@@ -1,3 +1,0 @@
-case_api
-case_core
-case_infra

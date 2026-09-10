@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# ruff
+.ruff_cache/
+
+# packaging
+*.egg-info/
+
+# virtual environments
+.venv/
+venv/
+env/
+
+# IDE/editor
+.idea/
+.vscode/
+
+# secrets/env files
+.env
+.env.local
+
+# SQLite runtime
+case_audit.db
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+
+# Logs
+*.log
+
+# Notebooks
+.ipynb_checkpoints/
