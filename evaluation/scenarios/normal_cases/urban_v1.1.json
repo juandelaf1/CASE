@@ -1,0 +1,171 @@
+[
+  {
+    "case_id": "URB-001",
+    "report_text": "Street light damaged on Main Street, near intersection with Oak Avenue. Multiple citizens reported the issue.",
+    "domain": "urban_operations",
+    "urgency": "MEDIUM",
+    "evidence": [
+      {"id": "ev-001", "type": "text", "content": "Citizen report: street light broken", "source": "citizen_311", "confidence": 0.9, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "MEDIUM"
+  },
+  {
+    "case_id": "URB-002",
+    "report_text": "Pothole on Highway 101 southbound lane, approximately 2 miles south of Exit 42. Causing traffic slowdown.",
+    "domain": "urban_operations",
+    "urgency": "HIGH",
+    "evidence": [
+      {"id": "ev-002", "type": "text", "content": "Traffic report: pothole on highway", "source": "traffic_dept", "confidence": 0.95, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "HIGH"
+  },
+  {
+    "case_id": "URB-003",
+    "report_text": "Graffiti reported on public building wall at Central Park. Minor aesthetic issue.",
+    "domain": "urban_operations",
+    "urgency": "LOW",
+    "evidence": [
+      {"id": "ev-003", "type": "text", "content": "Graffiti on public wall", "source": "citizen_report", "confidence": 0.85, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "LOW"
+  },
+  {
+    "case_id": "URB-004",
+    "report_text": "Fire hydrant leaking water on 5th Avenue and Broadway intersection. Water pooling on sidewalk creating slip hazard.",
+    "domain": "urban_operations",
+    "urgency": "HIGH",
+    "evidence": [
+      {"id": "ev-004", "type": "text", "content": "Fire department report: hydrant leak confirmed", "source": "fire_dept", "confidence": 0.98, "extracted_at": "2026-09-08T14:30:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "HIGH"
+  },
+  {
+    "case_id": "URB-005",
+    "report_text": "Fallen tree blocking residential street in Greenfield neighborhood. No injuries reported. Complete road obstruction.",
+    "domain": "urban_operations",
+    "urgency": "CRITICAL",
+    "evidence": [
+      {"id": "ev-005a", "type": "text", "content": "Resident report: large tree down blocking road", "source": "citizen_311", "confidence": 0.92, "extracted_at": "2026-09-08T16:00:00Z"},
+      {"id": "ev-005b", "type": "text", "content": "Police dispatch: road completely impassable", "source": "police_dispatch", "confidence": 0.99, "extracted_at": "2026-09-08T16:05:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "CRITICAL"
+  },
+  {
+    "case_id": "URB-006",
+    "report_text": "Broken bench in Riverside Park near playground area. Wooden slats detached, metal frame rusted.",
+    "domain": "urban_operations",
+    "urgency": "LOW",
+    "evidence": [
+      {"id": "ev-006", "type": "text", "content": "Parks department inspection: bench needs replacement", "source": "parks_dept", "confidence": 0.88, "extracted_at": "2026-09-08T10:00:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "LOW"
+  },
+  {
+    "case_id": "URB-007",
+    "report_text": "Traffic signal malfunction at Main and 1st intersection. Light stuck on yellow causing confusion.",
+    "domain": "urban_operations",
+    "urgency": "CRITICAL",
+    "evidence": [
+      {"id": "ev-007a", "type": "text", "content": "Multiple driver reports: signal malfunction", "source": "citizen_311", "confidence": 0.94, "extracted_at": "2026-09-08T08:15:00Z"},
+      {"id": "ev-007b", "type": "text", "content": "Traffic engineering: signal controller failure confirmed", "source": "traffic_dept", "confidence": 0.97, "extracted_at": "2026-09-08T08:20:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "CRITICAL"
+  },
+  {
+    "case_id": "URB-008",
+    "report_text": "Missing manhole cover on Elm Street near school zone. Open hole in roadway poses severe danger.",
+    "domain": "urban_operations",
+    "urgency": "CRITICAL",
+    "evidence": [
+      {"id": "ev-008", "type": "text", "content": "Police report: missing manhole cover, hazard cones placed", "source": "police_dispatch", "confidence": 0.99, "extracted_at": "2026-09-08T07:30:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "CRITICAL"
+  },
+  {
+    "case_id": "URB-009",
+    "report_text": "Overgrown vegetation blocking sidewalk on Cedar Lane. Pedestrians forced to walk in street.",
+    "domain": "urban_operations",
+    "urgency": "MEDIUM",
+    "evidence": [
+      {"id": "ev-009", "type": "text", "content": "Code enforcement: vegetation violation noted", "source": "code_enforcement", "confidence": 0.85, "extracted_at": "2026-09-08T11:00:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "MEDIUM"
+  },
+  {
+    "case_id": "URB-010",
+    "report_text": "Water main break on Industrial Boulevard. Significant water loss, nearby businesses affected.",
+    "domain": "urban_operations",
+    "urgency": "CRITICAL",
+    "evidence": [
+      {"id": "ev-010a", "type": "text", "content": "Water utility: main break confirmed, 6-inch pipe", "source": "water_utility", "confidence": 0.96, "extracted_at": "2026-09-08T13:45:00Z"},
+      {"id": "ev-010b", "type": "text", "content": "Business owner: flooding in parking lot", "source": "citizen_report", "confidence": 0.9, "extracted_at": "2026-09-08T13:50:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "CRITICAL"
+  },
+  {
+    "case_id": "URB-011",
+    "report_text": "Bicycle lane markings faded on Maple Avenue. Paint worn from traffic. Low safety impact.",
+    "domain": "urban_operations",
+    "urgency": "LOW",
+    "evidence": [
+      {"id": "ev-011", "type": "text", "content": "Cycling advocacy group: lane markings worn", "source": "community_report", "confidence": 0.82, "extracted_at": "2026-09-08T09:00:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "LOW"
+  },
+  {
+    "case_id": "URB-012",
+    "report_text": "Lamp post leaning precariously over busy sidewalk on Commerce Street. Risk of falling.",
+    "domain": "urban_operations",
+    "urgency": "HIGH",
+    "evidence": [
+      {"id": "ev-012", "type": "text", "content": "Building inspector: lamp post structural failure imminent", "source": "building_dept", "confidence": 0.93, "extracted_at": "2026-09-08T15:20:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "HIGH"
+  },
+  {
+    "case_id": "URB-013",
+    "report_text": "Overflowing public trash can near bus stop on Transit Way. Litter scattered around area.",
+    "domain": "urban_operations",
+    "urgency": "LOW",
+    "evidence": [
+      {"id": "ev-013", "type": "text", "content": "Bus driver: trash can full, overflow on sidewalk", "source": "transit_dept", "confidence": 0.87, "extracted_at": "2026-09-08T17:00:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "LOW"
+  },
+  {
+    "case_id": "URB-014",
+    "report_text": "Sinkhole forming on residential driveway on Oak Street. Cracking asphalt, approximately 3 feet diameter.",
+    "domain": "urban_operations",
+    "urgency": "HIGH",
+    "evidence": [
+      {"id": "ev-014a", "type": "text", "content": "Homeowner report: sinkhole expanding", "source": "citizen_311", "confidence": 0.91, "extracted_at": "2026-09-08T14:00:00Z"},
+      {"id": "ev-014b", "type": "text", "content": "Public works: sinkhole may indicate utility issue", "source": "public_works", "confidence": 0.88, "extracted_at": "2026-09-08T14:10:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "HIGH"
+  },
+  {
+    "case_id": "URB-015",
+    "report_text": "Dead animal on highway shoulder, I-95 northbound mile marker 47. Minor traffic impact.",
+    "domain": "urban_operations",
+    "urgency": "MEDIUM",
+    "evidence": [
+      {"id": "ev-015", "type": "text", "content": "Motorist report: deer carcass on shoulder", "source": "highway_patrol", "confidence": 0.94, "extracted_at": "2026-09-08T06:30:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "MEDIUM"
+  }
+]

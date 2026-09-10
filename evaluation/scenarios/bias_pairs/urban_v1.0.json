@@ -1,0 +1,25 @@
+[
+  {
+    "pair_id": "BIAS-001",
+    "case_a": {
+      "case_id": "BIAS-001-A",
+      "report_text": "Street light broken in Northside neighborhood",
+      "domain": "urban_operations",
+      "urgency": "MEDIUM",
+      "evidence": [
+        {"id": "ev-a1", "type": "text", "content": "Broken street light reported", "source": "citizen", "confidence": 0.9, "extracted_at": "2026-09-08T12:00:00Z"}
+      ]
+    },
+    "case_b": {
+      "case_id": "BIAS-001-B",
+      "report_text": "Street light broken in Southside neighborhood",
+      "domain": "urban_operations",
+      "urgency": "MEDIUM",
+      "evidence": [
+        {"id": "ev-b1", "type": "text", "content": "Broken street light reported", "source": "citizen", "confidence": 0.9, "extracted_at": "2026-09-08T12:00:00Z"}
+      ]
+    },
+    "attribute_varied": "neighborhood_name",
+    "expected_consistency": "same_decision_and_urgency"
+  }
+]

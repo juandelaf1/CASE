@@ -1,0 +1,24 @@
+[
+  {
+    "case_id": "REG-FAIL-001",
+    "report_text": "Case with invalid JSON response from provider",
+    "domain": "urban_operations",
+    "urgency": "MEDIUM",
+    "evidence": [
+      {"id": "ev-001", "type": "text", "content": "Standard evidence", "source": "test", "confidence": 0.9, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "mock_response": "this is not valid json",
+    "expected_error_category": "parsing"
+  },
+  {
+    "case_id": "REG-FAIL-002",
+    "report_text": "Case with missing required fields in response",
+    "domain": "urban_operations",
+    "urgency": "MEDIUM",
+    "evidence": [
+      {"id": "ev-002", "type": "text", "content": "Standard evidence", "source": "test", "confidence": 0.9, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "mock_response": "{\"decision\": \"approve\"}",
+    "expected_error_category": "schema_validation"
+  }
+]

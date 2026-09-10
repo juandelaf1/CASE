@@ -1,0 +1,35 @@
+[
+  {
+    "case_id": "REG-NORMAL-001",
+    "report_text": "Street light damaged on Main Street, near intersection with Oak Avenue. Multiple citizens reported the issue.",
+    "domain": "urban_operations",
+    "urgency": "MEDIUM",
+    "evidence": [
+      {"id": "ev-001", "type": "text", "content": "Citizen report: street light broken", "source": "citizen_311", "confidence": 0.9, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "MEDIUM"
+  },
+  {
+    "case_id": "REG-NORMAL-002",
+    "report_text": "Pothole on Highway 101 southbound lane, approximately 2 miles south of Exit 42. Causing traffic slowdown.",
+    "domain": "urban_operations",
+    "urgency": "HIGH",
+    "evidence": [
+      {"id": "ev-002", "type": "text", "content": "Traffic report: pothole on highway", "source": "traffic_dept", "confidence": 0.95, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "HIGH"
+  },
+  {
+    "case_id": "REG-NORMAL-003",
+    "report_text": "Graffiti reported on public building wall at Central Park. Minor aesthetic issue.",
+    "domain": "urban_operations",
+    "urgency": "LOW",
+    "evidence": [
+      {"id": "ev-003", "type": "text", "content": "Graffiti on public wall", "source": "citizen_report", "confidence": 0.85, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "expected_decision": "approve",
+    "expected_urgency": "LOW"
+  }
+]

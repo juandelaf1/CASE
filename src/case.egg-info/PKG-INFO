@@ -1,0 +1,69 @@
+Metadata-Version: 2.4
+Name: case
+Version: 0.1.0
+Summary: CASE — AI Decision Platform
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn>=0.34.0
+Requires-Dist: pydantic>=2.10.0
+Requires-Dist: pydantic-settings>=2.8.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: python-dotenv>=1.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Requires-Dist: pytest-cov>=6.0.0; extra == "dev"
+Requires-Dist: ruff>=0.9.0; extra == "dev"
+Requires-Dist: mypy>=1.13.0; extra == "dev"
+Requires-Dist: types-requests>=2.32.0; extra == "dev"
+
+# CASE — AI Decision Platform
+
+## Foundation v0.3
+
+CASE is a domain-agnostic AI Decision Platform that transforms unstructured operational cases into structured, validated, evidence-backed decisions with human oversight.
+
+## Architecture
+
+```text
+Streamlit UI → FastAPI → Application → Domain → Ports → Infrastructure
+```
+
+## Project Structure
+
+```text
+src/
+├── case_core/
+│   ├── contracts/     # Pydantic v2 schemas
+│   ├── domain/        # DomainRegistry, DomainPolicy
+│   ├── ports/         # LLMProvider, RepositoryPort, AuditPort
+│   ├── providers/     # MockProvider, OllamaProvider, CloudProvider
+│   ├── reliability/   # Validation, repair, retry
+│   ├── prompts/       # PromptBuilder
+│   └── application/   # TriageEngine
+├── case_api/
+│   └── api/v1/        # FastAPI endpoints
+└── case_infra/
+    └── persistence/   # SQLite adapters
+tests/
+├── unit/
+├── integration/
+└── behavioral/
+```
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+## Status
+
+**Foundation v0.3** — Specification FROZEN.
+Implementation Phase 0: Academic/Portfolio MVP.
+
+**Implementation Readiness**: READY
+**Blueprint Status**: FROZEN
+**Benchmark Status**: NOT YET MEASURED

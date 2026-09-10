@@ -1,0 +1,20 @@
+[
+  {
+    "model": "qwen3:4b",
+    "case_id": "MINI-001",
+    "expected_decision": "approve",
+    "expected_urgency": "MEDIUM",
+    "final_status": "provider_error",
+    "error": "",
+    "total_latency_ms": 300449.70655441284
+  },
+  {
+    "model": "qwen3:4b",
+    "case_id": "MINI-002",
+    "expected_decision": "escalate",
+    "expected_urgency": "HIGH",
+    "final_status": "provider_error",
+    "error": "",
+    "total_latency_ms": 300336.46416664124
+  }
+]

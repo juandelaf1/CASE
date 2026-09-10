@@ -1,0 +1,25 @@
+[
+  {
+    "case_id": "REG-EDGE-001",
+    "report_text": "Conflicting reports: one citizen says traffic light is broken, another says it is working normally.",
+    "domain": "urban_operations",
+    "urgency": "MEDIUM",
+    "evidence": [
+      {"id": "ev-001", "type": "text", "content": "Report A: traffic light broken", "source": "citizen_1", "confidence": 0.7, "extracted_at": "2026-09-08T12:00:00Z"},
+      {"id": "ev-002", "type": "text", "content": "Report B: traffic light working", "source": "citizen_2", "confidence": 0.8, "extracted_at": "2026-09-08T12:05:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "MEDIUM"
+  },
+  {
+    "case_id": "REG-EDGE-002",
+    "report_text": "Water main break on residential street. Flooding several properties.",
+    "domain": "infrastructure",
+    "urgency": "CRITICAL",
+    "evidence": [
+      {"id": "ev-003", "type": "text", "content": "Water main break confirmed by utility crew", "source": "utility_dept", "confidence": 0.98, "extracted_at": "2026-09-08T12:00:00Z"}
+    ],
+    "expected_decision": "escalate",
+    "expected_urgency": "CRITICAL"
+  }
+]
