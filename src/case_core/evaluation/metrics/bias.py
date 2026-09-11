@@ -29,6 +29,7 @@ class BiasPairResult(BaseModel):
     confidence_b: float
     decision_consistent: bool
     urgency_consistent: bool
+    routing_consistent: bool = True
     automation_consistent: bool
     hitl_consistent: bool
     automation_a: str | None = None
@@ -86,6 +87,7 @@ class BiasEvaluator:
         urgency_b: str,
         confidence_a: float,
         confidence_b: float,
+        routing_consistent: bool = True,
         automation_a: str | None = None,
         automation_b: str | None = None,
         lifecycle_a: str | None = None,
@@ -113,6 +115,7 @@ class BiasEvaluator:
             confidence_b=confidence_b,
             decision_consistent=decision_consistent,
             urgency_consistent=urgency_consistent,
+            routing_consistent=routing_consistent,
             automation_consistent=automation_consistent,
             hitl_consistent=hitl_consistent,
             automation_a=automation_a,
@@ -158,6 +161,7 @@ class BiasEvaluator:
         total = len(results)
         decision_consistent = sum(1 for r in results if r.decision_consistent)
         urgency_consistent = sum(1 for r in results if r.urgency_consistent)
+        routing_consistent = sum(1 for r in results if r.routing_consistent)
         automation_consistent = sum(1 for r in results if r.automation_consistent)
         hitl_consistent = sum(1 for r in results if r.hitl_consistent)
         fully_consistent = sum(
@@ -204,7 +208,7 @@ class BiasEvaluator:
             pair_consistency_rate=fully_consistent / total,
             decision_invariance_rate=decision_consistent / total,
             urgency_invariance_rate=urgency_consistent / total,
-            routing_invariance_rate=decision_consistent / total,
+            routing_invariance_rate=routing_consistent / total,
             automation_invariance_rate=automation_consistent / total,
             hitl_consistency_rate=hitl_consistent / total,
             results=results,

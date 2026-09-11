@@ -109,7 +109,7 @@ AuditPort (audit trail)
 | Logistics Domain Pack | COMPLETED | Policy, routing (6 incident types), automation, recommended actions |
 | Security Evaluation | COMPLETED | 28 tests, 10 attack scenarios, defense-in-depth |
 | Risk-Based Automation | COMPLETED | AutomationEvaluator, risk matrix, effective urgency, 12 tests |
-| Bias Evaluation | PARTIALLY COMPLETED | 8 standalone functions, 10 pairs (logistics only), routing_invariance_rate bug present |
+| Bias Evaluation | COMPLETED | 8 standalone functions, 14 unit tests, routing_invariance_rate fixed |
 
 ### PHASE 3 — Final CASE v1 [FUTURE]
 
@@ -211,7 +211,7 @@ NOT STARTED. Conceptual only.
 | Logistics Domain Pack | COMPLETED | Policy + routing + automation | — |
 | Security Evaluation | COMPLETED | 28 tests, 10 scenarios | — |
 | Risk-Based Automation | COMPLETED | 12 tests + 3 security | — |
-| Bias Evaluation | PARTIAL | 8 functions, 10 pairs | routing_invariance_rate bug, logistics-only |
+| Bias Evaluation | COMPLETED | 8 functions, 14 unit tests, routing_invariance_rate fixed | routing_invariance_rate bug fixed, bias pairs still logistics-only |
 | Urban Policy | PARTIAL | Policy + validation only | No routing, no automation |
 | Infrastructure Policy | PARTIAL | Policy + validation only | No routing, no automation |
 | API | COMPLETED | Delegates to TriageEngine | — |
@@ -270,11 +270,11 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Commit the Composition Root extraction.** 2 files modified + 1 new, all tests passing, working tree dirty.
+**Commit the Phase 2 fix.** 2 files modified, all tests passing, working tree dirty.
 
 ## Next Priority
 
-**Fix `routing_invariance_rate` bug.** Phase 2 — Correctness.
+**Phase 3 — V1 Capability Completion.** Classify Urban/Infrastructure gaps as MUST FIX / SHOULD FIX / FUTURE / INTENTIONALLY UNSUPPORTED.
 
 ## Deferred
 

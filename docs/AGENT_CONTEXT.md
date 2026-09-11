@@ -69,17 +69,17 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 
 ## CURRENT PRIORITY
 
-**Commit the Composition Root extraction.** 2 files modified + 1 new, all tests passing, working tree dirty.
+**Commit the Phase 2 fix.** 2 files modified, all tests passing, working tree dirty.
 
 Files pending commit:
-- `src/case_api/api/v1/app.py` (modified)
-- `src/case_core/composition.py` (new)
+- `src/case_core/evaluation/metrics/bias.py` (modified)
+- `tests/unit/test_bias_evaluation.py` (modified)
 
 ---
 
 ## NEXT PRIORITY
 
-**Fix `routing_invariance_rate` bug.** Phase 2 — Correctness.
+**Phase 3 — V1 Capability Completion.** Classify Urban/Infrastructure gaps.
 
 ---
 
@@ -164,10 +164,10 @@ If a task is interrupted or you lose context:
 ## CURRENT ROADMAP POINTER
 
 ```
-CURRENT PHASE: Phase 2 — Correctness
+CURRENT PHASE: Phase 3 — V1 Capability Completion
 CURRENT SPRINT: Sprint 1 — CASE Decision Platform [COMPLETED]
-CURRENT TASK: Commit Composition Root extraction
-NEXT TASK: Fix routing_invariance_rate bug
+CURRENT TASK: Commit Phase 2 fix
+NEXT TASK: Classify Urban/Infrastructure gaps
 ```
 
 ---

@@ -274,10 +274,10 @@ Validation lives in `ReliabilityPipeline`:
 | Evaluator class | BiasEvaluator (load_pairs, evaluate_pair, compute_results) |
 | Standalone functions | 8 metrics (pair consistency, decision invariance, etc.) |
 | Bias pairs | 10 pairs, ALL in logistics domain |
-| Tests | 8 behavioral (TestBS030) + 8 unit (test_bias_evaluation.py) |
+| Tests | 8 behavioral (TestBS030) + 14 unit (test_bias_evaluation.py) |
 | Documentation | BENCHMARK_BIAS_V0.1.md (44 lines) |
 
-**Known bug:** `routing_invariance_rate` in `compute_results()` uses `decision_consistent / total` instead of a routing-specific check. It is a duplicate of `decision_invariance_rate`.
+**Known bug:** `routing_invariance_rate` in `compute_results()` — FIXED. Now uses `routing_consistent` field instead of duplicating `decision_consistent / total`. Added `routing_consistent: bool = True` to `BiasPairResult` and `routing_consistent` parameter to `evaluate_pair()`.
 
 **Coverage gap:** Zero bias pairs for Urban or Infrastructure domains.
 
@@ -365,7 +365,7 @@ Display only. No auth. No write operations.
 ## 20. Tests
 
 ```
-384 collected → 377 passed, 7 skipped, 0 failed
+390 collected → 383 passed, 7 skipped, 0 failed
 ```
 
 | Suite | Tests | Status |
@@ -373,7 +373,7 @@ Display only. No auth. No write operations.
 | test_api.py (integration) | 11 | PASS |
 | test_ollama_integration.py | 7 | SKIPPED (no Ollama) |
 | test_behavioral.py | 42 | PASS |
-| test_bias_evaluation.py | 8 | PASS |
+| test_bias_evaluation.py | 14 | PASS |
 | test_cloud_provider.py | 28 | PASS |
 | test_contracts.py | 23 | PASS |
 | test_domain.py | 38 | PASS |
