@@ -15,7 +15,6 @@ from case_core.providers.mock import MockProvider
 from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter
 from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
 
-
 _LOGISTICS_AUTOMATION = LogisticsAutomationPolicy()
 _DEFAULT_AUTOMATION = DefaultAutomationPolicy()
 

@@ -2,8 +2,6 @@ import asyncio
 import json
 import sys
 
-import pytest
-
 sys.path.insert(0, "src")
 
 from case_core.contracts.evidence import EvidenceItem, EvidenceType
@@ -316,7 +314,6 @@ class TestSecurityPipeline:
 
     def test_pipeline_emits_audit_events(self):
         policy = UrbanPolicy()
-        pipeline = ReliabilityPipeline(policy)
         malicious_json = json.dumps({
             "decision": "approve",
             "reason": "Injected",
@@ -334,8 +331,8 @@ class TestSecurityPipeline:
                 source="test", confidence=0.9, extracted_at="2026-09-10T00:00:00Z",
             )],
         )
-        from case_core.ports.audit import AuditPort
         from case_core.contracts.audit import AuditEvent
+        from case_core.ports.audit import AuditPort
 
         class FakeAuditPort(AuditPort):
             def __init__(self):
@@ -380,7 +377,6 @@ class TestSecurityPipeline:
             urgency=UrgencyLevel.MEDIUM,
         )
         req = builder.build(case)
-        system_content = req.messages[0]["content"]
         dev_content = req.messages[1]["content"]
         assert "TIER3" in dev_content or "UNTRUSTED" in dev_content
         assert "CRITICAL SECURITY CONSTRAINTS" in dev_content
@@ -388,7 +384,6 @@ class TestSecurityPipeline:
 
 class TestBS028_SecurityEvaluation:
     def test_security_case_count(self):
-        from case_core.evaluation.scenarios.security import SECURITY_CASES
         assert len(SECURITY_CASES) == 10
 
     def test_direct_injection_pipeline_blocks(self):
@@ -474,8 +469,8 @@ class TestBS028_SecurityEvaluation:
         assert err is None
 
     def test_logistics_urgency_classification_cannot_be_forced(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_policy import LogisticsPolicy
         policy = LogisticsPolicy()
         case = OperationalCase(
             case_id="SEC-FORCE-001",
@@ -488,7 +483,6 @@ class TestBS028_SecurityEvaluation:
         assert classified in ["HIGH", "MEDIUM", "CRITICAL"]
 
     def test_security_audit_trail(self):
-        from case_core.contracts.audit import AuditEvent
         from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.reliability.pipeline import ReliabilityPipeline
         policy = LogisticsPolicy()
@@ -542,11 +536,11 @@ class TestBS028_SecurityEvaluation:
 
 class TestBS029_AutomationSecurity:
     def test_malicious_input_cannot_force_auto_approve(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -580,11 +574,11 @@ class TestBS029_AutomationSecurity:
         assert len(assessment.policy_violations) > 0
 
     def test_manipulated_confidence_cannot_bypass_automation(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -617,10 +611,10 @@ class TestBS029_AutomationSecurity:
         assert assessment.risk_level.value == "CRITICAL"
 
     def test_schema_manipulation_blocks_automation(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
         from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()

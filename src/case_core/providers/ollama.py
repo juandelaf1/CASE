@@ -167,7 +167,8 @@ class OllamaProvider(LLMProvider):
                     json={"name": self._model},
                 )
                 if response.status_code == 200:
-                    return response.json()
+                    result: dict[str, Any] = response.json()
+                    return result
                 return None
         except Exception:
             return None

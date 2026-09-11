@@ -1,13 +1,11 @@
 import sys
 
-import pytest
-
 sys.path.insert(0, "src")
 
 from case_core.contracts.evidence import EvidenceItem, EvidenceType
 from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
 from case_core.domain.urban_policy import UrbanPolicy
-from case_core.prompts.builder import PromptBuilder, TIER1_SYSTEM, TIER3_DEVELOPER
+from case_core.prompts.builder import PromptBuilder
 
 
 def _make_case(text: str = "Falla en farola", evidence: list | None = None) -> OperationalCase:

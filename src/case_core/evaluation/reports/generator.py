@@ -1,12 +1,13 @@
 import json
 from pathlib import Path
+from typing import Any
 
 from case_core.evaluation.metrics.calculator import compute_all_metrics
 from case_core.evaluation.runner.results import EvaluationRun
 
 
 class ReportGenerator:
-    def generate(self, run: EvaluationRun) -> dict:
+    def generate(self, run: EvaluationRun) -> dict[str, Any]:
         metrics = compute_all_metrics(run)
 
         decisions: dict[str, int] = {}
@@ -39,7 +40,7 @@ class ReportGenerator:
             ],
         }
 
-    def save_report(self, run: EvaluationRun, path: str | Path) -> dict:
+    def save_report(self, run: EvaluationRun, path: str | Path) -> dict[str, Any]:
         report = self.generate(run)
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)

@@ -240,7 +240,8 @@ class CloudProvider(LLMProvider):
                     headers={"Authorization": f"Bearer {self._api_key}"},
                 )
                 if response.status_code == 200:
-                    return response.json()
+                    result: dict[str, Any] = response.json()
+                    return result
                 return None
         except Exception:
             return None

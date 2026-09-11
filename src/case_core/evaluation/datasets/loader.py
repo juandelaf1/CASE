@@ -40,7 +40,7 @@ class DatasetLoader:
             metadata=data.get("metadata", {}),
         )
 
-    def load_from_dict(self, data: dict) -> Dataset:
+    def load_from_dict(self, data: dict[str, Any]) -> Dataset:
         return Dataset(
             name=data.get("name", "unnamed"),
             version=data.get("version", "0.0.0"),

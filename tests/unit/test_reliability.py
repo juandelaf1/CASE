@@ -2,21 +2,16 @@ import asyncio
 import json
 import sys
 
-import pytest
-
 sys.path.insert(0, "src")
 
 from case_core.contracts.audit import AuditEvent
-from case_core.contracts.evidence import EvidenceItem, EvidenceType
 from case_core.contracts.error import ErrorCategory
+from case_core.contracts.evidence import EvidenceItem, EvidenceType
 from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
 from case_core.domain.urban_policy import UrbanPolicy
 from case_core.ports.audit import AuditPort
 from case_core.reliability.pipeline import (
     ReliabilityPipeline,
-    MAX_VALIDATION_RETRIES,
-    MAX_TRANSIENT_RETRIES,
-    TOTAL_TIMEOUT_SECONDS,
 )
 
 
@@ -221,7 +216,7 @@ class TestPipelineEndToEnd:
 
 class TestRetryLoop:
     def test_retry_success_after_validation_failure(self):
-        from case_core.contracts.llm import LLMRequest, DecodingParameters
+        from case_core.contracts.llm import DecodingParameters, LLMRequest
         audit = InMemoryAuditPort()
         pipeline = ReliabilityPipeline(UrbanPolicy(), audit_port=audit)
         case = _make_case()
@@ -335,7 +330,6 @@ class TestRetryLoop:
 
 class TestTimeout:
     def test_timeout_budget_respected(self):
-        start_time = [0.0]
         current_time = [0.0]
 
         def mock_time():

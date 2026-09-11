@@ -1,15 +1,18 @@
 import sys
 
-import pytest
-
 sys.path.insert(0, "src")
 
 from case_core.contracts.evidence import EvidenceItem, EvidenceType
-from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+from case_core.contracts.operational_case import OperationalCase
+from case_core.domain.infrastructure_policy import InfrastructurePolicy
+from case_core.domain.logistics_policy import (
+    RECOMMENDED_ACTIONS,
+    Department,
+    IncidentType,
+    LogisticsPolicy,
+)
 from case_core.domain.registry import DomainRegistry
 from case_core.domain.urban_policy import UrbanPolicy
-from case_core.domain.logistics_policy import Department, IncidentType, LogisticsPolicy, RECOMMENDED_ACTIONS
-from case_core.domain.infrastructure_policy import InfrastructurePolicy
 
 
 def _make_case(text: str, domain: str = "urban_operations") -> OperationalCase:

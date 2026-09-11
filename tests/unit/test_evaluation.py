@@ -1,5 +1,3 @@
-import asyncio
-import json
 import os
 import sys
 
@@ -7,23 +5,22 @@ import pytest
 
 sys.path.insert(0, "src")
 
-from case_core.evaluation.datasets.loader import DatasetLoader, Dataset, DatasetItem
-from case_core.evaluation.metrics.calculator import (
-    compute_decision_accuracy,
-    compute_urgency_accuracy,
-    compute_avg_confidence,
-    compute_avg_processing_time,
-    compute_error_rate,
-    compute_all_metrics,
-)
-from case_core.evaluation.runner.results import EvaluationResult, EvaluationRun
-from case_core.evaluation.reports.generator import ReportGenerator
-from case_core.evaluation.runner.runner import EvaluationRunner
 from case_core.domain.registry import DomainRegistry
 from case_core.domain.urban_policy import UrbanPolicy
+from case_core.evaluation.datasets.loader import Dataset, DatasetItem, DatasetLoader
+from case_core.evaluation.metrics.calculator import (
+    compute_all_metrics,
+    compute_avg_confidence,
+    compute_avg_processing_time,
+    compute_decision_accuracy,
+    compute_error_rate,
+    compute_urgency_accuracy,
+)
+from case_core.evaluation.reports.generator import ReportGenerator
+from case_core.evaluation.runner.results import EvaluationResult, EvaluationRun
+from case_core.evaluation.runner.runner import EvaluationRunner
 from case_core.providers.mock import MockProvider
 from case_core.reliability.pipeline import ReliabilityPipeline
-
 
 TEST_DATASET_PATH = "test_dataset.json"
 
@@ -194,7 +191,7 @@ class TestReportGenerator:
     def test_save_report(self):
         run = _make_run()
         gen = ReportGenerator()
-        report = gen.save_report(run, "test_report.json")
+        gen.save_report(run, "test_report.json")
         assert os.path.exists("test_report.json")
         os.remove("test_report.json")
 

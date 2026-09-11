@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +20,7 @@ class EvidenceItem(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     extracted_at: str
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "type": self.type.value,
@@ -30,7 +31,7 @@ class EvidenceItem(BaseModel):
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "EvidenceItem":
+    def from_dict(cls, data: dict[str, Any]) -> "EvidenceItem":
         return cls(
             id=data["id"],
             type=EvidenceType(data["type"]),

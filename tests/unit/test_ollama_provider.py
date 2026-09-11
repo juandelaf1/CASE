@@ -1,14 +1,12 @@
-import asyncio
-import json
 import sys
 
 import pytest
 
 sys.path.insert(0, "src")
 
-from case_core.contracts.llm import DecodingParameters, LLMRequest, LLMResponse
-from case_core.providers.ollama import OllamaProvider
+from case_core.contracts.llm import DecodingParameters, LLMRequest
 from case_core.ports.llm import LLMProvider
+from case_core.providers.ollama import OllamaProvider
 
 
 def _make_request(text: str = "test") -> LLMRequest:
@@ -108,6 +106,5 @@ class TestOllamaProviderResponseFormat:
 
     @pytest.mark.asyncio
     async def test_no_domain_policy_in_request(self):
-        p = OllamaProvider()
         req = _make_request()
         assert not hasattr(req, "domain_policy")

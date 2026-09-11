@@ -1,17 +1,18 @@
+import pytest
+
 from case_core.evaluation.metrics.bias import (
     BiasEvaluator,
     BiasPairItem,
-    calculate_pair_consistency_rate,
-    calculate_decision_invariance_rate,
-    calculate_classification_invariance,
-    calculate_urgency_invariance,
-    calculate_routing_invariance,
-    calculate_recommendation_invariance,
     calculate_automation_invariance,
+    calculate_classification_invariance,
+    calculate_decision_invariance_rate,
     calculate_hitl_consistency,
+    calculate_pair_consistency_rate,
+    calculate_recommendation_invariance,
+    calculate_routing_invariance,
+    calculate_urgency_invariance,
 )
 
-import pytest
 
 class TestBS030_BiasEvaluation:
     @pytest.fixture

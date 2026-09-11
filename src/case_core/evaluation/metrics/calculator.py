@@ -1,3 +1,5 @@
+from typing import Any
+
 from case_core.evaluation.runner.results import EvaluationRun
 
 
@@ -44,7 +46,7 @@ def compute_precision_recall(
     return precision, recall
 
 
-def compute_all_metrics(run: EvaluationRun) -> dict:
+def compute_all_metrics(run: EvaluationRun) -> dict[str, Any]:
     return {
         "decision_accuracy": compute_decision_accuracy(run),
         "urgency_accuracy": compute_urgency_accuracy(run),

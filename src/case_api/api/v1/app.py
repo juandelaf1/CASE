@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -52,8 +53,8 @@ class TriageDecisionResponse(BaseModel):
     evidence_summary: str
     lifecycle: str
     processing_time_ms: float
-    original_ai_proposal: dict | None = None
-    human_override: dict | None = None
+    original_ai_proposal: dict[str, Any] | None = None
+    human_override: dict[str, Any] | None = None
 
 
 class ErrorResponse(BaseModel):

@@ -25,7 +25,7 @@ VALID_URGENCIES = {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
 
 
 def _backoff(attempt: int) -> float:
-    return BACKOFF_BASE_SECONDS * (2 ** attempt)
+    return float(BACKOFF_BASE_SECONDS * (2 ** attempt))
 
 
 class ReliabilityPipeline:
@@ -48,7 +48,7 @@ class ReliabilityPipeline:
         self,
         case: OperationalCase,
         event_type: str,
-        details: dict,
+        details: dict[str, Any],
         decision_id: str | None = None,
     ) -> None:
         if self._audit_port is None:
@@ -63,7 +63,7 @@ class ReliabilityPipeline:
         )
         await self._audit_port.log_event(event)
 
-    def parse(self, raw_content: str) -> tuple[dict | None, CASEError | None]:
+    def parse(self, raw_content: str) -> tuple[dict[str, Any] | None, CASEError | None]:
         try:
             data = json.loads(raw_content)
             return data, None
@@ -75,7 +75,7 @@ class ReliabilityPipeline:
                 retryable=True,
             )
 
-    def schema_validate(self, data: dict) -> tuple[dict | None, CASEError | None]:
+    def schema_validate(self, data: dict[str, Any]) -> tuple[dict[str, Any] | None, CASEError | None]:
         missing = DECISION_FIELDS - set(data.keys())
         if missing:
             return None, CASEError(
@@ -119,7 +119,7 @@ class ReliabilityPipeline:
 
         return data, None
 
-    def semantic_validate(self, data: dict) -> tuple[dict | None, CASEError | None]:
+    def semantic_validate(self, data: dict[str, Any]) -> tuple[dict[str, Any] | None, CASEError | None]:
         if not data.get("reason") or len(data["reason"].strip()) < 10:
             return None, CASEError(
                 category=ErrorCategory.SEMANTIC_VALIDATION,
@@ -138,7 +138,7 @@ class ReliabilityPipeline:
 
         return data, None
 
-    def domain_validate(self, data: dict, case: OperationalCase) -> tuple[dict | None, CASEError | None]:
+    def domain_validate(self, data: dict[str, Any], case: OperationalCase) -> tuple[dict[str, Any] | None, CASEError | None]:
         ok, msg = self._domain_policy.validate_evidence(case.evidence)
         if not ok:
             return None, CASEError(
@@ -150,7 +150,7 @@ class ReliabilityPipeline:
 
         return data, None
 
-    def validate_all(self, raw_content: str, case: OperationalCase) -> tuple[dict | None, CASEError | None]:
+    def validate_all(self, raw_content: str, case: OperationalCase) -> tuple[dict[str, Any] | None, CASEError | None]:
         data, err = self.parse(raw_content)
         if err:
             return None, err
@@ -193,7 +193,7 @@ class ReliabilityPipeline:
 
     def build_decision(
         self,
-        data: dict,
+        data: dict[str, Any],
         case: OperationalCase,
         processing_time_ms: float,
         automation_assessment: RiskAssessment | None = None,

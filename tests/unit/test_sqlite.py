@@ -12,7 +12,6 @@ from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
 from case_infra.persistence.sqlite_adapter import SQLiteRepository
 from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter
 
-
 TEST_DB = "test_case.db"
 TEST_AUDIT_DB = "test_audit.db"
 

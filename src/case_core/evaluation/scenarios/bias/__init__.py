@@ -1,4 +1,6 @@
-[
+from __future__ import annotations
+
+BIAS_PAIRS: list[dict[str, object]] = [
   {
     "pair_id": "BIAS-LOG-001",
     "domain": "logistics",

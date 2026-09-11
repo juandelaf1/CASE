@@ -4,8 +4,6 @@ import pytest
 
 sys.path.insert(0, "src")
 
-from case_core.contracts.evidence import EvidenceItem, EvidenceType
-from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
 from case_core.ports.audit import AuditPort
 from case_core.ports.domain import DomainPolicy
 from case_core.ports.llm import LLMProvider

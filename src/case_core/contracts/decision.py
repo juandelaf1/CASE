@@ -40,7 +40,7 @@ class TriageDecision(BaseModel):
     original_ai_proposal: AIProposal | None = None
     human_override: HumanOverride | None = None
 
-    def model_dump_ext(self) -> dict:
+    def model_dump_ext(self) -> dict[str, Any]:
         return {
             "decision_id": self.decision_id,
             "case_id": self.case_id,
@@ -59,7 +59,7 @@ class TriageDecision(BaseModel):
         }
 
     @classmethod
-    def model_validate_ext(cls, data: dict) -> "TriageDecision":
+    def model_validate_ext(cls, data: dict[str, Any]) -> "TriageDecision":
         original_ai = None
         if data.get("original_ai_proposal"):
             original_ai = AIProposal(**data["original_ai_proposal"])

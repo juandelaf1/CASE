@@ -68,8 +68,13 @@ class BiasEvaluator:
         if not p.exists():
             raise FileNotFoundError(f"Bias pairs not found: {p}")
 
-        with open(p) as f:
-            data = json.load(f)
+        if p.suffix == ".py":
+            import importlib
+            mod = importlib.import_module("case_core.evaluation.scenarios.bias")
+            data = mod.BIAS_PAIRS
+        else:
+            with open(p) as f:
+                data = json.load(f)
 
         self._pairs = [BiasPairItem(**item) for item in data]
         return self._pairs

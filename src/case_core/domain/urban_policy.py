@@ -1,3 +1,5 @@
+from typing import Any
+
 from case_core.contracts.evidence import EvidenceItem
 from case_core.contracts.operational_case import OperationalCase
 from case_core.ports.domain import DomainPolicy
@@ -26,7 +28,7 @@ class UrbanPolicy(DomainPolicy):
             return "MEDIUM"
         return "LOW"
 
-    def get_domain_context(self) -> dict:
+    def get_domain_context(self) -> dict[str, Any]:
         return {
             "domain": "urban_operations",
             "evidence_types": ["text", "image", "metric"],

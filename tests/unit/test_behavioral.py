@@ -754,10 +754,8 @@ class TestBS027_LogisticsDomainPack:
 
     def test_logistics_domain_validation(self):
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
-        from case_core.contracts.operational_case import OperationalCase
         from case_core.domain.logistics_policy import LogisticsPolicy
         policy = LogisticsPolicy()
-        case = OperationalCase(case_id="LOG-001", report_text="Package delivery delayed", domain="logistics")
         ok, msg = policy.validate_evidence([EvidenceItem(
             id="ev1", type=EvidenceType.TEXT, content="Delivery note",
             source="warehouse", confidence=0.9, extracted_at="2026-09-10T00:00:00Z",

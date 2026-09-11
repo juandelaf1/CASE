@@ -1,12 +1,10 @@
 import sys
 
-import pytest
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, "src")
 
 from case_api.api.v1.app import app
-
 
 client = TestClient(app)
 
