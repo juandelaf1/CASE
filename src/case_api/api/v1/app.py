@@ -3,18 +3,17 @@ import time
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from case_core.application.engine import TriageEngine
 from case_core.contracts.audit import AuditEvent
-from case_core.contracts.decision import AIProposal, HumanOverride
+from case_core.contracts.decision import HumanOverride
 from case_core.contracts.evidence import EvidenceItem, EvidenceType
-from case_core.contracts.lifecycle import DecisionLifecycle, ProcessingLifecycle
+from case_core.contracts.lifecycle import DecisionLifecycle
 from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
 from case_core.domain.infrastructure_policy import InfrastructurePolicy
 from case_core.domain.logistics_policy import LogisticsPolicy
 from case_core.domain.registry import DomainRegistry
 from case_core.domain.urban_policy import UrbanPolicy
-from case_core.prompts.builder import PromptBuilder
 from case_core.providers.mock import MockProvider
-from case_core.reliability.pipeline import ReliabilityPipeline
 from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter
 from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
 
@@ -32,6 +31,13 @@ registry.register(InfrastructurePolicy())
 provider = MockProvider()
 audit_adapter = SQLiteAuditAdapter()
 decision_repo = SQLiteDecisionRepository()
+
+engine = TriageEngine(
+    domain_registry=registry,
+    provider=provider,
+    audit_port=audit_adapter,
+    decision_repository=decision_repo,
+)
 
 
 class EvidenceRequest(BaseModel):
@@ -110,8 +116,7 @@ async def list_domains() -> dict[str, list[str]]:
 
 @app.post("/api/v1/triage")
 async def triage(request: TriageRequest) -> TriageDecisionResponse:
-    policy = registry.get(request.domain)
-    if not policy:
+    if not registry.validate_domain(request.domain):
         raise HTTPException(
             status_code=400,
             detail=f"Unknown domain: {request.domain}. Valid domains: {registry.list_domains()}",
@@ -138,27 +143,10 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
         metadata=request.metadata,
     )
 
-    case.status = ProcessingLifecycle.PROMPT_BUILDING
-    builder = PromptBuilder(domain_policy=policy)
-    llm_request = builder.build(case)
+    result = await engine.execute(case)
 
-    case.status = ProcessingLifecycle.PROVIDING
-    llm_response = await provider.complete(llm_request)
-
-    case.status = ProcessingLifecycle.PARSING_RESPONSE
-    pipeline = ReliabilityPipeline(
-        domain_policy=policy,
-        audit_port=audit_adapter,
-    )
-    decision, err = await pipeline.run(
-        llm_response.raw_output,
-        case,
-        provider=provider,
-        llm_request=llm_request,
-    )
-
-    if err:
-        case.status = ProcessingLifecycle.TERMINAL_FAILURE
+    if result.error is not None:
+        err = result.error
         requires_manual_review = err.details.get("requires_manual_review", False) if err.details else False
         raise HTTPException(
             status_code=422,
@@ -168,30 +156,17 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
                 "recoverable": err.recoverable,
                 "retryable": err.retryable,
                 "requires_manual_review": requires_manual_review,
-                "processing_lifecycle": case.status.value,
+                "processing_lifecycle": result.processing_lifecycle.value,
             },
         )
 
-    case.status = ProcessingLifecycle.COMPLETED
-    case.decision = decision
-
-    if decision is None:
+    if result.decision is None:
         raise HTTPException(
             status_code=422,
             detail={"error": "No decision produced", "category": "internal", "recoverable": False, "retryable": False},
         )
 
-    decision.lifecycle = DecisionLifecycle.AI_PROPOSED
-    decision.original_ai_proposal = AIProposal(
-        action=decision.action,
-        reason=decision.reason,
-        urgency=decision.urgency,
-        confidence=decision.confidence,
-        evidence_summary=decision.evidence_summary,
-    )
-
-    await decision_repo.save_decision(decision)
-
+    decision = result.decision
     return TriageDecisionResponse(
         decision_id=decision.decision_id,
         case_id=decision.case_id,
