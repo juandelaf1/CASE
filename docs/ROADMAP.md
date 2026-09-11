@@ -87,7 +87,7 @@ AuditPort (audit trail)
 | PromptBuilder | COMPLETED | TIER1_SYSTEM + TIER3_DEVELOPER security constraints |
 | TriageEngine | COMPLETED | Application layer orchestrator, 175 lines, 25 tests |
 | Composition Root | COMPLETED | `composition.py` — AppDependencies, create_app_dependencies |
-| Risk-Based Automation | COMPLETED (uncommitted) | TriageEngine wires automation_policy_fn, DefaultAutomationPolicy for Urban/Infrastructure |
+| Risk-Based Automation | COMMITTED | TriageEngine wires automation_policy_fn, DefaultAutomationPolicy for Urban/Infrastructure |
 
 ### PHASE 1 — Providers / Evaluation / UI [COMPLETED]
 
@@ -271,7 +271,7 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Commit the automation wiring.** 4 files modified + 1 new, all tests passing, working tree dirty.
+**Phase 4 — Final Evaluation.** Run evaluation suite against production path with automation enabled.
 
 ## Next Priority
 

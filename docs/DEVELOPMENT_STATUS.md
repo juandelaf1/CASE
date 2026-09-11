@@ -24,7 +24,7 @@
 | HEAD | `9c2a9af` |
 | Commits | 3 (`c26dc66`, `65b3832`, `9c2a9af`) |
 | Remote | NONE |
-| Working tree | 4 files modified + 1 new (Automation wiring, uncommitted) |
+| Working tree | Clean |
 | Source files | 57 Python files in src/ |
 | Test files | 19 Python files in tests/ |
 
@@ -466,7 +466,7 @@ All pre-existing. No new errors introduced. Dominant issue: missing type argumen
 | TriageEngine as application orchestrator | 2026-09-11 | COMPLETED |
 | API delegates to TriageEngine | 2026-09-11 | COMPLETED |
 | Composition Root extraction | 2026-09-11 | COMPLETED |
-| Risk-based automation wired | 2026-09-11 | COMPLETED (uncommitted) |
+| Risk-based automation wired | 2026-09-11 | COMMITTED (345202b) |
 
 ---
 

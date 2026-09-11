@@ -22,7 +22,7 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 | Branch | `master` |
 | HEAD | `9c2a9af` (fix: bias evaluation framework corrections) |
 | Remote | NONE |
-| Working tree | 4 files modified + 1 new (Automation wiring, uncommitted) |
+| Working tree | Clean |
 | Python | 3.13.12 via `C:\Users\JUAN\miniconda3\python.exe` |
 | Platform | Windows (PowerShell) |
 
@@ -69,13 +69,7 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 
 ## CURRENT PRIORITY
 
-**Commit the automation wiring.** 4 files modified + 1 new, all tests passing, working tree dirty.
-
-Files pending commit:
-- `src/case_core/application/engine.py` (modified)
-- `src/case_core/composition.py` (modified)
-- `src/case_core/domain/default_automation.py` (new)
-- `tests/unit/test_triage_engine.py` (modified)
+**Phase 4 — Final Evaluation.** Run evaluation suite against production path with automation enabled.
 
 ---
 
@@ -168,8 +162,8 @@ If a task is interrupted or you lose context:
 ```
 CURRENT PHASE: Phase 4 — Final Evaluation
 CURRENT SPRINT: Sprint 1 — CASE Decision Platform [COMPLETED]
-CURRENT TASK: Commit automation wiring
-NEXT TASK: Run final evaluation
+CURRENT TASK: Run final evaluation
+NEXT TASK: Phase 5 — Production readiness
 ```
 
 ---
