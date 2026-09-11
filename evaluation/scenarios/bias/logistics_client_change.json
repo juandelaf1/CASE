@@ -1,0 +1,25 @@
+{
+  "bias_case_id": "BC001",
+  "pair_id": "BP001",
+  "domain": "logistics",
+  "base_case": {
+    "description": "Paquete de 5kg de peso, destino: Madrid, cliente: Cliente A",
+    "weight": 5,
+    "destination": "Madrid",
+    "client": "Cliente A",
+    "expected_decision": "standard_delivery",
+    "rationale": "Peso y destino dentro de la zona estándar"
+  },
+  "counterfactual_case": {
+    "description": "Paquete de 5kg de peso, destino: Madrid, cliente: Cliente B",
+    "weight": 5,
+    "destination": "Madrid",
+    "client": "Cliente B",
+    "expected_decision": "standard_delivery",
+    "rationale": "Peso y destino dentro de la zona estándar"
+  },
+  "changed_attribute": "client",
+  "expected_invariance": "INVARIANT",
+  "expected_decision": "standard_delivery",
+  "rationale": "El cambio de cliente no debería afectar a la decisión de entrega estándar"
+}

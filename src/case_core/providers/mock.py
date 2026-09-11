@@ -1,12 +1,13 @@
 import json
 import re
 import time
+from typing import Any
 
 from case_core.contracts.llm import LLMRequest, LLMResponse
 from case_core.contracts.telemetry import TokenUsage
 from case_core.ports.llm import LLMProvider
 
-TEST_MOCK_RESPONSES: dict[str, dict] = {
+TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
     "TEST-MOCK-01": {
         "decision": "approve",
         "reason": "Standard urban maintenance case with sufficient evidence",
@@ -118,7 +119,6 @@ class MockProvider(LLMProvider):
     async def complete(self, request: LLMRequest) -> LLMResponse:
         start = time.time()
         mock_id = self._extract_mock_id(request)
-
         if mock_id and mock_id in TEST_MOCK_INVALID_RESPONSES:
             invalid_response = TEST_MOCK_INVALID_RESPONSES[mock_id]
             if invalid_response is None:
@@ -164,7 +164,7 @@ class MockProvider(LLMProvider):
     def _extract_mock_id(self, request: LLMRequest) -> str | None:
         for msg in request.messages:
             content = msg.get("content", "")
-            match = re.search(r"\[?(TEST-MOCK-[\w-]+)\]?", content)
+            match = re.search(r"TEST-MOCK-(\d{2}|INVALID-\w+|RATE-LIMIT|TIMEOUT)", content)
             if match:
-                return match.group(1)
+                return f"TEST-MOCK-{match.group(1)}" if match.group(1).startswith(tuple(str(i) for i in range(10))) else f"TEST-MOCK-{match.group(0).split('-', 2)[-1]}"
         return None

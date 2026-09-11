@@ -521,7 +521,7 @@ class TestBS020_BiasEvaluation:
         assert case_a.domain == case_b.domain
         assert case_a.urgency == case_b.urgency
 
-    def testurgency_classification_consistency(self):
+    def test_urgency_classification_consistency(self):
         policy = UrbanPolicy()
         case_high = _make_case(report_text="Emergency: gas leak detected")
         case_low = _make_case(report_text="Scheduled inspection of park benches")
@@ -745,17 +745,17 @@ class TestBS026_HITLFULLifecycle:
 
 class TestBS027_LogisticsDomainPack:
     def test_logistics_registry(self):
-        from case_core.domain.registry import DomainRegistry
         from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.domain.registry import DomainRegistry
         reg = DomainRegistry()
         reg.register(LogisticsPolicy())
         assert reg.validate_domain("logistics") is True
         assert reg.get("logistics") is not None
 
     def test_logistics_domain_validation(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
         from case_core.contracts.operational_case import OperationalCase
+        from case_core.domain.logistics_policy import LogisticsPolicy
         policy = LogisticsPolicy()
         case = OperationalCase(case_id="LOG-001", report_text="Package delivery delayed", domain="logistics")
         ok, msg = policy.validate_evidence([EvidenceItem(
@@ -766,8 +766,6 @@ class TestBS027_LogisticsDomainPack:
 
     def test_logistics_domain_invalid_evidence(self):
         from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.contracts.evidence import EvidenceItem, EvidenceType
-        from case_core.contracts.operational_case import OperationalCase
         policy = LogisticsPolicy()
         ok, msg = policy.validate_evidence([])
         assert ok is False
@@ -782,23 +780,23 @@ class TestBS027_LogisticsDomainPack:
         assert "recommended_actions" in ctx
 
     def test_logistics_incident_classification(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy, IncidentType
         from case_core.contracts.operational_case import OperationalCase
+        from case_core.domain.logistics_policy import IncidentType, LogisticsPolicy
         policy = LogisticsPolicy()
         case = OperationalCase(case_id="LOG-002", report_text="Shipment delayed by 3 days", domain="logistics")
         assert policy.classify_incident_type(case) == IncidentType.DELIVERY_DELAY
 
     def test_core_domain_agnostic(self):
+        from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.domain.registry import DomainRegistry
         from case_core.domain.urban_policy import UrbanPolicy
-        from case_core.domain.logistics_policy import LogisticsPolicy
         reg = DomainRegistry()
         reg.register(UrbanPolicy())
         reg.register(LogisticsPolicy())
         assert reg.list_domains() == ["urban_operations", "logistics"]
 
     def test_human_decision_on_logistics(self):
-        from case_core.contracts.decision import AIProposal, HumanOverride, TriageDecision
+        from case_core.contracts.decision import AIProposal, TriageDecision
         from case_core.contracts.lifecycle import DecisionLifecycle
         proposal = AIProposal(action="approve", reason="shipment on time", urgency="MEDIUM", confidence=0.85, evidence_summary="delivery confirmed")
         decision = TriageDecision(
@@ -829,12 +827,11 @@ class TestBS027_LogisticsDomainPack:
 
 class TestBS029_RiskBasedAutomation:
     def test_low_risk_valid_auto_approve(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
-        from case_core.contracts.lifecycle import DecisionLifecycle
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -868,11 +865,11 @@ class TestBS029_RiskBasedAutomation:
         assert assessment.risk_level.value == "LOW"
 
     def test_low_risk_insufficient_evidence_human_review(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -904,11 +901,11 @@ class TestBS029_RiskBasedAutomation:
         assert "confidence_low" in assessment.factors
 
     def test_medium_risk_human_review(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -941,11 +938,11 @@ class TestBS029_RiskBasedAutomation:
         assert assessment.risk_level.value == "MEDIUM"
 
     def test_high_risk_human_review(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -979,11 +976,11 @@ class TestBS029_RiskBasedAutomation:
         assert assessment.requires_hitl is True
 
     def test_critical_risk_escalate(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -1016,10 +1013,10 @@ class TestBS029_RiskBasedAutomation:
         assert assessment.risk_level.value == "CRITICAL"
 
     def test_schema_invalid_no_automation(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
         from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -1044,10 +1041,10 @@ class TestBS029_RiskBasedAutomation:
         assert err.category.name == "SCHEMA_VALIDATION"
 
     def test_semantic_invalid_no_automation(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
         from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -1072,10 +1069,10 @@ class TestBS029_RiskBasedAutomation:
         assert err.category.name == "SEMANTIC_VALIDATION"
 
     def test_domain_invalid_no_automation(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
         from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -1101,11 +1098,11 @@ class TestBS029_RiskBasedAutomation:
         assert err.category.name == "DOMAIN_VALIDATION"
 
     def test_policy_violation_no_automation(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -1137,11 +1134,11 @@ class TestBS029_RiskBasedAutomation:
         assert assessment.automation_decision.value != "auto_approve"
 
     def test_disagreement_ambiguity_human_review(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -1173,14 +1170,14 @@ class TestBS029_RiskBasedAutomation:
         assert assessment.automation_decision.value == "human_review"
 
     def test_automated_decision_audited(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.contracts.audit import AuditEvent
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
         from case_core.contracts.lifecycle import DecisionLifecycle
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.ports.audit import AuditPort
-        from case_core.contracts.audit import AuditEvent
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         class MockAuditPort(AuditPort):
             def __init__(self):
@@ -1227,11 +1224,11 @@ class TestBS029_RiskBasedAutomation:
         assert "AUTO_APPROVED" in audit_types
 
     def test_hitl_existing_still_works(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
         from case_core.contracts.lifecycle import DecisionLifecycle
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         pipeline = ReliabilityPipeline(policy)
@@ -1271,10 +1268,10 @@ class TestBS030_BiasEvaluation:
         assert len(pairs) == 10
 
     def test_equivalent_pairs_same_classification(self):
+        from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.evaluation.metrics.bias import BiasEvaluator
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
-        from case_core.contracts.evidence import EvidenceItem, EvidenceType
 
         policy = LogisticsPolicy()
         evaluator = BiasEvaluator()
@@ -1325,10 +1322,10 @@ class TestBS030_BiasEvaluation:
             )
 
     def test_equivalent_pairs_same_urgency(self):
+        from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.evaluation.metrics.bias import BiasEvaluator
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
-        from case_core.contracts.evidence import EvidenceItem, EvidenceType
 
         policy = LogisticsPolicy()
         evaluator = BiasEvaluator()
@@ -1379,10 +1376,10 @@ class TestBS030_BiasEvaluation:
             )
 
     def test_equivalent_pairs_same_routing(self):
+        from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.evaluation.metrics.bias import BiasEvaluator
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
-        from case_core.contracts.evidence import EvidenceItem, EvidenceType
 
         policy = LogisticsPolicy()
         evaluator = BiasEvaluator()
@@ -1433,12 +1430,12 @@ class TestBS030_BiasEvaluation:
             )
 
     def test_irrelevant_changes_no_automation_difference(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.evaluation.metrics.bias import BiasEvaluator
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.evaluation.metrics.bias import BiasEvaluator
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -1511,12 +1508,12 @@ class TestBS030_BiasEvaluation:
                     )
 
     def test_irrelevant_changes_no_hitl_difference(self):
-        from case_core.domain.logistics_policy import LogisticsPolicy
-        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-        from case_core.reliability.pipeline import ReliabilityPipeline
-        from case_core.evaluation.metrics.bias import BiasEvaluator
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+        from case_core.domain.logistics_automation import LogisticsAutomationPolicy
+        from case_core.domain.logistics_policy import LogisticsPolicy
+        from case_core.evaluation.metrics.bias import BiasEvaluator
+        from case_core.reliability.pipeline import ReliabilityPipeline
 
         policy = LogisticsPolicy()
         automation_policy = LogisticsAutomationPolicy()
@@ -1589,10 +1586,10 @@ class TestBS030_BiasEvaluation:
                     )
 
     def test_wording_changes_no_decision_alteration(self):
+        from case_core.contracts.evidence import EvidenceItem, EvidenceType
+        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
         from case_core.domain.logistics_policy import LogisticsPolicy
         from case_core.evaluation.metrics.bias import BiasEvaluator
-        from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
-        from case_core.contracts.evidence import EvidenceItem, EvidenceType
 
         policy = LogisticsPolicy()
         evaluator = BiasEvaluator()
@@ -1645,7 +1642,7 @@ class TestBS030_BiasEvaluation:
             )
 
     def test_bias_evaluator_computes_results_correctly(self):
-        from case_core.evaluation.metrics.bias import BiasEvaluator, BiasPairItem, BiasPairResult
+        from case_core.evaluation.metrics.bias import BiasEvaluator, BiasPairItem
 
         evaluator = BiasEvaluator()
 

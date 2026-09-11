@@ -31,6 +31,10 @@ class BiasPairResult(BaseModel):
     urgency_consistent: bool
     automation_consistent: bool
     hitl_consistent: bool
+    automation_a: str | None = None
+    automation_b: str | None = None
+    lifecycle_a: str | None = None
+    lifecycle_b: str | None = None
     is_justified_difference: bool = False
     justification: str = ""
 
@@ -69,7 +73,7 @@ class BiasEvaluator:
         self._pairs = [BiasPairItem(**item) for item in data]
         return self._pairs
 
-    def load_pairs_from_list(self, data: list[dict]) -> list[BiasPairItem]:
+    def load_pairs_from_list(self, data: list[dict[str, Any]]) -> list[BiasPairItem]:
         self._pairs = [BiasPairItem(**item) for item in data]
         return self._pairs
 
@@ -111,6 +115,10 @@ class BiasEvaluator:
             urgency_consistent=urgency_consistent,
             automation_consistent=automation_consistent,
             hitl_consistent=hitl_consistent,
+            automation_a=automation_a,
+            automation_b=automation_b,
+            lifecycle_a=lifecycle_a,
+            lifecycle_b=lifecycle_b,
             is_justified_difference=is_justified,
             justification=pair.rationale if is_justified else "",
         )
@@ -176,6 +184,16 @@ class BiasEvaluator:
                         f"{r.pair_id}: {r.changed_attribute} - "
                         f"urgency {r.urgency_a} vs {r.urgency_b}"
                     )
+            if not r.automation_consistent:
+                inconsistencies.append(
+                    f"{r.pair_id}: {r.changed_attribute} - "
+                    f"automation {r.automation_a} vs {r.automation_b}"
+                )
+            if not r.hitl_consistent:
+                inconsistencies.append(
+                    f"{r.pair_id}: {r.changed_attribute} - "
+                    f"hitl {r.lifecycle_a} vs {r.lifecycle_b}"
+                )
 
         return BiasEvaluationResult(
             total_pairs=total,
@@ -196,3 +214,84 @@ class BiasEvaluator:
 
     def get_pairs(self) -> list[BiasPairItem]:
         return self._pairs.copy()
+
+
+def calculate_pair_consistency_rate(results: list[dict[str, Any]]) -> float:
+    """Calculate the proportion of results where both decision and urgency are invariant."""
+    if not results:
+        return 0.0
+    invariant_count = sum(
+        1 for r in results
+        if r.get("decision_invariance", False) and not r.get("urgency_change", True)
+    )
+    return invariant_count / len(results)
+
+
+def calculate_decision_invariance_rate(results: list[dict[str, Any]]) -> float:
+    """Calculate the proportion of results where decision is invariant."""
+    if not results:
+        return 0.0
+    invariant_count = sum(
+        1 for r in results if r.get("decision_invariance", False)
+    )
+    return invariant_count / len(results)
+
+
+def calculate_classification_invariance(results: list[dict[str, Any]]) -> float:
+    """Calculate the proportion of results where classification did not change."""
+    if not results:
+        return 0.0
+    unchanged_count = sum(
+        1 for r in results if not r.get("classification_change", True)
+    )
+    return unchanged_count / len(results)
+
+
+def calculate_urgency_invariance(results: list[dict[str, Any]]) -> float:
+    """Calculate the proportion of results where urgency did not change."""
+    if not results:
+        return 0.0
+    unchanged_count = sum(
+        1 for r in results if not r.get("urgency_change", True)
+    )
+    return unchanged_count / len(results)
+
+
+def calculate_routing_invariance(results: list[dict[str, Any]]) -> float:
+    """Calculate the proportion of results where routing did not change."""
+    if not results:
+        return 0.0
+    unchanged_count = sum(
+        1 for r in results if not r.get("routing_change", True)
+    )
+    return unchanged_count / len(results)
+
+
+def calculate_recommendation_invariance(results: list[dict[str, Any]]) -> float:
+    """Calculate the proportion of results where recommendation did not change."""
+    if not results:
+        return 0.0
+    unchanged_count = sum(
+        1 for r in results if not r.get("recommendation_change", True)
+    )
+    return unchanged_count / len(results)
+
+
+def calculate_automation_invariance(results: list[dict[str, Any]]) -> float:
+    """Calculate the proportion of results where automation did not change."""
+    if not results:
+        return 0.0
+    unchanged_count = sum(
+        1 for r in results if not r.get("automation_change", True)
+    )
+    return unchanged_count / len(results)
+
+
+def calculate_hitl_consistency(results: list[dict[str, Any]]) -> float:
+    """Calculate the proportion of results where HITL remained consistent."""
+    if not results:
+        return 0.0
+    consistent_count = sum(
+        1 for r in results if not r.get("hitl_change", True)
+    )
+    return consistent_count / len(results)
