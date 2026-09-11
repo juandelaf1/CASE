@@ -24,13 +24,15 @@
 | HEAD | `9c2a9af` |
 | Commits | 3 (`c26dc66`, `65b3832`, `9c2a9af`) |
 | Remote | NONE |
-| Working tree | 2 files modified + 1 new (Composition Root extraction, uncommitted) |
+| Working tree | 4 files modified + 1 new (Automation wiring, uncommitted) |
 | Source files | 57 Python files in src/ |
 | Test files | 19 Python files in tests/ |
 
 **Pending changes (uncommitted):**
-- `src/case_api/api/v1/app.py` — Modified (composition delegated to composition.py)
-- `src/case_core/composition.py` — New (46 lines, AppDependencies + create_app_dependencies)
+- `src/case_core/application/engine.py` — Modified (automation_policy_fn parameter)
+- `src/case_core/composition.py` — Modified (wires per-domain automation policies)
+- `src/case_core/domain/default_automation.py` — New (46 lines, DefaultAutomationPolicy)
+- `tests/unit/test_triage_engine.py` — Modified (+10 automation integration tests)
 
 ---
 
@@ -100,6 +102,7 @@ AuditPort (audit trail)
 | LogisticsPolicy | COMPLETED | validate_evidence(), classify_urgency(), get_domain_context(), classify_incident_type(), get_recommended_actions() |
 | InfrastructurePolicy | PARTIAL | validate_evidence(), classify_urgency(), get_domain_context() — NO routing, NO automation |
 | LogisticsAutomationPolicy | COMPLETED | assess_risk(), _requires_hitl(), _decide_automation(), 5 departments |
+| DefaultAutomationPolicy | COMPLETED | Conservative generic policy for Urban/Infrastructure, risk-based automation |
 
 ---
 
@@ -123,7 +126,7 @@ AuditPort (audit trail)
 | Class | `TriageEngine` |
 | Result type | `TriageResult` (dataclass: decision, error, processing_lifecycle) |
 | Entry point | `async execute(case: OperationalCase) -> TriageResult` |
-| Dependencies | DomainRegistry, LLMProvider (port), AuditPort (port), DecisionRepositoryPort (port) |
+| Dependencies | DomainRegistry, LLMProvider (port), AuditPort (port), DecisionRepositoryPort (port), automation_policy_fn (callable) |
 | Domain-agnostic | VERIFIED — AST inspection confirms zero `if domain ==` checks |
 | Provider-agnostic | VERIFIED — accepts LLMProvider port, not concrete providers |
 | Tests | 15 tests in `tests/unit/test_triage_engine.py` |
@@ -243,12 +246,13 @@ Validation lives in `ReliabilityPipeline`:
 | AutomationEvaluator | COMPLETED |
 | LogisticsAutomationPolicy | COMPLETED (risk matrix, 5 departments, HITL rules) |
 | Pipeline integration | COMPLETED (assess_automation() in pipeline.py) |
+| TriageEngine integration | COMPLETED (automation_policy_fn resolves per-domain policy) |
 | Effective urgency | COMPLETED (max(LLM, case) prevents downgrade) |
 | Audit events | AUTOMATION_ASSESSED, AUTO_APPROVED, AUTO_ESCALATED, AUTO_HUMAN_REVIEW |
 | Security tests | 3 anti-manipulation tests |
 | Tests | 12 tests (TestBS029) + 3 security |
 
-**LLM cannot decide automation:** VERIFIED. Automation is assessed by AutomationEvaluator after pipeline validation, not by LLM output.
+**LLM cannot decide automation:** VERIFIED. Automation is assessed by AutomationEvaluator after pipeline validation, not by LLM output. Production path (TriageEngine) now wires automation via `automation_policy_fn`.
 
 ---
 
@@ -365,7 +369,7 @@ Display only. No auth. No write operations.
 ## 20. Tests
 
 ```
-390 collected → 383 passed, 7 skipped, 0 failed
+400 collected → 393 passed, 7 skipped, 0 failed
 ```
 
 | Suite | Tests | Status |
@@ -388,7 +392,7 @@ Display only. No auth. No write operations.
 | test_sqlite.py | 10 | PASS |
 | test_streamlit_boundary.py | 2 | PASS |
 | test_streamlit_client.py | 17 | PASS |
-| test_triage_engine.py | 15 | PASS |
+| test_triage_engine.py | 25 | PASS |
 
 ---
 
@@ -461,7 +465,8 @@ All pre-existing. No new errors introduced. Dominant issue: missing type argumen
 | llama3.2 as primary model | 2026-09 | COMPLETED |
 | TriageEngine as application orchestrator | 2026-09-11 | COMPLETED |
 | API delegates to TriageEngine | 2026-09-11 | COMPLETED |
-| Composition Root extraction | 2026-09-11 | COMPLETED (uncommitted) |
+| Composition Root extraction | 2026-09-11 | COMPLETED |
+| Risk-based automation wired | 2026-09-11 | COMPLETED (uncommitted) |
 
 ---
 

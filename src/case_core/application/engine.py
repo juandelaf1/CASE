@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
 from case_core.contracts.audit import AuditEvent
 from case_core.contracts.decision import AIProposal, TriageDecision
 from case_core.contracts.error import CASEError, ErrorCategory
-from case_core.contracts.lifecycle import DecisionLifecycle, ProcessingLifecycle
+from case_core.contracts.lifecycle import ProcessingLifecycle
 from case_core.contracts.operational_case import OperationalCase
 from case_core.domain.registry import DomainRegistry
 from case_core.ports.audit import AuditPort
+from case_core.ports.automation import AutomationPolicy
 from case_core.ports.decision_repository import DecisionRepositoryPort
 from case_core.ports.domain import DomainPolicy
 from case_core.ports.llm import LLMProvider
@@ -50,12 +52,14 @@ class TriageEngine:
         provider: LLMProvider,
         audit_port: AuditPort | None = None,
         decision_repository: DecisionRepositoryPort | None = None,
+        automation_policy_fn: Callable[[str], AutomationPolicy | None] | None = None,
         time_fn: Any = None,
     ) -> None:
         self._domain_registry = domain_registry
         self._provider = provider
         self._audit_port = audit_port
         self._decision_repository = decision_repository
+        self._automation_policy_fn = automation_policy_fn
         self._time_fn = time_fn or time.time
 
     async def execute(self, case: OperationalCase) -> TriageResult:
@@ -110,6 +114,7 @@ class TriageEngine:
             domain_policy=domain_policy,
             audit_port=self._audit_port,
             time_fn=self._time_fn,
+            automation_policy=self._automation_policy_fn(case.domain) if self._automation_policy_fn else None,
         )
 
         decision, err = await pipeline.run(
@@ -140,7 +145,6 @@ class TriageEngine:
         case.decision = decision
         result.processing_lifecycle = ProcessingLifecycle.COMPLETED
 
-        decision.lifecycle = DecisionLifecycle.AI_PROPOSED
         decision.original_ai_proposal = AIProposal(
             action=decision.action,
             reason=decision.reason,

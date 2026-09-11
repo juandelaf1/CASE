@@ -85,8 +85,9 @@ AuditPort (audit trail)
 | DomainRegistry | COMPLETED | 3 domains registered |
 | ReliabilityPipeline | COMPLETED | Parse, schema, semantic, domain validation, retry, repair, terminal failure |
 | PromptBuilder | COMPLETED | TIER1_SYSTEM + TIER3_DEVELOPER security constraints |
-| TriageEngine | COMPLETED | Application layer orchestrator, 175 lines, 15 tests |
-| Composition Root | COMPLETED (uncommitted) | `composition.py` — AppDependencies, create_app_dependencies |
+| TriageEngine | COMPLETED | Application layer orchestrator, 175 lines, 25 tests |
+| Composition Root | COMPLETED | `composition.py` — AppDependencies, create_app_dependencies |
+| Risk-Based Automation | COMPLETED (uncommitted) | TriageEngine wires automation_policy_fn, DefaultAutomationPolicy for Urban/Infrastructure |
 
 ### PHASE 1 — Providers / Evaluation / UI [COMPLETED]
 
@@ -270,7 +271,7 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Commit the Phase 2 fix.** 2 files modified, all tests passing, working tree dirty.
+**Commit the automation wiring.** 4 files modified + 1 new, all tests passing, working tree dirty.
 
 ## Next Priority
 
