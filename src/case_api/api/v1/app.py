@@ -3,19 +3,12 @@ import time
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from case_core.application.engine import TriageEngine
+from case_core.composition import create_app_dependencies
 from case_core.contracts.audit import AuditEvent
 from case_core.contracts.decision import HumanOverride
 from case_core.contracts.evidence import EvidenceItem, EvidenceType
 from case_core.contracts.lifecycle import DecisionLifecycle
 from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
-from case_core.domain.infrastructure_policy import InfrastructurePolicy
-from case_core.domain.logistics_policy import LogisticsPolicy
-from case_core.domain.registry import DomainRegistry
-from case_core.domain.urban_policy import UrbanPolicy
-from case_core.providers.mock import MockProvider
-from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter
-from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
 
 app = FastAPI(
     title="CASE — AI Decision Platform",
@@ -23,21 +16,11 @@ app = FastAPI(
     description="Domain-agnostic AI Decision Platform for operational case triage",
 )
 
-registry = DomainRegistry()
-registry.register(UrbanPolicy())
-registry.register(LogisticsPolicy())
-registry.register(InfrastructurePolicy())
-
-provider = MockProvider()
-audit_adapter = SQLiteAuditAdapter()
-decision_repo = SQLiteDecisionRepository()
-
-engine = TriageEngine(
-    domain_registry=registry,
-    provider=provider,
-    audit_port=audit_adapter,
-    decision_repository=decision_repo,
-)
+_deps = create_app_dependencies()
+engine = _deps.engine
+registry = _deps.registry
+audit_adapter = _deps.audit_adapter
+decision_repo = _deps.decision_repo
 
 
 class EvidenceRequest(BaseModel):

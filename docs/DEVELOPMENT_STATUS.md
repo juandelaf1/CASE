@@ -24,15 +24,13 @@
 | HEAD | `9c2a9af` |
 | Commits | 3 (`c26dc66`, `65b3832`, `9c2a9af`) |
 | Remote | NONE |
-| Working tree | 4 files modified/created (TriageEngine, uncommitted) |
+| Working tree | 2 files modified + 1 new (Composition Root extraction, uncommitted) |
 | Source files | 57 Python files in src/ |
 | Test files | 19 Python files in tests/ |
 
 **Pending changes (uncommitted):**
-- `src/case_api/api/v1/app.py` — Modified (delegates to TriageEngine)
-- `src/case_core/application/__init__.py` — Modified (exports TriageEngine)
-- `src/case_core/application/engine.py` — New (175 lines)
-- `tests/unit/test_triage_engine.py` — New (377 lines, 15 tests)
+- `src/case_api/api/v1/app.py` — Modified (composition delegated to composition.py)
+- `src/case_core/composition.py` — New (46 lines, AppDependencies + create_app_dependencies)
 
 ---
 
@@ -41,7 +39,9 @@
 ```
 Streamlit (display only)
    ↓
-FastAPI (HTTP adapter + composition root)
+FastAPI (HTTP adapter)
+   ↓
+composition.py (dependency wiring: domains, provider, persistence, engine)
    ↓
 TriageEngine (application layer orchestrator)
    ↓
@@ -58,7 +58,7 @@ DecisionRepositoryPort (persistence)
 AuditPort (audit trail)
 ```
 
-**Verified:** API triage endpoint contains zero references to ReliabilityPipeline, PromptBuilder, or provider internals. All orchestration delegated to `engine.execute(case)`.
+**Verified:** API triage endpoint contains zero references to ReliabilityPipeline, PromptBuilder, or provider internals. All orchestration delegated to `engine.execute(case)`. Composition wiring extracted to `composition.py`.
 
 ---
 
@@ -105,7 +105,17 @@ AuditPort (audit trail)
 
 ## 5. Application Layer
 
-### 5.1 TriageEngine (`src/case_core/application/engine.py`)
+### 5.1 Composition (`src/case_core/composition.py`)
+
+| Aspect | Detail |
+|--------|--------|
+| File | `src/case_core/composition.py` (46 lines) |
+| Function | `create_app_dependencies() -> AppDependencies` |
+| Returns | `AppDependencies` dataclass: engine, registry, audit_adapter, decision_repo |
+| Responsibilities | Domain registration, provider creation, persistence creation, engine assembly |
+| Called by | `app.py` at module load |
+
+### 5.2 TriageEngine (`src/case_core/application/engine.py`)
 
 | Aspect | Detail |
 |--------|--------|
@@ -408,7 +418,7 @@ All pre-existing. No new errors introduced. Dominant issue: missing type argumen
 2. **Urban/Infrastructure missing routing** — No `classify_incident_type()` method
 3. **Urban/Infrastructure missing automation** — No AutomationPolicy implementations
 4. **Bias pairs logistics-only** — Zero pairs for Urban or Infrastructure
-5. **Composition wiring in app.py** — Domain registration, provider creation, persistence creation happen in API layer instead of dedicated startup module
+5. ~~**Composition wiring in app.py**~~ — RESOLVED. Extracted to `composition.py`.
 6. **OperationalTelemetry/LLMTelemetry unused** — Defined in contracts but not consumed
 7. **pyproject.toml includes sqlalchemy** — Dependency listed but not used (SQLite uses sqlite3 directly)
 8. **tests/behavioral/ and tests/evaluation/ empty** — Directories exist but contain no files
@@ -449,8 +459,9 @@ All pre-existing. No new errors introduced. Dominant issue: missing type argumen
 | Foundation v0.3 FROZEN | 2026-09 | COMPLETED |
 | Blueprint v1.1 FROZEN | 2026-09 | COMPLETED |
 | llama3.2 as primary model | 2026-09 | COMPLETED |
-| TriageEngine as application orchestrator | 2026-09-11 | COMPLETED (uncommitted) |
-| API delegates to TriageEngine | 2026-09-11 | COMPLETED (uncommitted) |
+| TriageEngine as application orchestrator | 2026-09-11 | COMPLETED |
+| API delegates to TriageEngine | 2026-09-11 | COMPLETED |
+| Composition Root extraction | 2026-09-11 | COMPLETED (uncommitted) |
 
 ---
 
@@ -458,10 +469,9 @@ All pre-existing. No new errors introduced. Dominant issue: missing type argumen
 
 | Decision | Status |
 |----------|--------|
-| Composition root extraction | PLANNED |
+| Fix routing_invariance_rate | NEXT |
 | Urban/Infrastructure Automation | DEFERRED |
 | Urban/Infrastructure Routing | DEFERRED |
-| Fix routing_invariance_rate | DEFERRED |
 | Final evaluation | DEFERRED |
 
 ---

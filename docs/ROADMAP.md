@@ -85,7 +85,8 @@ AuditPort (audit trail)
 | DomainRegistry | COMPLETED | 3 domains registered |
 | ReliabilityPipeline | COMPLETED | Parse, schema, semantic, domain validation, retry, repair, terminal failure |
 | PromptBuilder | COMPLETED | TIER1_SYSTEM + TIER3_DEVELOPER security constraints |
-| TriageEngine | COMPLETED (uncommitted) | Application layer orchestrator, 175 lines, 15 tests |
+| TriageEngine | COMPLETED | Application layer orchestrator, 175 lines, 15 tests |
+| Composition Root | COMPLETED (uncommitted) | `composition.py` — AppDependencies, create_app_dependencies |
 
 ### PHASE 1 — Providers / Evaluation / UI [COMPLETED]
 
@@ -213,7 +214,8 @@ NOT STARTED. Conceptual only.
 | Bias Evaluation | PARTIAL | 8 functions, 10 pairs | routing_invariance_rate bug, logistics-only |
 | Urban Policy | PARTIAL | Policy + validation only | No routing, no automation |
 | Infrastructure Policy | PARTIAL | Policy + validation only | No routing, no automation |
-| API | COMPLETED | Delegates to TriageEngine | Composition wiring in app.py |
+| API | COMPLETED | Delegates to TriageEngine | — |
+| Composition Root | COMPLETED (uncommitted) | `composition.py` extracts wiring from app.py | — |
 | Persistence | COMPLETED | SQLite adapters | — |
 | Audit | COMPLETED | AuditPort + events | — |
 | Documentation | IN PROGRESS | This document | ROADMAP, AGENT_CONTEXT, DEV_STATUS |
@@ -268,11 +270,11 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Commit the TriageEngine implementation.** 4 files modified/created, all tests passing, working tree dirty.
+**Commit the Composition Root extraction.** 2 files modified + 1 new, all tests passing, working tree dirty.
 
 ## Next Priority
 
-**Composition root extraction.** Move wiring (domain registration, provider creation, persistence creation) out of app.py into a dedicated startup module.
+**Fix `routing_invariance_rate` bug.** Phase 2 — Correctness.
 
 ## Deferred
 
