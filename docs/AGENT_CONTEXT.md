@@ -20,7 +20,8 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch | `master` |
-| HEAD | `9c2a9af` (fix: bias evaluation framework corrections) |
+| HEAD | `1f4ae7d` (docs: update status after automation wiring commit) |
+| Commits | 7 |
 | Remote | NONE |
 | Working tree | Clean |
 | Python | 3.13.12 via `C:\Users\JUAN\miniconda3\python.exe` |
@@ -32,14 +33,16 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 
 - **Foundation v0.3:** FROZEN. Contracts, ports, domain system, pipeline, prompts.
 - **Blueprint v1.1:** FROZEN. Architecture, domain packs, security, automation, bias.
-- **377 tests passing**, 7 skipped (Ollama integration), 0 failures.
-- **TriageEngine implemented** but NOT committed (working tree dirty).
+- **393 tests passing**, 7 skipped (Ollama integration), 0 failures.
+- **TriageEngine implemented** and committed.
 - **API delegates to TriageEngine** for triage endpoint.
+- **Composition Root** extracted to `composition.py`.
 - **3 domain packs:** Urban (partial), Logistics (full), Infrastructure (partial).
 - **3 providers:** Mock, Ollama, Cloud.
-- **Security evaluation:** 28 tests, 10 attack scenarios.
-- **Risk-Based Automation:** 12 tests, Logistics only.
-- **Bias evaluation:** 10 pairs (logistics only), routing_invariance_rate bug present.
+- **Security evaluation:** 31 tests, 10 attack scenarios.
+- **Risk-Based Automation:** 12 tests + 3 security, all domains wired.
+- **Bias evaluation:** 23 tests, routing_invariance fixed, logistics-only pairs.
+- **Phase 4 evaluation:** COMPLETED. All areas evaluated.
 
 ---
 
@@ -50,17 +53,21 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 - DomainRegistry (3 domains)
 - ReliabilityPipeline (parse, schema, semantic, domain, retry, repair)
 - PromptBuilder (TIER1 + TIER3 security)
-- TriageEngine (application layer orchestrator, 175 lines, 15 tests)
-- MockProvider (30 tests)
+- TriageEngine (application layer orchestrator, 175 lines, 25 tests)
+- Composition Root (extracted to composition.py)
+- MockProvider (17 tests)
 - OllamaProvider (13 tests + 5 integration)
-- CloudProvider (28 tests)
+- CloudProvider (24 tests)
 - Evaluation Framework (runner, metrics, reports)
 - Streamlit UI (Decision Center, Status, HITL display)
 - HITL Lifecycle (6 API endpoints, lifecycle states, audit)
 - Logistics Domain Pack (policy, routing, automation, recommended actions)
-- Security Evaluation (28 tests, 10 scenarios)
-- Risk-Based Automation (12 tests, 3 security tests)
-- Bias Evaluation (8 standalone functions, 10 pairs, partial)
+- Urban Policy (validation, urgency, DefaultAutomationPolicy)
+- Infrastructure Policy (validation, urgency, DefaultAutomationPolicy)
+- Security Evaluation (31 tests, 10 scenarios)
+- Risk-Based Automation (12 tests + 3 security, all domains)
+- Bias Evaluation (23 tests, routing_invariance fixed)
+- Phase 4 Final Evaluation (all areas evaluated)
 - API (delegates to TriageEngine)
 - Persistence (SQLite adapters)
 - Audit (AuditPort, event trail)
@@ -69,24 +76,25 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 
 ## CURRENT PRIORITY
 
-**Phase 4 — Final Evaluation.** Run evaluation suite against production path with automation enabled.
+**CASE v1 COMPLETE.** Product readiness, documentation, debt closure, and demo scripts finalized.
 
 ---
 
 ## NEXT PRIORITY
 
-**Phase 4 — Final Evaluation.** Run evaluation suite against production path with automation enabled.
+**Portfolio Release / Presentation.** CASE v1 is complete and ready for handover.
 
 ---
 
 ## DEFERRED
 
-- Urban/Infrastructure Automation (no AutomationPolicy)
-- Urban/Infrastructure Routing (no classify_incident_type)
-- Fix routing_invariance_rate bug in bias evaluation
-- Bias pairs for Urban and Infrastructure domains
-- Final evaluation
+- Urban/Infrastructure Routing (FUTURE)
+- Urban/Infrastructure domain-specific automation (DefaultAutomationPolicy used)
+- Bias pairs for Urban and Infrastructure domains (FUTURE)
 - Quality hardening
+- Documentation consolidation
+- Demo preparation
+- Portfolio readiness
 
 ---
 
@@ -136,8 +144,8 @@ C:\Users\JUAN\miniconda3\python.exe -m mypy src
 
 Expected:
 - 0 pytest failures
-- No new ruff errors (65 pre-existing)
-- No new mypy errors (22 pre-existing across 11 files)
+- 0 ruff errors
+- 0 mypy errors
 - API regression: all 11 integration tests pass
 
 ---
@@ -160,10 +168,10 @@ If a task is interrupted or you lose context:
 ## CURRENT ROADMAP POINTER
 
 ```
-CURRENT PHASE: Phase 4 — Final Evaluation
+CURRENT PHASE: CASE v1 Complete (FINAL GATE PASSED)
 CURRENT SPRINT: Sprint 1 — CASE Decision Platform [COMPLETED]
-CURRENT TASK: Run final evaluation
-NEXT TASK: Phase 5 — Production readiness
+CURRENT TASK: Final consolidation report & commit recommendations
+NEXT TASK: Handover
 ```
 
 ---

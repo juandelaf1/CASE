@@ -112,15 +112,16 @@ AuditPort (audit trail)
 | Risk-Based Automation | COMPLETED | AutomationEvaluator, risk matrix, effective urgency, 12 tests |
 | Bias Evaluation | COMPLETED | 8 standalone functions, 14 unit tests, routing_invariance_rate fixed |
 
-### PHASE 3 — Final CASE v1 [FUTURE]
+### PHASE 3 — Final CASE v1 [COMPLETED]
 
 | Component | Status |
 |-----------|--------|
-| Final evaluation (multi-model) | DEFERRED |
+| Final evaluation (end-to-end) | COMPLETED (Phase 4) |
+| Automation wiring | COMMITTED |
 | Quality hardening | DEFERRED |
-| Documentation consolidation | IN PROGRESS (this document) |
-| Demo preparation | DEFERRED |
-| Portfolio readiness | DEFERRED |
+| Documentation | IN PROGRESS |
+| Demo preparation | FUTURE |
+| Portfolio readiness | FUTURE |
 
 ### PHASE 4 — Logistics Intelligence [FUTURE]
 
@@ -198,28 +199,28 @@ NOT STARTED. Conceptual only.
 
 | Capability | Status | Evidence | Remaining |
 |------------|--------|----------|-----------|
-| Core Contracts | COMPLETED | 9 files, 362+ tests | — |
+| Core Contracts | COMPLETED | 9 files, 393+ tests | — |
 | Ports | COMPLETED | 6 interfaces | — |
 | Domain Registry | COMPLETED | 3 domains | — |
 | Reliability Pipeline | COMPLETED | Full validation chain | — |
-| TriageEngine | COMPLETED (uncommitted) | 175 lines, 15 tests | Commit pending |
-| MockProvider | COMPLETED | 30 tests | — |
+| TriageEngine | COMPLETED | 175 lines, 25 tests | — |
+| MockProvider | COMPLETED | 17 tests | — |
 | OllamaProvider | COMPLETED | 13 tests + 5 integration | — |
-| CloudProvider | COMPLETED | 28 tests | — |
+| CloudProvider | COMPLETED | 24 tests | — |
 | Evaluation Framework | COMPLETED | Runner, metrics, reports | — |
 | Streamlit UI | COMPLETED | Decision Center + Status + HITL | — |
 | HITL Lifecycle | COMPLETED | 6 endpoints, audit trail | — |
 | Logistics Domain Pack | COMPLETED | Policy + routing + automation | — |
-| Security Evaluation | COMPLETED | 28 tests, 10 scenarios | — |
+| Security Evaluation | COMPLETED | 31 tests, 10 scenarios | — |
 | Risk-Based Automation | COMPLETED | 12 tests + 3 security | — |
-| Bias Evaluation | COMPLETED | 8 functions, 14 unit tests, routing_invariance_rate fixed | routing_invariance_rate bug fixed, bias pairs still logistics-only |
-| Urban Policy | PARTIAL | Policy + validation only | No routing, no automation |
-| Infrastructure Policy | PARTIAL | Policy + validation only | No routing, no automation |
+| Bias Evaluation | COMPLETED | 23 tests, routing_invariance fixed | Bias pairs logistics-only (FUTURE) |
+| Urban Policy | PARTIAL | Policy + validation + DefaultAutomationPolicy | No routing (FUTURE) |
+| Infrastructure Policy | PARTIAL | Policy + validation + DefaultAutomationPolicy | No routing (FUTURE) |
 | API | COMPLETED | Delegates to TriageEngine | — |
-| Composition Root | COMPLETED (uncommitted) | `composition.py` extracts wiring from app.py | — |
+| Composition Root | COMPLETED | `composition.py` extracts wiring | — |
 | Persistence | COMPLETED | SQLite adapters | — |
 | Audit | COMPLETED | AuditPort + events | — |
-| Documentation | IN PROGRESS | This document | ROADMAP, AGENT_CONTEXT, DEV_STATUS |
+| Phase 4 Evaluation | COMPLETED | 393 passed, all areas evaluated | — |
 
 ---
 
@@ -271,18 +272,18 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Phase 4 — Final Evaluation.** Run evaluation suite against production path with automation enabled.
+**CASE v1 CONSOLIDATION COMPLETE.**
+Phase 5 (Quality Hardening) and Phase 6 (Product/Release Readiness) completed.
+Quality gates: `pytest` 393 passed, 7 skipped; `ruff` 0 errors; `mypy` 0 errors.
 
 ## Next Priority
 
-**Phase 3 — V1 Capability Completion.** Classify Urban/Infrastructure gaps as MUST FIX / SHOULD FIX / FUTURE / INTENTIONALLY UNSUPPORTED.
+**Portfolio Presentation & Handover.** CASE v1 is complete and ready for portfolio release.
 
 ## Deferred
 
-- Urban/Infrastructure Automation
-- Urban/Infrastructure Routing
-- Fix routing_invariance_rate bug in bias evaluation
-- Bias pairs for Urban and Infrastructure domains
-- Final evaluation
+- Urban/Infrastructure Automation (FUTURE)
+- Urban/Infrastructure Routing (FUTURE)
+- Bias pairs for Urban and Infrastructure (FUTURE)
 - Quality hardening
 - Documentation consolidation

@@ -21,18 +21,10 @@
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch | `master` |
-| HEAD | `9c2a9af` |
-| Commits | 3 (`c26dc66`, `65b3832`, `9c2a9af`) |
+| HEAD | `1f4ae7d` |
+| Commits | 7 (`65b3832`, `9c2a9af`, `d825c41`, `afbdc6f`, `2a7e225`, `345202b`, `1f4ae7d`) |
 | Remote | NONE |
-| Working tree | Clean |
-| Source files | 57 Python files in src/ |
-| Test files | 19 Python files in tests/ |
-
-**Pending changes (uncommitted):**
-- `src/case_core/application/engine.py` — Modified (automation_policy_fn parameter)
-- `src/case_core/composition.py` — Modified (wires per-domain automation policies)
-- `src/case_core/domain/default_automation.py` — New (46 lines, DefaultAutomationPolicy)
-- `tests/unit/test_triage_engine.py` — Modified (+10 automation integration tests)
+| Working tree | 14 files modified (Phase 5 quality hardening, uncommitted) |
 
 ---
 
@@ -376,22 +368,22 @@ Display only. No auth. No write operations.
 |-------|-------|--------|
 | test_api.py (integration) | 11 | PASS |
 | test_ollama_integration.py | 7 | SKIPPED (no Ollama) |
-| test_behavioral.py | 42 | PASS |
+| test_behavioral.py | 79 | PASS |
 | test_bias_evaluation.py | 14 | PASS |
-| test_cloud_provider.py | 28 | PASS |
+| test_cloud_provider.py | 24 | PASS |
 | test_contracts.py | 23 | PASS |
 | test_domain.py | 38 | PASS |
-| test_evaluation.py | 17 | PASS |
-| test_mock_provider.py | 30 | PASS |
+| test_evaluation.py | 12 | PASS |
+| test_mock_provider.py | 17 | PASS |
 | test_ollama_provider.py | 13 | PASS |
 | test_ports.py | 8 | PASS |
 | test_prompt_builder.py | 17 | PASS |
-| test_regression.py | 15 | PASS |
-| test_reliability.py | 28 | PASS |
-| test_security.py | 28 | PASS |
-| test_sqlite.py | 10 | PASS |
+| test_regression.py | 11 | PASS |
+| test_reliability.py | 26 | PASS |
+| test_security.py | 31 | PASS |
+| test_sqlite.py | 9 | PASS |
 | test_streamlit_boundary.py | 2 | PASS |
-| test_streamlit_client.py | 17 | PASS |
+| test_streamlit_client.py | 16 | PASS |
 | test_triage_engine.py | 25 | PASS |
 
 ---
@@ -399,35 +391,36 @@ Display only. No auth. No write operations.
 ## 21. Ruff
 
 ```
-65 errors (58 fixable, 7 hidden with --unsafe-fixes)
+0 errors (src/ tests/)
 ```
 
-All pre-existing. No new errors introduced by TriageEngine implementation. Dominant issues: import sorting (I001), missing newlines (W292), unused imports (F401).
+All errors resolved in Phase 5.
 
 ---
 
 ## 22. Mypy
 
 ```
-22 errors in 11 files (checked 57 source files)
+0 errors (59 source files checked)
 ```
 
-All pre-existing. No new errors introduced. Dominant issue: missing type arguments for generic `dict` (type-arg). Configuration: `strict = true`, `python_version = 3.11`, `disallow_untyped_defs = true`.
+All errors resolved in Phase 5. Fixed: missing type arguments for generic `dict` (22 errors across 11 files) and `no-any-return` (3 errors in pipeline.py, ollama.py, cloud.py).
 
 ---
 
 ## 23. Known Technical Debt
 
-1. **routing_invariance_rate bug** — `compute_results()` in bias.py uses `decision_consistent / total` instead of routing-specific check
-2. **Urban/Infrastructure missing routing** — No `classify_incident_type()` method
-3. **Urban/Infrastructure missing automation** — No AutomationPolicy implementations
-4. **Bias pairs logistics-only** — Zero pairs for Urban or Infrastructure
+1. ~~**routing_invariance_rate bug**~~ — FIXED (2a7e225)
+2. **Urban/Infrastructure missing routing** — No `classify_incident_type()` method (FUTURE)
+3. ~~**Urban/Infrastructure missing automation**~~ — RESOLVED. DefaultAutomationPolicy wired.
+4. **Bias pairs logistics-only** — Zero pairs for Urban or Infrastructure (FUTURE)
 5. ~~**Composition wiring in app.py**~~ — RESOLVED. Extracted to `composition.py`.
-6. **OperationalTelemetry/LLMTelemetry unused** — Defined in contracts but not consumed
-7. **pyproject.toml includes sqlalchemy** — Dependency listed but not used (SQLite uses sqlite3 directly)
-8. **tests/behavioral/ and tests/evaluation/ empty** — Directories exist but contain no files
-9. **Mypy dict type-arg errors** — 14 of 22 errors are missing dict type arguments
-10. **Ruff import sorting** — 58 fixable import ordering issues across test files
+6. **OperationalTelemetry/LLMTelemetry unused** — Defined in contracts, designed for future use (Blueprint v1.1)
+7. ~~**pyproject.toml includes sqlalchemy**~~ — RESOLVED. Removed in Phase 5 (unused dependency).
+8. ~~**tests/behavioral/ and tests/evaluation/ empty**~~ — RESOLVED. Dead empty directories removed in final consolidation.
+9. ~~**Mypy dict type-arg errors**~~ — RESOLVED. All 22 errors fixed in Phase 5.
+10. ~~**Ruff import sorting**~~ — RESOLVED. All 66 errors fixed in Phase 5.
+11. ~~**httpx declared as indirect dependency**~~ — RESOLVED. Added as direct dependency in pyproject.toml.
 
 ---
 
@@ -443,14 +436,17 @@ All pre-existing. No new errors introduced. Dominant issue: missing type argumen
 - No monitoring/observability beyond audit trail
 - No multi-tenant support
 - No streaming responses
+- Urban/Infrastructure use generic DefaultAutomationPolicy (not domain-specific)
+- No bias pairs for Urban or Infrastructure domains
+- No routing for Urban or Infrastructure domains
 
 ---
 
 ## 25. Current Risks
 
-1. **Working tree dirty** — TriageEngine implementation uncommitted, risk of loss
+1. ~~**Working tree dirty**~~ — RESOLVED. All committed.
 2. **Composition coupling** — API layer acts as both HTTP adapter and composition root
-3. **Bias evaluation incomplete** — routing_invariance_rate bug, logistics-only coverage
+3. **Bias evaluation incomplete** — logistics-only coverage (Urban/Infrastructure FUTURE)
 4. **No real LLM testing** — Security and bias evaluations only with MockProvider
 5. **Documentation gaps** — No CHANGELOG, no LICENSE, no API documentation
 
@@ -463,10 +459,13 @@ All pre-existing. No new errors introduced. Dominant issue: missing type argumen
 | Foundation v0.3 FROZEN | 2026-09 | COMPLETED |
 | Blueprint v1.1 FROZEN | 2026-09 | COMPLETED |
 | llama3.2 as primary model | 2026-09 | COMPLETED |
-| TriageEngine as application orchestrator | 2026-09-11 | COMPLETED |
-| API delegates to TriageEngine | 2026-09-11 | COMPLETED |
-| Composition Root extraction | 2026-09-11 | COMPLETED |
-| Risk-based automation wired | 2026-09-11 | COMMITTED (345202b) |
+| TriageEngine as application orchestrator | 2026-09-11 | COMMITTED |
+| API delegates to TriageEngine | 2026-09-11 | COMMITTED |
+| Composition Root extraction | 2026-09-11 | COMMITTED |
+| Risk-based automation wired | 2026-09-11 | COMMITTED |
+| Phase 4 evaluation completed | 2026-09-11 | COMPLETED |
+| Phase 5 quality hardening | 2026-09-11 | COMPLETED |
+| Phase 6 product/release readiness | 2026-09-11 | COMPLETED |
 
 ---
 
@@ -474,20 +473,18 @@ All pre-existing. No new errors introduced. Dominant issue: missing type argumen
 
 | Decision | Status |
 |----------|--------|
-| Fix routing_invariance_rate | NEXT |
-| Urban/Infrastructure Automation | DEFERRED |
-| Urban/Infrastructure Routing | DEFERRED |
-| Final evaluation | DEFERRED |
+| ~~Fix routing_invariance_rate~~ | RESOLVED (2a7e225) |
+| Urban/Infrastructure Automation | FUTURE |
+| Urban/Infrastructure Routing | FUTURE |
+| Final evaluation | COMPLETED (Phase 4) |
 
 ---
 
 ## 28. Deferred Work
 
-- Urban/Infrastructure Automation
-- Urban/Infrastructure Routing
-- Fix routing_invariance_rate bug
-- Bias pairs for Urban and Infrastructure
-- Final evaluation
+- Urban/Infrastructure Automation (FUTURE)
+- Urban/Infrastructure Routing (FUTURE)
+- Bias pairs for Urban and Infrastructure (FUTURE)
 - Quality hardening
 - CHANGELOG
 - LICENSE
