@@ -20,8 +20,8 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch | `master` |
-| HEAD | `1f4ae7d` (docs: update status after automation wiring commit) |
-| Commits | 7 |
+| HEAD | `02f193e` |
+| Commits | 9 |
 | Remote | NONE |
 | Working tree | Clean |
 | Python | 3.13.12 via `C:\Users\JUAN\miniconda3\python.exe` |
@@ -76,13 +76,13 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 
 ## CURRENT PRIORITY
 
-**CASE v1 COMPLETE.** Product readiness, documentation, debt closure, and demo scripts finalized.
+**Phase 2 — Logistics Intelligence.** Current objective is deepening logistics domain intelligence with shipment classification, route recommendation, carrier matching, scoring, optimization, and operational constraints.
 
 ---
 
 ## NEXT PRIORITY
 
-**Portfolio Release / Presentation.** CASE v1 is complete and ready for handover.
+**Phase 3 — ML Adaptation.** After Phase 2 Logistics Intelligence is complete, the next priority is ML Adaptation for domain-specific fine-tuning.
 
 ---
 
@@ -168,11 +168,66 @@ If a task is interrupted or you lose context:
 ## CURRENT ROADMAP POINTER
 
 ```
-CURRENT PHASE: CASE v1 Complete (FINAL GATE PASSED)
-CURRENT SPRINT: Sprint 1 — CASE Decision Platform [COMPLETED]
-CURRENT TASK: Final consolidation report & commit recommendations
-NEXT TASK: Handover
+CURRENT PHASE: Phase 2 — Logistics Intelligence [ACTIVE]
+CURRENT SPRINT: Sprint 2 — Logistics Intelligence [ACTIVE]
+CURRENT TASK: Implement logistics intelligence capabilities (shipment classification, route recommendation, carrier matching, scoring, optimization)
+NEXT TASK: Phase 3 — ML Adaptation
 ```
+
+---
+
+## Autonomous Execution Protocol
+
+### Phase Numbering
+| Phase | Name | Status |
+|-------|------|--------|
+| Phase 1 | CASE v1 | COMPLETED |
+| Phase 2 | Logistics Intelligence | ACTIVE |
+| Phase 3 | ML Adaptation | FUTURE |
+| Phase 4 | Specialist Models | FUTURE |
+| Phase 5 | Hybrid Decision Intelligence | FUTURE |
+| Phase 6 | Additional Domain Packs | FUTURE |
+| Phase 7 | Advanced Governance/Security | FUTURE |
+| Phase 8 | Production/Scale Readiness | FUTURE |
+
+### Quality Gates
+Before advancing to the next phase, all quality gates must pass:
+- `pytest` 0 failures
+- `ruff` 0 errors
+- `mypy` 0 errors
+- Integration tests all pass
+- No regressions in existing capabilities
+
+### Exit Criteria
+Each phase must meet its exit criteria before the next phase begins:
+- **Phase 2 exit:** All logistics intelligence components implemented, tested, and evaluated
+- **Phase 3 exit:** ML adaptation pipeline operational with fine-tuned models
+- **Phase 4 exit:** Specialist models deployed and integrated with the LLM pipeline
+- **Phase 5 exit:** Full hybrid decision pipeline operational end-to-end
+- **Phase 6 exit:** New domain packs implemented with bias evaluation coverage
+- **Phase 7 exit:** Governance and security capabilities production-ready
+- **Phase 8 exit:** Production deployment successful with scale validation
+
+### Change-Control Rules
+Before adding any of the following, there must be explicit technical justification:
+- Models
+- Dependencies
+- Infrastructure
+- Frameworks
+- Architectural changes
+This maps to I10 (complexity requires justification).
+
+### Scope Boundaries
+The following must NOT be implemented within the current milestone without a new explicit decision:
+- BERT / encoder models
+- Fine-tuning / LoRA
+- RAG (retrieval-augmented generation)
+- Agent frameworks
+- Ensembles
+- New Domain Packs (Finance, Real Estate, etc.)
+- New infrastructure (Kubernetes, Docker, cloud deployment)
+- Speculative ML optimization
+- Unjustified benchmarks
 
 ---
 
