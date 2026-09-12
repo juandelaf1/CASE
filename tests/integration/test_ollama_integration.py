@@ -1,5 +1,3 @@
-import asyncio
-import json
 import sys
 
 import httpx
@@ -9,7 +7,6 @@ sys.path.insert(0, "src")
 
 from case_core.contracts.llm import DecodingParameters, LLMRequest
 from case_core.providers.ollama import OllamaProvider
-
 
 OLLAMA_AVAILABLE = False
 try:
