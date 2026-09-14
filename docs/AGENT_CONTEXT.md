@@ -129,16 +129,13 @@ These modules exist as standalone implementations. They are tested in isolation 
 
 ## CURRENT PRIORITY
 
-**Release Preparation.** Audit complete. Preparing CASE v1.0.0 for public release with honest documentation.
+**POST-V1.0 — Integration Selection & Hardening.** Audit complete. First integration: ShipmentUnderstanding (v1.0.1).
 
 ---
 
 ## NEXT PRIORITY
 
-**Post-v1.0 Evolution.** After v1.0.0 release:
-- Architecture hardening
-- Evaluation improvements
-- Integration of isolated modules (with justification)
+**v1.0.1 — ShipmentUnderstanding Integration.** Wire ShipmentUnderstanding to composition.py for logistics domain pre-processing.
 - New domain packs (with justification)
 
 ---
@@ -207,9 +204,9 @@ These modules exist as standalone implementations. They are tested in isolation 
 
 ## NEXT RECOMMENDED ACTION
 
-1. Complete v1.0.0 release preparation (documentation, LICENSE, CHANGELOG)
-2. Commit with clean history
-3. Post-v1.0: evaluate which isolated modules to integrate
+1. Integrate ShipmentUnderstanding (v1.0.1)
+2. Register RealEstatePolicy (v1.0.2)
+3. Architecture review after integrations
 
 ---
 

@@ -259,17 +259,52 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 
 ## Current Priority
 
-**Release v1.0.0.** Phase 1 is the connected, working system. Phases 2-8 are isolated implementations ready for future integration.
+**POST-V1.0 — Integration Selection & Hardening.** Systematically evaluate isolated capabilities for integration.
+
+---
+
+## POST-V1.0 — Integration Selection & Hardening
+
+**Objective:** Convert progressively isolated capabilities into integrated capabilities when technical justification exists.
+
+**Status:** Audit complete. See `docs/CAPABILITY_AUDIT.md` for full matrix.
+
+### Integration Decisions
+
+| Priority | Capability | Decision | Rationale |
+|----------|-----------|----------|-----------|
+| 1 | ShipmentUnderstanding | **INTEGRATE** | High value, low complexity, low risk |
+| 2 | RealEstatePolicy | **INTEGRATE** | Low complexity, demonstrates domain-agnostic design |
+| 3 | HybridDecisionEngine | **DEFER** | High value but high risk, needs architectural decision |
+| 4-13 | All others | **KEEP ISOLATED** | Not critical for core pipeline |
+
+### Milestones
+
+| Milestone | Focus | Dependencies |
+|-----------|-------|--------------|
+| v1.0.1 | ShipmentUnderstanding integration | None |
+| v1.0.2 | RealEstatePolicy registration | None |
+| v1.1.0 | Architecture hardening | v1.0.1, v1.0.2 |
+| v1.2.0 | Evaluation improvements | None |
+| v2.0.0 | Hybrid Decision Engine integration | Architectural decision required |
+
+### Rules
+
+1. Each integration must preserve golden baseline (Phase 1)
+2. Each integration must have tests before/after
+3. Each integration must pass quality gates
+4. No integration without documented justification (I10)
+5. KEEP ISOLATED is a valid decision, not a failure
 
 ---
 
 ## Next Priority (Post-v1.0)
 
 ### Track A — Architecture Hardening
-- [ ] Evaluate which isolated modules to integrate
-- [ ] Wire RealEstatePolicy to DomainRegistry
-- [ ] Add integration tests for isolated modules
-- [ ] Create ARCHITECTURE.md
+- [ ] Integrate ShipmentUnderstanding (v1.0.1)
+- [ ] Register RealEstatePolicy (v1.0.2)
+- [ ] Architecture review after integrations
+- [ ] Update ARCHITECTURE.md
 
 ### Track B — Evaluation
 - [ ] Expand bias pairs to Urban/Infrastructure
