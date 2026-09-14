@@ -136,22 +136,33 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 
 ---
 
-### PHASE 3 — ML Adaptation [FUTURE]
+### PHASE 3 — ML Adaptation [COMPLETED]
 
 **Objective:** Adapt CASE for domain-specific ML with fine-tuning and multi-domain learning.
 
 | Component | Status | Evidence |
 |-----------|--------|----------|
-| CASE dataset | NOT STARTED | New capability in Phase 3 |
-| LoRA / QLoRA | NOT STARTED | New capability in Phase 3 |
-| Fine-tuning | NOT STARTED | New capability in Phase 3 |
-| Multi-domain adaptation | NOT STARTED | New capability in Phase 3 |
+| Training abstraction | COMPLETED | ml/training_abstraction.py, ModelAdapter, TrainingPipeline, InferenceEngine, EvaluationRunner |
+| Dataset contracts | COMPLETED | ml/dataset_contracts.py, TrainingExample, TrainingDataset, Provenance |
+| Dataset pipeline | COMPLETED | ml/dataset_pipeline.py, DeterministicDatasetPipeline |
+| LoRA/QLoRA support | COMPLETED | ml/lora_config.py, LoRAConfig, TrainingConfig, AdapterMetadata |
+| Adapter implementations | COMPLETED | ml/adapters.py, MockAdapter, NullAdapter, NullInferenceEngine |
+| Evaluation framework | COMPLETED | ml/evaluation.py, DeterministicEvaluationRunner |
+| Evaluation dataset | COMPLETED | ml/evaluation_dataset.py, EvaluationDatasetGenerator |
+| Domain separation | COMPLETED | ML module separate from core, no domain leakage |
+| Provider neutrality | COMPLETED | Abstract adapters, no model-specific code |
+| Provenance tracking | COMPLETED | Dataset versioning, checksums |
+| Safety evaluation | COMPLETED | Safety test cases, regression checks |
+| Tests | COMPLETED | 26 tests in test_ml_adaptation.py |
 
 #### Sub-sections
-- **CASE dataset:** Curate and label a dataset of operational cases for training and evaluation.
-- **LoRA / QLoRA:** Apply low-rank adaptation techniques for efficient fine-tuning of foundation models.
-- **Fine-tuning:** Fine-tune models on CASE-specific data to improve domain accuracy.
-- **Multi-domain adaptation:** Adapt models to multiple domains with shared representations and domain-specific layers.
+- **Training abstraction:** Abstract interfaces for ModelAdapter, TrainingPipeline, InferenceEngine, EvaluationRunner.
+- **Dataset contracts:** TrainingExample, TrainingDataset, Provenance, DatasetConfig, DatasetVersion.
+- **Dataset pipeline:** DeterministicDatasetPipeline with save/load, checksum, versioning.
+- **LoRA/QLoRA:** LoRAConfig, TrainingConfig, AdapterMetadata with validation.
+- **Adapters:** MockAdapter, NullAdapter for testing, NullInferenceEngine for baseline.
+- **Evaluation:** Accuracy, safety, domain validity, baseline comparison, regression reports.
+- **Evaluation dataset:** Logistics evaluation, safety test cases, regression dataset.
 
 ---
 
@@ -253,13 +264,13 @@ Status: NOT STARTED. Conceptual only.
 
 **Deliverables:** Shipment classification, route recommendation, carrier matching, scoring, optimization, operational constraints, explainability, risk/Automation/HITL, audit, evaluation.
 
-### Sprint 3 — ML Adaptation [ACTIVE]
+### Sprint 3 — ML Adaptation [COMPLETED]
 
 **Objective:** Adapt CASE for domain-specific ML with fine-tuning and multi-domain learning.
 
-**Deliverables:** CASE dataset, LoRA fine-tuning, multi-domain adaptation.
+**Deliverables:** Training abstraction, dataset contracts, pipeline, LoRA/QLoRA support, adapters, evaluation framework, evaluation dataset.
 
-### Sprint 4 — Specialist Models [FUTURE]
+### Sprint 4 — Specialist Models [ACTIVE]
 
 **Objective:** Build specialist models for specific domains.
 
@@ -367,11 +378,11 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Phase 3 — ML Adaptation.** After Phase 2 Logistics Intelligence is complete, the next priority is ML Adaptation for domain-specific fine-tuning.
+**Phase 4 — Specialist Models.** After Phase 3 ML Adaptation is complete, the next priority is Specialist Models for domain-specific classification and prediction.
 
 ## Next Priority
 
-**Phase 4 — Specialist Models.** After Phase 3 ML Adaptation is complete, the next priority is Specialist Models.
+**Phase 5 — Hybrid Decision Intelligence.** After Phase 4 Specialist Models is complete, the next priority is Hybrid Decision Intelligence.
 
 ## Deferred
 
@@ -391,8 +402,8 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 |-------|------|--------|
 | Phase 1 | CASE v1 | COMPLETED |
 | Phase 2 | Logistics Intelligence | COMPLETED |
-| Phase 3 | ML Adaptation | ACTIVE |
-| Phase 4 | Specialist Models | FUTURE |
+| Phase 3 | ML Adaptation | COMPLETED |
+| Phase 4 | Specialist Models | ACTIVE |
 | Phase 5 | Hybrid Decision Intelligence | FUTURE |
 | Phase 6 | Additional Domain Packs | FUTURE |
 | Phase 7 | Advanced Governance/Security | FUTURE |

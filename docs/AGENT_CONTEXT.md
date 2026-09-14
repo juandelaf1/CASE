@@ -76,13 +76,13 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 
 ## CURRENT PRIORITY
 
-**Phase 3 — ML Adaptation.** After Phase 2 Logistics Intelligence is complete, the next priority is ML Adaptation for domain-specific fine-tuning.
+**Phase 4 — Specialist Models.** After Phase 3 ML Adaptation is complete, the next priority is Specialist Models for domain-specific classification and prediction.
 
 ---
 
 ## NEXT PRIORITY
 
-**Phase 4 — Specialist Models.** After Phase 3 ML Adaptation is complete, the next priority is Specialist Models.
+**Phase 5 — Hybrid Decision Intelligence.** After Phase 4 Specialist Models is complete, the next priority is Hybrid Decision Intelligence.
 
 ---
 
@@ -168,10 +168,10 @@ If a task is interrupted or you lose context:
 ## CURRENT ROADMAP POINTER
 
 ```
-CURRENT PHASE: Phase 3 — ML Adaptation [ACTIVE]
-CURRENT SPRINT: Sprint 3 — ML Adaptation [ACTIVE]
-CURRENT TASK: Implement ML adaptation pipeline with dataset contracts, training abstractions, evaluation framework
-NEXT TASK: Phase 4 — Specialist Models
+CURRENT PHASE: Phase 4 — Specialist Models [ACTIVE]
+CURRENT SPRINT: Sprint 4 — Specialist Models [ACTIVE]
+CURRENT TASK: Implement specialist model interfaces, adapters, evaluation, and integration with LLM pipeline
+NEXT TASK: Phase 5 — Hybrid Decision Intelligence
 ```
 
 ---
@@ -183,8 +183,8 @@ NEXT TASK: Phase 4 — Specialist Models
 |-------|------|--------|
 | Phase 1 | CASE v1 | COMPLETED |
 | Phase 2 | Logistics Intelligence | COMPLETED |
-| Phase 3 | ML Adaptation | ACTIVE |
-| Phase 4 | Specialist Models | FUTURE |
+| Phase 3 | ML Adaptation | COMPLETED |
+| Phase 4 | Specialist Models | ACTIVE |
 | Phase 5 | Hybrid Decision Intelligence | FUTURE |
 | Phase 6 | Additional Domain Packs | FUTURE |
 | Phase 7 | Advanced Governance/Security | FUTURE |
