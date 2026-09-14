@@ -1,4 +1,16 @@
+<p align="center">
+  <img src="docs/images/CASE_banner.jpg" alt="CASE Banner" width="100%">
+</p>
+
 # CASE — AI Decision Platform
+
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Pydantic v2](https://img.shields.io/badge/Pydantic-v2%2B-e91e63?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-526%20passed-brightgreen)]()
+[![Ruff](https://img.shields.io/badge/ruff-0%20errors-00b841)](https://github.com/astral-sh/ruff)
+[![Mypy](https://img.shields.io/badge/mypy-0%20errors-1f6feb)](https://mypy-lang.org/)
 
 > Domain-agnostic, provider-agnostic AI Decision Platform for operational case triage with human oversight.
 
