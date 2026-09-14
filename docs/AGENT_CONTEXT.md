@@ -76,13 +76,13 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 
 ## CURRENT PRIORITY
 
-**Phase 5 — Hybrid Decision Intelligence.** After Phase 4 Specialist Models is complete, the next priority is Hybrid Decision Intelligence.
+**Phase 6 — Additional Domain Packs.** After Phase 5 Hybrid Decision Intelligence is complete, the next priority is Additional Domain Packs.
 
 ---
 
 ## NEXT PRIORITY
 
-**Phase 6 — Additional Domain Packs.** After Phase 5 Hybrid Decision Intelligence is complete, the next priority is Additional Domain Packs.
+**Phase 7 — Advanced Governance/Security.** After Phase 6 Additional Domain Packs is complete, the next priority is Advanced Governance/Security.
 
 ---
 
@@ -168,10 +168,10 @@ If a task is interrupted or you lose context:
 ## CURRENT ROADMAP POINTER
 
 ```
-CURRENT PHASE: Phase 5 — Hybrid Decision Intelligence [ACTIVE]
-CURRENT SPRINT: Sprint 5 — Hybrid Decision Intelligence [ACTIVE]
-CURRENT TASK: Implement Decision Engine, combine LLM + specialist + rules + evidence + HITL + audit
-NEXT TASK: Phase 6 — Additional Domain Packs
+CURRENT PHASE: Phase 6 — Additional Domain Packs [ACTIVE]
+CURRENT SPRINT: Sprint 6 — Additional Domain Packs [ACTIVE]
+CURRENT TASK: Implement Real Estate domain pack with policy, taxonomy, urgency, routing, automation, tests
+NEXT TASK: Phase 7 — Advanced Governance/Security
 ```
 
 ---
@@ -185,8 +185,8 @@ NEXT TASK: Phase 6 — Additional Domain Packs
 | Phase 2 | Logistics Intelligence | COMPLETED |
 | Phase 3 | ML Adaptation | COMPLETED |
 | Phase 4 | Specialist Models | COMPLETED |
-| Phase 5 | Hybrid Decision Intelligence | ACTIVE |
-| Phase 6 | Additional Domain Packs | FUTURE |
+| Phase 5 | Hybrid Decision Intelligence | COMPLETED |
+| Phase 6 | Additional Domain Packs | ACTIVE |
 | Phase 7 | Advanced Governance/Security | FUTURE |
 | Phase 8 | Production/Scale Readiness | FUTURE |
 

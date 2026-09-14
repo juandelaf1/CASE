@@ -193,24 +193,31 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 
 ---
 
-### PHASE 5 — Hybrid Decision Intelligence [FUTURE]
+### PHASE 5 — Hybrid Decision Intelligence [COMPLETED]
 
 **Objective:** Combine LLM + specialist models + rules + evidence + decision engine + HITL + audit into a full hybrid decision pipeline.
 
-```
-LLM + Specialist Models + Rules + Evidence + Decision Engine + HITL + Audit
-```
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Decision Engine | COMPLETED | hybrid/decision_engine.py, HybridDecisionEngine |
+| Decision reconciliation | COMPLETED | Multi-source decision combination |
+| HITL routing | COMPLETED | Automatic HITL on risk/disagreement/low confidence |
+| Audit trail | COMPLETED | Complete audit trail of all decision steps |
+| Rules engine | COMPLETED | DecisionRule with priority-based execution |
+| Evidence validation | COMPLETED | Evidence sufficiency checking |
+| Risk integration | COMPLETED | Risk assessment integration |
+| Explanation | COMPLETED | Structured explanation generation |
+| Tests | COMPLETED | 18 tests in test_hybrid_decision.py |
 
 #### Sub-sections
-- **LLM:** Generate initial decision proposals from unstructured cases.
-- **Specialist Models:** Provide domain-specific predictions and classifications.
-- **Rules:** Apply deterministic business rules and constraints.
-- **Evidence:** Validate decisions against evidence and domain policies.
-- **Decision Engine:** Reconcile LLM, specialist model, and rule outputs into a final decision.
-- **HITL:** Human-in-the-loop review for high-risk or uncertain decisions.
-- **Audit:** Maintain a full audit trail of all decision steps and inputs.
-
-Status: NOT STARTED. Conceptual only.
+- **Decision Engine:** HybridDecisionEngine combines LLM, specialist, rules, evidence, risk.
+- **Decision reconciliation:** Weighted confidence-based decision combination.
+- **HITL routing:** Automatic HITL on high risk, low confidence, specialist-LLM disagreement.
+- **Audit trail:** Complete audit trail of all decision steps and inputs.
+- **Rules engine:** Priority-based deterministic rule execution.
+- **Evidence validation:** Evidence sufficiency and quality checking.
+- **Risk integration:** Risk assessment integration with HITL triggers.
+- **Explanation:** Structured explanation of hybrid decision process.
 
 ---
 
@@ -286,13 +293,13 @@ Status: NOT STARTED. Conceptual only.
 
 **Deliverables:** Specialist model interfaces, classification/risk/routing specialists, ensemble, registry.
 
-### Sprint 5 — Hybrid Decision Intelligence [ACTIVE]
+### Sprint 5 — Hybrid Decision Intelligence [COMPLETED]
 
 **Objective:** Combine LLM + specialist models + rules + evidence + decision engine + HITL + audit.
 
-**Deliverables:** Full hybrid decision pipeline.
+**Deliverables:** Decision Engine, reconciliation, HITL routing, audit trail, rules engine, evidence validation.
 
-### Sprint 6 — Additional Domain Packs [FUTURE]
+### Sprint 6 — Additional Domain Packs [ACTIVE]
 
 **Objective:** Extend CASE to new domains beyond the current Urban, Logistics, and Infrastructure coverage.
 
@@ -388,11 +395,11 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Phase 5 — Hybrid Decision Intelligence.** After Phase 4 Specialist Models is complete, the next priority is Hybrid Decision Intelligence.
+**Phase 6 — Additional Domain Packs.** After Phase 5 Hybrid Decision Intelligence is complete, the next priority is Additional Domain Packs.
 
 ## Next Priority
 
-**Phase 6 — Additional Domain Packs.** After Phase 5 Hybrid Decision Intelligence is complete, the next priority is Additional Domain Packs.
+**Phase 7 — Advanced Governance/Security.** After Phase 6 Additional Domain Packs is complete, the next priority is Advanced Governance/Security.
 
 ## Deferred
 
@@ -414,8 +421,8 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 | Phase 2 | Logistics Intelligence | COMPLETED |
 | Phase 3 | ML Adaptation | COMPLETED |
 | Phase 4 | Specialist Models | COMPLETED |
-| Phase 5 | Hybrid Decision Intelligence | ACTIVE |
-| Phase 6 | Additional Domain Packs | FUTURE |
+| Phase 5 | Hybrid Decision Intelligence | COMPLETED |
+| Phase 6 | Additional Domain Packs | ACTIVE |
 | Phase 7 | Advanced Governance/Security | FUTURE |
 | Phase 8 | Production/Scale Readiness | FUTURE |
 
