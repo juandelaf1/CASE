@@ -4,13 +4,20 @@ set -e
 echo "Starting CASE — Case Assessment and Structured Evaluation"
 echo "=========================================================="
 
-# Render sets PORT env var. If set, run API only (no Streamlit).
-if [ -n "$PORT" ]; then
-    echo "Render mode — API only on port $PORT"
-    exec uvicorn case_api.api.v1.app:app --host 0.0.0.0 --port "$PORT"
+# RUN_MODE: api | streamlit | both (default)
+MODE="${RUN_MODE:-both}"
+
+if [ "$MODE" = "api" ]; then
+    echo "API mode — port ${PORT:-8000}"
+    exec uvicorn case_api.api.v1.app:app --host 0.0.0.0 --port "${PORT:-8000}"
 fi
 
-# Local Docker mode — API + Streamlit
+if [ "$MODE" = "streamlit" ]; then
+    echo "Streamlit mode — port ${PORT:-8501}"
+    exec streamlit run streamlit_app/app.py --server.port "${PORT:-8501}" --server.address 0.0.0.0 --server.headless true
+fi
+
+# Both mode (local Docker)
 echo "Starting API server on port 8000..."
 uvicorn case_api.api.v1.app:app --host 0.0.0.0 --port 8000 &
 API_PID=$!
@@ -29,10 +36,8 @@ for i in $(seq 1 30); do
 done
 
 echo "Starting Streamlit UI on port 8501..."
-cd streamlit_app
-streamlit run app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true &
+streamlit run streamlit_app/app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true &
 STREAMLIT_PID=$!
-cd ..
 
 echo ""
 echo "CASE is running:"

@@ -1,14 +1,31 @@
 services:
   - type: web
-    name: case-demo
+    name: case-api
     runtime: docker
     dockerfilePath: Dockerfile
-    healthCheckPath: /health
     envVars:
+      - key: RUN_MODE
+        value: api
+      - key: PORT
+        value: 8000
       - key: CASE_DB_PATH
         value: /data/case_audit.db
     disk:
       mountPath: /data
       sizeGB: 1
+    plan: free
+    autoDeploy: true
+
+  - type: web
+    name: case-ui
+    runtime: docker
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: RUN_MODE
+        value: streamlit
+      - key: PORT
+        value: 8501
+      - key: CASE_API_BASE_URL
+        value: https://case-xhvh.onrender.com
     plan: free
     autoDeploy: true
