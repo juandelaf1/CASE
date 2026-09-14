@@ -21,8 +21,8 @@
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch | `master` |
-| HEAD | `51bdcb3` |
-| Commits | 11 |
+| HEAD | `ba2616b` |
+| Commits | 12 |
 | Remote | NONE |
 | Working tree | Clean |
 

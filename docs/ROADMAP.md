@@ -166,20 +166,30 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 
 ---
 
-### PHASE 4 — Specialist Models [FUTURE]
+### PHASE 4 — Specialist Models [COMPLETED]
 
 **Objective:** Build specialist models for specific domains and integrate them with the LLM pipeline.
 
 | Component | Status | Evidence |
 |-----------|--------|----------|
-| Small encoder / BERT-style models | NOT STARTED | New capability in Phase 4 |
-| Domain-specific classifiers | NOT STARTED | New capability in Phase 4 |
-| Hybrid decision architecture | NOT STARTED | New capability in Phase 4 |
+| Specialist model interfaces | COMPLETED | ml/specialist_models.py, SpecialistModel ABC |
+| Classification specialist | COMPLETED | ml/specialist_models.py, ClassificationSpecialist |
+| Risk specialist | COMPLETED | ml/specialist_models.py, RiskSpecialist |
+| Routing specialist | COMPLETED | ml/specialist_models.py, RoutingSpecialist |
+| Ensemble specialist | COMPLETED | ml/specialist_models.py, EnsembleSpecialist |
+| Specialist registry | COMPLETED | ml/specialist_contracts.py, SpecialistRegistry |
+| Specialist contracts | COMPLETED | ml/specialist_contracts.py, ModelCapability, SpecialistPrediction |
+| Registry manager | COMPLETED | ml/specialist_models.py, SpecialistRegistryManager |
+| Tests | COMPLETED | 21 tests in test_specialist_models.py |
 
 #### Sub-sections
-- **Small encoder / BERT-style models:** Deploy lightweight encoders for classification and semantic tasks.
-- **Domain-specific classifiers:** Train classifiers for specific domains (e.g., logistics, finance, real estate).
-- **Hybrid decision architecture:** Combine LLM output with specialist model predictions for improved accuracy.
+- **Specialist model interfaces:** Abstract SpecialistModel with predict, predict_batch, health_check.
+- **Classification specialist:** Keyword-based classification with confidence scoring.
+- **Risk specialist:** Risk assessment with factors and scoring.
+- **Routing specialist:** Route suggestion with transport mode and cost estimation.
+- **Ensemble specialist:** Combines multiple specialist predictions with consensus.
+- **Registry:** ModelCapability, SpecialistRegistry for managing available models.
+- **Registry manager:** SpecialistRegistryManager for registration and lookup.
 
 ---
 
@@ -270,13 +280,13 @@ Status: NOT STARTED. Conceptual only.
 
 **Deliverables:** Training abstraction, dataset contracts, pipeline, LoRA/QLoRA support, adapters, evaluation framework, evaluation dataset.
 
-### Sprint 4 — Specialist Models [ACTIVE]
+### Sprint 4 — Specialist Models [COMPLETED]
 
 **Objective:** Build specialist models for specific domains.
 
-**Deliverables:** BERT-style classifiers, hybrid architecture.
+**Deliverables:** Specialist model interfaces, classification/risk/routing specialists, ensemble, registry.
 
-### Sprint 5 — Hybrid Decision Intelligence [FUTURE]
+### Sprint 5 — Hybrid Decision Intelligence [ACTIVE]
 
 **Objective:** Combine LLM + specialist models + rules + evidence + decision engine + HITL + audit.
 
@@ -378,11 +388,11 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Phase 4 — Specialist Models.** After Phase 3 ML Adaptation is complete, the next priority is Specialist Models for domain-specific classification and prediction.
+**Phase 5 — Hybrid Decision Intelligence.** After Phase 4 Specialist Models is complete, the next priority is Hybrid Decision Intelligence.
 
 ## Next Priority
 
-**Phase 5 — Hybrid Decision Intelligence.** After Phase 4 Specialist Models is complete, the next priority is Hybrid Decision Intelligence.
+**Phase 6 — Additional Domain Packs.** After Phase 5 Hybrid Decision Intelligence is complete, the next priority is Additional Domain Packs.
 
 ## Deferred
 
@@ -403,8 +413,8 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 | Phase 1 | CASE v1 | COMPLETED |
 | Phase 2 | Logistics Intelligence | COMPLETED |
 | Phase 3 | ML Adaptation | COMPLETED |
-| Phase 4 | Specialist Models | ACTIVE |
-| Phase 5 | Hybrid Decision Intelligence | FUTURE |
+| Phase 4 | Specialist Models | COMPLETED |
+| Phase 5 | Hybrid Decision Intelligence | ACTIVE |
 | Phase 6 | Additional Domain Packs | FUTURE |
 | Phase 7 | Advanced Governance/Security | FUTURE |
 | Phase 8 | Production/Scale Readiness | FUTURE |
