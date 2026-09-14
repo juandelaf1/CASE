@@ -1,167 +1,225 @@
+from __future__ import annotations
+
 from typing import Any
 
 import streamlit as st
 
 from streamlit_app.components.state import get_client
 
-TEST_CASES = [
+EVAL_CASES = [
     {
-        "case_id": "eval-001",
+        "description": "Minor pothole with photo evidence",
         "report_text": "Minor pothole on Main St. Photo evidence attached.",
         "domain": "urban_operations",
         "urgency": "LOW",
         "evidence": [
             {"id": "ev-001", "type": "text", "content": "Photo confirms small pothole", "source": "test", "confidence": 0.9, "extracted_at": "2026-09-14T12:00:00Z"}
         ],
+        "expected_decision": "approve",
+        "expected_urgency": "LOW",
     },
     {
-        "case_id": "eval-002",
+        "description": "Structural crack on bridge",
         "report_text": "Structural crack on bridge over highway.",
         "domain": "urban_operations",
         "urgency": "CRITICAL",
         "evidence": [
             {"id": "ev-001", "type": "text", "content": "Inspection report flags load-bearing concern", "source": "test", "confidence": 0.95, "extracted_at": "2026-09-14T12:00:00Z"}
         ],
+        "expected_decision": "escalate",
+        "expected_urgency": "CRITICAL",
     },
     {
-        "case_id": "eval-003",
+        "description": "Illegal dumping with no evidence",
         "report_text": "Illegal dumping reported in alley.",
         "domain": "urban_operations",
         "urgency": "LOW",
         "evidence": [],
+        "expected_decision": "reject",
+        "expected_urgency": "LOW",
+        "expected_failure": True,
+        "failure_reason": "Urban domain requires evidence; this case has none. A real provider would reject or escalate.",
     },
 ]
 
 
-def _render_comparison_table(results: list[dict[str, Any]]) -> None:
-    if not results:
-        st.info("No comparison results to display.")
-        return
-
-    st.markdown("### Provider Comparison Results")
-
-    headers = ["Provider", "Model", "Cases", "Decision Acc.", "Urgency Acc.", "Avg Latency (ms)"]
-    cols = st.columns(len(headers))
-    for col, header in zip(cols, headers):
-        col.markdown(f"**{header}**")
-
-    for r in results:
-        cols = st.columns(len(headers))
-        cols[0].write(r.get("provider", "N/A"))
-        cols[1].write(r.get("model", "N/A"))
-        cols[2].write(str(r.get("total_cases", 0)))
-        cols[3].write(f"{r.get('decision_accuracy', 0):.1%}")
-        cols[4].write(f"{r.get('urgency_accuracy', 0):.1%}")
-        cols[5].write(f"{r.get('avg_latency_ms', 0):.0f}")
-
-
 def render() -> None:
     st.header("Provider Evaluation")
-    st.markdown("*Compare provider performance on the same dataset*")
+    st.markdown("*Test the triage pipeline with representative cases*")
 
     client = get_client()
 
     try:
         health = client.health_sync()
         if health.get("status") != "ok":
-            st.warning("CASE API is not healthy. Provider comparison may not work.")
+            st.warning("CASE API is not healthy.")
             return
     except Exception:
-        st.error("Cannot connect to CASE API. Start the API server first.")
+        st.error("Cannot connect to CASE API.")
         return
 
     st.markdown("---")
-    st.markdown("### Quick Evaluation")
+    st.markdown("### Pipeline Evaluation")
     st.markdown(
-        "Run a quick evaluation through the API with the MockProvider. "
-        "This tests the end-to-end pipeline with 3 representative cases."
+        "Runs 3 cases through the full triage pipeline. "
+        "With MockProvider, responses are deterministic and do not reflect real LLM analysis."
     )
 
-    if st.button("Run Quick Evaluation", key="run_quick_eval"):
-        results = []
-        correct_decisions = 0
-        correct_urgencies = 0
-        total_cases = len(TEST_CASES)
+    if st.button("Run Evaluation", key="run_quick_eval"):
+        results = _run_evaluation(client)
+        _render_results(results)
 
-        expected = {
-            "eval-001": ("approve", "LOW"),
-            "eval-002": ("escalate", "CRITICAL"),
-            "eval-003": ("reject", "LOW"),
-        }
 
-        with st.spinner("Running evaluation..."):
-            for test_case in TEST_CASES:
-                try:
-                    result = client.triage_sync(**test_case)
-                    if result.get("error"):
-                        st.warning(f"Case {test_case['case_id']}: Error - {result.get('detail', 'Unknown')}")
-                        continue
+def _run_evaluation(client) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
 
-                    data = result.get("data", {})
-                    exp_decision, exp_urgency = expected.get(test_case["case_id"], ("unknown", "UNKNOWN"))
+    with st.spinner("Running evaluation..."):
+        for i, test_case in enumerate(EVAL_CASES):
+            try:
+                payload = {
+                    "report_text": test_case["report_text"],
+                    "domain": test_case["domain"],
+                    "urgency": test_case["urgency"],
+                }
+                if test_case["evidence"]:
+                    payload["evidence"] = test_case["evidence"]
 
-                    if data.get("action") == exp_decision:
-                        correct_decisions += 1
-                    if data.get("urgency") == exp_urgency:
-                        correct_urgencies += 1
+                result = client.triage_sync(**payload)
 
+                if result.get("error"):
+                    detail = result.get("detail", {})
+                    error_msg = detail.get("error", "Unknown error") if isinstance(detail, dict) else str(detail)
                     results.append({
-                        "case_id": test_case["case_id"],
-                        "decision": data.get("action", "N/A"),
-                        "urgency": data.get("urgency", "N/A"),
-                        "confidence": data.get("confidence", 0),
-                        "processing_time_ms": data.get("processing_time_ms", 0),
-                        "expected_decision": exp_decision,
-                        "expected_urgency": exp_urgency,
+                        "index": i,
+                        "description": test_case["description"],
+                        "expected_decision": test_case["expected_decision"],
+                        "expected_urgency": test_case["expected_urgency"],
+                        "expected_failure": test_case.get("expected_failure", False),
+                        "failure_reason": test_case.get("failure_reason", ""),
+                        "status": "error",
+                        "actual_decision": None,
+                        "actual_urgency": None,
+                        "error": error_msg,
+                        "confidence": 0,
+                        "processing_time_ms": 0,
                     })
-                except Exception as e:
-                    st.warning(f"Case {test_case['case_id']}: {e}")
+                    continue
 
-        if results:
-            st.markdown("### Evaluation Results")
+                data = result.get("data", {})
+                actual_decision = data.get("action", "N/A")
+                actual_urgency = data.get("urgency", "N/A")
+                expected_decision = test_case["expected_decision"]
+                expected_urgency = test_case["expected_urgency"]
 
-            headers = ["Case", "Decision", "Expected", "Match", "Urgency", "Expected", "Match", "Confidence", "Time (ms)"]
-            cols = st.columns(len(headers))
-            for col, header in zip(cols, headers):
-                col.markdown(f"**{header}**")
+                decision_match = actual_decision == expected_decision
+                urgency_match = actual_urgency == expected_urgency
 
-            for r in results:
-                cols = st.columns(len(headers))
-                cols[0].write(r["case_id"])
-                cols[1].write(r["decision"])
-                cols[2].write(r["expected_decision"])
-                cols[3].write("Yes" if r["decision"] == r["expected_decision"] else "No")
-                cols[4].write(r["urgency"])
-                cols[5].write(r["expected_urgency"])
-                cols[6].write("Yes" if r["urgency"] == r["expected_urgency"] else "No")
-                cols[7].write(f"{r['confidence']:.2f}")
-                cols[8].write(f"{r['processing_time_ms']:.0f}")
+                if test_case.get("expected_failure"):
+                    status = "expected_behavior"
+                elif decision_match and urgency_match:
+                    status = "match"
+                elif decision_match:
+                    status = "partial_match"
+                else:
+                    status = "mismatch"
 
-            st.markdown("---")
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Decision Accuracy", f"{correct_decisions}/{total_cases}", f"{correct_decisions/total_cases:.0%}")
-            col2.metric("Urgency Accuracy", f"{correct_urgencies}/{total_cases}", f"{correct_urgencies/total_cases:.0%}")
-            col3.metric("Total Cases", str(total_cases))
+                results.append({
+                    "index": i,
+                    "description": test_case["description"],
+                    "expected_decision": expected_decision,
+                    "expected_urgency": expected_urgency,
+                    "expected_failure": test_case.get("expected_failure", False),
+                    "failure_reason": test_case.get("failure_reason", ""),
+                    "status": status,
+                    "actual_decision": actual_decision,
+                    "actual_urgency": actual_urgency,
+                    "error": None,
+                    "confidence": data.get("confidence", 0),
+                    "processing_time_ms": data.get("processing_time_ms", 0),
+                })
+            except Exception as e:
+                results.append({
+                    "index": i,
+                    "description": test_case["description"],
+                    "expected_decision": test_case["expected_decision"],
+                    "expected_urgency": test_case["expected_urgency"],
+                    "expected_failure": test_case.get("expected_failure", False),
+                    "failure_reason": test_case.get("failure_reason", ""),
+                    "status": "error",
+                    "actual_decision": None,
+                    "actual_urgency": None,
+                    "error": str(e),
+                    "confidence": 0,
+                    "processing_time_ms": 0,
+                })
 
-    st.markdown("---")
-    st.markdown("### Provider Comparison")
-    st.markdown(
-        "To compare providers (e.g., MockProvider vs OllamaProvider), "
-        "run the evaluation with different provider configurations and compare results side by side."
-    )
+    return results
 
-    with st.expander("How to compare providers"):
+
+def _render_results(results: list[dict[str, Any]]) -> None:
+    if not results:
+        st.info("No results to display.")
+        return
+
+    status_labels = {
+        "match": ("pass", "Full match"),
+        "partial_match": ("warn", "Decision matches"),
+        "mismatch": ("error", "Mismatch"),
+        "expected_behavior": ("info", "Expected"),
+        "error": ("error", "Error"),
+    }
+
+    st.markdown("### Results")
+
+    for r in results:
+        status_type, status_text = status_labels.get(r["status"], ("info", r["status"]))
+
+        with st.container():
+            st.markdown(f"**{r['description']}**")
+
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.caption("Decision")
+                if r["actual_decision"]:
+                    st.markdown(f"`{r['actual_decision']}` (expected `{r['expected_decision']}`)")
+                elif r["error"]:
+                    st.error(r["error"][:100])
+            with col2:
+                st.caption("Urgency")
+                if r["actual_urgency"]:
+                    st.markdown(f"`{r['actual_urgency']}` (expected `{r['expected_urgency']}`)")
+            with col3:
+                st.caption("Status")
+                if status_type == "pass":
+                    st.success(status_text)
+                elif status_type == "warn":
+                    st.warning(status_text)
+                elif status_type == "error":
+                    st.error(status_text)
+                else:
+                    st.info(status_text)
+            with col4:
+                st.caption("Confidence")
+                if r["confidence"]:
+                    st.markdown(f"{r['confidence']:.0%}")
+
+            if r["failure_reason"]:
+                st.caption(r["failure_reason"])
+
+            st.divider()
+
+    total = len(results)
+    matches = sum(1 for r in results if r["status"] in ("match", "expected_behavior"))
+    errors = sum(1 for r in results if r["status"] == "error")
+
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Pipeline Success", f"{total - errors}/{total}")
+    m2.metric("Exact Matches", f"{matches}/{total}")
+    m3.metric("Errors", f"{errors}/{total}")
+
+    with st.expander("About MockProvider"):
         st.markdown(
-            "1. Start the API with MockProvider (default)\n"
-            "2. Run Quick Evaluation above\n"
-            "3. Restart the API with OllamaProvider\n"
-            "4. Run Quick Evaluation again\n"
-            "5. Compare the results"
-        )
-
-    with st.expander("Architecture note"):
-        st.markdown(
-            "The Streamlit dashboard communicates with CASE exclusively through the HTTP API. "
-            "Provider evaluation runs through the same triage pipeline as operational requests, "
-            "ensuring evaluation results reflect real system behavior."
+            "MockProvider returns deterministic responses for testing the pipeline. "
+            "It does not perform real LLM analysis. "
+            "For accurate evaluation, use OllamaProvider or a cloud provider."
         )

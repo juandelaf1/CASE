@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 import streamlit as st
@@ -5,54 +7,61 @@ import streamlit as st
 
 def render_decision(result: dict[str, Any]) -> None:
     action = result.get("action", "unknown")
-    action_colors = {
-        "approve": "🟢",
-        "reject": "🔴",
-        "escalate": "🟡",
+    action_labels = {
+        "approve": ("Approved", "Case approved for action."),
+        "reject": ("Rejected", "Case does not meet criteria."),
+        "escalate": ("Escalated", "Case requires higher-level review."),
     }
-    icon = action_colors.get(action, "⚪")
+    action_icons = {"approve": "green", "reject": "red", "escalate": "orange"}
 
-    st.markdown(f"### {icon} Decision: {action.upper()}")
-    st.markdown(f"**Reason:** {result.get('reason', 'N/A')}")
+    label, description = action_labels.get(action, (action.upper(), ""))
+    color = action_icons.get(action, "gray")
+
+    st.markdown(f":{color}[**{label}**] — {description}")
+
+    reason = result.get("reason", "")
+    if reason:
+        st.markdown(f"**Reason:** {reason}")
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Urgency", result.get("urgency", "N/A"))
+        reported = result.get("reported_urgency")
+        effective = result.get("urgency", "N/A")
+        if reported and reported != effective:
+            st.metric("Urgency", effective, delta=f"from {reported}", delta_color="off")
+        else:
+            st.metric("Urgency", effective)
     with col2:
         confidence = result.get("confidence", 0.0)
-        st.metric("Confidence", f"{confidence:.2f}")
+        st.metric("AI Confidence", f"{confidence:.0%}")
     with col3:
-        st.metric("Processing Time", f"{result.get('processing_time_ms', 0):.0f} ms")
+        ms = result.get("processing_time_ms", 0)
+        st.metric("Processed", f"{ms:.0f} ms")
+
+    case_id = result.get("case_id")
+    external_ref = result.get("external_reference")
+    if case_id or external_ref:
+        with st.container():
+            parts = []
+            if case_id:
+                parts.append(f"Case: `{case_id}`")
+            if external_ref:
+                parts.append(f"Reference: `{external_ref}`")
+            st.caption(" · ".join(parts))
 
 
 def render_evidence(result: dict[str, Any]) -> None:
-    st.markdown("### Evidence")
     evidence_summary = result.get("evidence_summary", "")
     if evidence_summary:
-        st.info(f"**Summary:** {evidence_summary}")
-
-
-def render_audit_events(events: list[dict[str, Any]]) -> None:
-    if not events:
-        st.info("No audit events recorded.")
-        return
-
-    st.markdown("### Audit Trail")
-    for event in events:
-        event_type = event.get("event_type", "unknown")
-        st.markdown(f"- **{event_type}** at {event.get('timestamp', 'N/A')}")
+        st.info(f"**Evidence Analysis:** {evidence_summary}")
 
 
 def render_manual_review(detail: dict[str, Any]) -> None:
-    st.warning("**REQUIRES MANUAL REVIEW**")
-    st.markdown(f"**Error:** {detail.get('error', 'Unknown error')}")
-    st.markdown(f"**Category:** {detail.get('category', 'N/A')}")
-    st.markdown(f"**Recoverable:** {detail.get('recoverable', False)}")
-    st.markdown(f"**Retryable:** {detail.get('retryable', False)}")
+    st.warning("**Manual Review Required**")
+    error_msg = detail.get("error", "Unknown error")
+    st.markdown(f"**Reason:** {error_msg}")
 
 
 def render_error(detail: dict[str, Any]) -> None:
-    st.error(f"**Error:** {detail.get('error', 'Unknown error')}")
-    st.markdown(f"**Category:** {detail.get('category', 'N/A')}")
-    if detail.get("requires_manual_review"):
-        render_manual_review(detail)
+    error_msg = detail.get("error", "Unknown error")
+    st.error(f"**Could not process case:** {error_msg}")

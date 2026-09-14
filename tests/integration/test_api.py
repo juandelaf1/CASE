@@ -15,7 +15,8 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
-        assert data["version"] == "0.1.0"
+        assert "version" in data
+        assert data["version"]  # version is read from pyproject.toml
 
 
 class TestDomainsEndpoint:

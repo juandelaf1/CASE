@@ -30,27 +30,34 @@ class CASEClient:
 
     async def triage(
         self,
-        case_id: str,
         report_text: str,
         domain: str,
         urgency: str = "MEDIUM",
+        case_id: str | None = None,
+        external_reference: str | None = None,
         evidence: list[dict[str, Any]] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        payload = {
-            "case_id": case_id,
+        payload: dict[str, Any] = {
             "report_text": report_text,
             "domain": domain,
             "urgency": urgency,
-            "evidence": evidence or [],
-            "metadata": metadata or {},
         }
+        if case_id:
+            payload["case_id"] = case_id
+        if external_reference:
+            payload["external_reference"] = external_reference
+        if evidence:
+            payload["evidence"] = evidence
+        if metadata:
+            payload["metadata"] = metadata
+
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/triage",
                 json=payload,
             )
-            if response.status_code == 422:
+            if response.status_code in (400, 422):
                 detail = response.json().get("detail", {})
                 return {"error": True, "detail": detail}
             response.raise_for_status()
@@ -81,27 +88,34 @@ class CASEClient:
 
     def triage_sync(
         self,
-        case_id: str,
         report_text: str,
         domain: str,
         urgency: str = "MEDIUM",
+        case_id: str | None = None,
+        external_reference: str | None = None,
         evidence: list[dict[str, Any]] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        payload = {
-            "case_id": case_id,
+        payload: dict[str, Any] = {
             "report_text": report_text,
             "domain": domain,
             "urgency": urgency,
-            "evidence": evidence or [],
-            "metadata": metadata or {},
         }
+        if case_id:
+            payload["case_id"] = case_id
+        if external_reference:
+            payload["external_reference"] = external_reference
+        if evidence:
+            payload["evidence"] = evidence
+        if metadata:
+            payload["metadata"] = metadata
+
         with httpx.Client(timeout=self._timeout) as client:
             response = client.post(
                 f"{self._base_url}/api/v1/triage",
                 json=payload,
             )
-            if response.status_code == 422:
+            if response.status_code in (400, 422):
                 detail = response.json().get("detail", {})
                 return {"error": True, "detail": detail}
             response.raise_for_status()
@@ -288,17 +302,6 @@ class CASEClient:
                     "notes": notes,
                     "justification": justification,
                 },
-            )
-            if response.status_code == 404:
-                return {"error": True, "detail": "Decision not found"}
-            response.raise_for_status()
-            return response.json()
-
-    async def start_review(self, decision_id: str, actor: str = "human", justification: str = "") -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            response = await client.post(
-                f"{self._base_url}/api/v1/hitl/{decision_id}/under-review",
-                json={"actor": actor, "justification": justification},
             )
             if response.status_code == 404:
                 return {"error": True, "detail": "Decision not found"}

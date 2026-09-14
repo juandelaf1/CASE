@@ -1,8 +1,9 @@
 import time
+import uuid
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from case_core.composition import create_app_dependencies
 from case_core.contracts.audit import AuditEvent
@@ -10,10 +11,11 @@ from case_core.contracts.decision import HumanOverride
 from case_core.contracts.evidence import EvidenceItem, EvidenceType
 from case_core.contracts.lifecycle import DecisionLifecycle
 from case_core.contracts.operational_case import OperationalCase, UrgencyLevel
+from case_core.version import VERSION
 
 app = FastAPI(
     title="CASE — AI Decision Platform",
-    version="0.1.0",
+    version=VERSION,
     description="Domain-agnostic AI Decision Platform for operational case triage",
 )
 
@@ -22,6 +24,18 @@ engine = _deps.engine
 registry = _deps.registry
 audit_adapter = _deps.audit_adapter
 decision_repo = _deps.decision_repo
+
+VALID_EVIDENCE_TYPES = {t.value for t in EvidenceType}
+VALID_URGENCY_LEVELS = {u.value for u in UrgencyLevel}
+MAX_REPORT_LENGTH = 50000
+MAX_EVIDENCE_ITEMS = 10
+MAX_EVIDENCE_CONTENT_LENGTH = 10000
+MAX_JUSTIFICATION_LENGTH = 5000
+
+
+def _generate_case_id() -> str:
+    short = uuid.uuid4().hex[:8].upper()
+    return f"CASE-{short}"
 
 
 class EvidenceRequest(BaseModel):
@@ -32,23 +46,79 @@ class EvidenceRequest(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     extracted_at: str
 
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v: str) -> str:
+        if v not in VALID_EVIDENCE_TYPES:
+            raise ValueError(f"Invalid evidence type: {v}. Valid types: {sorted(VALID_EVIDENCE_TYPES)}")
+        return v
+
+    @field_validator("content")
+    @classmethod
+    def validate_content(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Evidence content cannot be empty")
+        if len(v) > MAX_EVIDENCE_CONTENT_LENGTH:
+            raise ValueError(f"Evidence content too long (max {MAX_EVIDENCE_CONTENT_LENGTH} characters)")
+        return v.strip()
+
+    @field_validator("source")
+    @classmethod
+    def validate_source(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Evidence source cannot be empty")
+        return v.strip()
+
 
 class TriageRequest(BaseModel):
-    case_id: str
+    case_id: str | None = None
     report_text: str
     domain: str
     urgency: str = "MEDIUM"
     evidence: list[EvidenceRequest] = Field(default_factory=list)
+    external_reference: str | None = None
     metadata: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("report_text")
+    @classmethod
+    def validate_report_text(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Report text cannot be empty")
+        if len(v) > MAX_REPORT_LENGTH:
+            raise ValueError(f"Report text too long (max {MAX_REPORT_LENGTH} characters)")
+        return v.strip()
+
+    @field_validator("urgency")
+    @classmethod
+    def validate_urgency(cls, v: str) -> str:
+        if v not in VALID_URGENCY_LEVELS:
+            raise ValueError(f"Invalid urgency: {v}. Valid levels: {sorted(VALID_URGENCY_LEVELS)}")
+        return v
+
+    @field_validator("domain")
+    @classmethod
+    def validate_domain(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Domain cannot be empty")
+        return v.strip()
+
+    @field_validator("evidence")
+    @classmethod
+    def validate_evidence_count(cls, v: list[EvidenceRequest]) -> list[EvidenceRequest]:
+        if len(v) > MAX_EVIDENCE_ITEMS:
+            raise ValueError(f"Too many evidence items (max {MAX_EVIDENCE_ITEMS})")
+        return v
 
 
 class TriageDecisionResponse(BaseModel):
     decision_id: str
     case_id: str
+    external_reference: str | None = None
     domain: str
     action: str
     reason: str
     urgency: str
+    reported_urgency: str | None = None
     confidence: float
     evidence_summary: str
     lifecycle: str
@@ -70,6 +140,13 @@ class HITLActionRequest(BaseModel):
     notes: str = ""
     justification: str = ""
 
+    @field_validator("justification")
+    @classmethod
+    def validate_justification(cls, v: str) -> str:
+        if v and len(v) > MAX_JUSTIFICATION_LENGTH:
+            raise ValueError(f"Justification too long (max {MAX_JUSTIFICATION_LENGTH} characters)")
+        return v
+
 
 class HITLModifyRequest(BaseModel):
     action: str
@@ -81,6 +158,35 @@ class HITLModifyRequest(BaseModel):
     notes: str = ""
     justification: str = ""
 
+    @field_validator("action")
+    @classmethod
+    def validate_action(cls, v: str) -> str:
+        valid = {"approve", "reject", "escalate"}
+        if v not in valid:
+            raise ValueError(f"Invalid action: {v}. Valid actions: {sorted(valid)}")
+        return v
+
+    @field_validator("urgency")
+    @classmethod
+    def validate_urgency(cls, v: str) -> str:
+        if v not in VALID_URGENCY_LEVELS:
+            raise ValueError(f"Invalid urgency: {v}. Valid levels: {sorted(VALID_URGENCY_LEVELS)}")
+        return v
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Reason cannot be empty")
+        return v.strip()
+
+    @field_validator("justification")
+    @classmethod
+    def validate_justification(cls, v: str) -> str:
+        if v and len(v) > MAX_JUSTIFICATION_LENGTH:
+            raise ValueError(f"Justification too long (max {MAX_JUSTIFICATION_LENGTH} characters)")
+        return v
+
 
 class HITLEscalateRequest(BaseModel):
     actor: str = "human"
@@ -90,7 +196,7 @@ class HITLEscalateRequest(BaseModel):
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": VERSION}
 
 
 @app.get("/domains")
@@ -106,6 +212,9 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
             detail=f"Unknown domain: {request.domain}. Valid domains: {registry.list_domains()}",
         )
 
+    case_id = request.case_id or _generate_case_id()
+    reported_urgency = request.urgency
+
     evidence = [
         EvidenceItem(
             id=e.id,
@@ -118,13 +227,17 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
         for e in request.evidence
     ]
 
+    meta = dict(request.metadata)
+    if request.external_reference:
+        meta["external_reference"] = request.external_reference
+
     case = OperationalCase(
-        case_id=request.case_id,
+        case_id=case_id,
         report_text=request.report_text,
         domain=request.domain,
         urgency=UrgencyLevel(request.urgency),
         evidence=evidence,
-        metadata=request.metadata,
+        metadata=meta,
     )
 
     result = await engine.execute(case)
@@ -154,10 +267,12 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
     return TriageDecisionResponse(
         decision_id=decision.decision_id,
         case_id=decision.case_id,
+        external_reference=request.external_reference,
         domain=decision.domain,
         action=decision.action,
         reason=decision.reason,
         urgency=decision.urgency,
+        reported_urgency=reported_urgency,
         confidence=decision.confidence,
         evidence_summary=decision.evidence_summary,
         lifecycle=decision.lifecycle.value,
