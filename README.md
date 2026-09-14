@@ -1,276 +1,302 @@
 <p align="center">
-  <img src="docs/images/CASE_banner.jpg" alt="CASE Banner" width="100%">
+  <img src="docs/images/CASE_banner.jpg" alt="CASE — Case Assessment and Structured Evaluation" width="100%">
 </p>
 
-# CASE — AI Decision Platform
+<h1 align="center">CASE</h1>
+<h3 align="center">Case Assessment and Structured Evaluation</h3>
 
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Pydantic v2](https://img.shields.io/badge/Pydantic-v2%2B-e91e63?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-526%20passed-brightgreen)]()
-[![Ruff](https://img.shields.io/badge/ruff-0%20errors-00b841)](https://github.com/astral-sh/ruff)
-[![Mypy](https://img.shields.io/badge/mypy-0%20errors-1f6feb)](https://mypy-lang.org/)
+<p align="center">
+  Conservative AI decision orchestration for operational workflows.
+</p>
 
-> Domain-agnostic, provider-agnostic AI Decision Platform for operational case triage with human oversight.
+<p align="center">
+  <a href="https://github.com/juandelaf1/CASE/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-blue" alt="Release"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
+  <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/pydantic-v2%2B-e91e63?logo=pydantic&logoColor=white" alt="Pydantic">
+  <img src="https://img.shields.io/badge/fastapi-0.115%2B-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+</p>
+
+<p align="center">
+  <strong>526 passed · 7 skipped · 0 failed</strong><br>
+  <sub>ruff 0 errors · mypy 0 errors · 82 source files</sub>
+</p>
 
 ---
 
 ## What is CASE?
 
-CASE (Case Assessment and Structured Evaluation) is an orchestration layer that transforms unstructured operational cases into structured, validated, evidence-backed decisions. It does **not** make autonomous decisions — it proposes, validates, assesses risk, and routes to human review when needed.
+CASE is a domain-agnostic, provider-agnostic AI decision orchestration platform. It transforms unstructured operational cases into structured, validated, evidence-backed decisions — with human oversight enforced by design.
+
+CASE is **not** an autonomous decision-maker. It is an orchestration layer that introduces a **controlled decision boundary** between probabilistic LLM output and operational action. Raw model output is never trusted directly. Every decision passes through multi-stage validation, domain-specific policy checks, risk evaluation, and conservative routing before persistence.
 
 **What CASE is:**
-- An orchestration layer between raw LLM output and business decisions
 - A validation pipeline that never trusts raw LLM output
 - A risk-based automation system with human oversight (HITL)
 - A domain-agnostic framework supporting multiple operational domains
+- An auditable decision system with full traceability
 
-**What CASE is NOT:**
-- Not a fine-tuned model
-- Not a RAG system
+**What CASE is not:**
+- Not a fine-tuned model or RAG system
 - Not an agent framework
-- Not a real-time production system
+- Not a production deployment
 - Not an autonomous decision-maker
 
 ---
 
-## Problem CASE Solves
+## Why CASE?
 
-Operational teams receive unstructured cases (reports, incidents, requests) that need structured evaluation: What should we do? How urgent is it? What evidence supports the decision? Is this safe to automate, or should a human review it?
+Large language models are probabilistic systems. Their output can be inconsistent, hallucinated, or subtly wrong in ways that are difficult to detect automatically. Directly routing raw LLM output to operational decisions introduces unacceptable risk.
 
-CASE provides:
-1. **Structured output** from unstructured input via LLM
-2. **Multi-stage validation** (schema, semantic, domain, security)
-3. **Risk-based automation** — safe cases auto-approved, risky cases to humans
-4. **Full audit trail** — every decision is traceable
-5. **Human-in-the-loop** — humans can approve, reject, modify, or escalate
+CASE addresses this by introducing a structured orchestration layer:
+
+1. **Receive** an operational case with evidence
+2. **Obtain** a model proposal via the LLM provider port
+3. **Validate** the output through schema, semantic, and domain constraints
+4. **Retry** on transient and validation failures with exponential backoff
+5. **Evaluate** automation risk using domain-specific policies
+6. **Route** to the appropriate outcome: auto-approve, human review, or escalation
+7. **Persist** the decision with full audit trail
+8. **Enable** human override at any point in the lifecycle
+
+The architectural insight is that **uncertainty should increase human involvement, not decrease it**. When confidence drops, evidence is thin, or risk rises, CASE routes toward human judgment rather than automated action.
+
+---
+
+## Core Design Principles
+
+| Principle | Implementation |
+|-----------|---------------|
+| **Hexagonal architecture** | Ports and Adapters pattern — core logic depends on ABC interfaces, not implementations |
+| **Provider neutrality** | LLM providers implement `LLMProvider` port; swapping requires zero core changes |
+| **Domain-policy abstraction** | Each domain registers a `DomainPolicy` and `AutomationPolicy`; core remains domain-agnostic |
+| **Contract-driven validation** | All data flows through Pydantic v2 schemas with strict type enforcement |
+| **Reliability pipeline** | Multi-stage validation: parse → schema → semantic → domain → retry → repair |
+| **Risk-based routing** | Three outcomes: `AUTO_APPROVE`, `HUMAN_REVIEW`, `ESCALATE` — conservative by default |
+| **Human-in-the-loop** | Full decision lifecycle with approve, reject, modify, and escalate operations |
+| **Auditability** | Every event logged through `AuditPort` with full traceability |
+| **Deterministic evaluation** | Synthetic evaluation with reproducible metrics, no external dependencies |
+| **Counterfactual invariance** | Bias testing verifies decisions remain stable across irrelevant attribute changes |
 
 ---
 
 ## Architecture
 
-```text
-Streamlit (display only)
-   ↓
-FastAPI (HTTP adapter)
-   ↓
-Composition Root (dependency wiring)
-   ↓
-TriageEngine (application layer orchestrator)
-   ↓
-DomainRegistry → DomainPolicy (domain resolution)
-   ↓
-PromptBuilder → LLMProvider (via port)
-   ↓
-ReliabilityPipeline (parse → schema → semantic → domain → retry → repair)
-   ↓
-AutomationEvaluator (risk assessment → AUTO_APPROVE / HUMAN_REVIEW / ESCALATE)
-   ↓
-DecisionRepositoryPort (persistence)
-   ↓
-AuditPort (audit trail)
+```mermaid
+graph TB
+    subgraph "Presentation Layer"
+        UI[Streamlit UI<br/>display only]
+    end
+
+    subgraph "API Layer"
+        API[FastAPI<br/>11 endpoints]
+    end
+
+    subgraph "Application Layer"
+        CR[Composition Root<br/>dependency wiring]
+        TE[TriageEngine<br/>orchestrator]
+    end
+
+    subgraph "Domain Layer"
+        DR[DomainRegistry<br/>3 domains]
+        DP1[UrbanPolicy]
+        DP2[LogisticsPolicy]
+        DP3[InfrastructurePolicy]
+    end
+
+    subgraph "Intelligence Layer"
+        PB[PromptBuilder<br/>security constraints]
+        LLM[LLMProvider port]
+        MP[MockProvider]
+        OP[OllamaProvider]
+        CP[CloudProvider]
+    end
+
+    subgraph "Reliability Layer"
+        RP[ReliabilityPipeline<br/>validation chain]
+        AE[AutomationEvaluator<br/>risk assessment]
+    end
+
+    subgraph "Persistence Layer"
+        DB[(SQLite)]
+        AUD[AuditPort]
+    end
+
+    UI --> API
+    API --> CR
+    CR --> TE
+    TE --> DR
+    DR --> DP1 & DP2 & DP3
+    TE --> PB
+    PB --> LLM
+    LLM --> MP & OP & CP
+    TE --> RP
+    RP --> AE
+    TE --> DB
+    TE --> AUD
+
+    style TE fill:#f9f,stroke:#333,stroke-width:2px
+    style RP fill:#bbf,stroke:#333,stroke-width:2px
+    style AE fill:#fbb,stroke:#333,stroke-width:2px
 ```
 
-### Key Components
+### Connected vs. Isolated
 
-| Layer | Component | Responsibility |
-|-------|-----------|----------------|
-| **Contracts** | Pydantic v2 schemas | Type-safe data models for all domain objects |
-| **Ports** | ABC interfaces | LLMProvider, DomainPolicy, AuditPort, RepositoryPort, AutomationPolicy |
-| **Domain** | DomainRegistry + DomainPacks | Domain-specific validation, urgency classification, routing |
-| **Providers** | Mock, Ollama, Cloud | LLM provider implementations behind LLMProvider port |
-| **Reliability** | ReliabilityPipeline | JSON parse → schema validate → semantic validate → domain validate → retry → repair |
-| **Automation** | AutomationEvaluator | Risk assessment, conservative automation with HITL fallback |
-| **Application** | TriageEngine | Orchestrates the full triage flow |
-| **API** | FastAPI endpoints | HTTP interface, delegates to TriageEngine |
-| **Persistence** | SQLite adapters | Decision storage, audit trail, HITL queue |
+The diagram above shows the **connected execution path** — components that are wired together and run as a system. CASE also contains implemented and tested modules that are **not** connected to this pipeline. See [Project Status](#project-status) for the complete distinction.
 
 ---
 
 ## Decision Flow
 
-```text
-Case arrives
-  → LLM proposes decision (approve/reject/escalate)
-  → ReliabilityPipeline validates output
-     → JSON parse check
-     → Schema validation (required fields, enums, confidence range)
-     → Semantic validation (reason length, evidence quality)
-     → Domain validation (policy-specific evidence requirements)
-     → Retry on transient failures (max 2 retries)
-     → Retry on validation failures (max 3 retries)
-     → Terminal failure if exhausted
-  → AutomationEvaluator assesses risk
-     → Risk signals: confidence, evidence quality, policy violations, domain complexity
-     → Effective urgency: max(LLM urgency, case urgency) — prevents downgrade
-  → Decision produced
-     → AUTO_APPROVE: low risk, sufficient evidence, valid schema
-     → HUMAN_REVIEW: ambiguous, medium risk, or insufficient evidence
-     → ESCALATE: critical risk, policy violation, or schema failure
-  → Persisted to database
-  → Audit event logged
+```mermaid
+flowchart LR
+    A[Case Received] --> B[Domain Resolution]
+    B --> C[Prompt Construction]
+    C --> D[LLM Proposal]
+    D --> E{JSON Parse}
+    E -->|fail| F[Retry / Repair]
+    E -->|pass| G{Schema Validation}
+    G -->|fail| F
+    G -->|pass| H{Semantic Validation}
+    H -->|fail| F
+    H -->|pass| I{Domain Validation}
+    I -->|fail| F
+    I -->|pass| J[Risk Assessment]
+    F -->|exhausted| K[Terminal Failure]
+    J --> L{Automation Decision}
+    L -->|AUTO_APPROVE| M[Approve & Persist]
+    L -->|HUMAN_REVIEW| N[Route to Human]
+    L -->|ESCALATE| O[Escalate to Supervisor]
+    M --> P[Audit Log]
+    N --> P
+    O --> P
+    K --> P
 ```
 
----
+### Decision Routing
 
-## Automation — Risk-Based Decision Routing
+| Outcome | Condition | Behavior |
+|---------|-----------|----------|
+| `AUTO_APPROVE` | Low risk, valid schema, high confidence, sufficient evidence | Decision persisted, audit logged |
+| `HUMAN_REVIEW` | Medium risk, ambiguous evidence, confidence below threshold | Routed to human review queue |
+| `ESCALATE` | Critical risk, policy violation, schema failure after retries | Escalated to supervisor |
 
-CASE uses **risk-based automation**, not full autonomy. The system classifies each case into one of three outcomes:
-
-### AUTO_APPROVE
-
-Case is safe to automate:
-- Decision schema is valid
-- Confidence is high
-- Evidence quality is sufficient
-- No policy violations
-- Risk assessment is LOW
-
-### HUMAN_REVIEW
-
-Case requires human judgment:
-- Medium risk level
-- Ambiguous evidence
-- Confidence below threshold
-- Domain-specific concerns
-- Default for Urban and Infrastructure domains
-
-### ESCALATE
-
-Case is critical and must go to a supervisor:
-- Critical risk level
-- Policy violation detected
-- Schema validation failed after retries
-- Evidence quality critically low
-
-**Conservative by design:** When in doubt, CASE routes to humans. The system is designed to err on the side of human review rather than automated action.
+**Conservative by design:** When uncertainty or risk increases, CASE prefers human review over automation. The system is designed to err on the side of caution.
 
 ---
 
-## Supported Domains
+## Project Status
 
-| Domain | Policy | Routing | Automation | Bias Pairs |
-|--------|--------|---------|------------|------------|
-| **Logistics** | Full | 6 incident types | LogisticsAutomationPolicy (5 departments) | 10 pairs |
-| **Urban Operations** | Partial | Generic | DefaultAutomationPolicy (conservative) | 0 |
-| **Infrastructure** | Partial | Generic | DefaultAutomationPolicy (conservative) | 0 |
+> Verified against repository state. Last checked: 2026-09-14.
 
-### Logistics Domain Pack
+### Connected Core
 
-- **Incident Types:** delivery_delay, delivery_failure, stock_issue, warehouse_delay, damaged_goods, transport_disruption
-- **Departments:** logistics, warehouse, fleet, operations, customer_service
-- **Recommended Actions:** Per incident type, per department
-- **Automation:** Full risk-based automation with domain-specific rules
+These components are wired into the running system via `composition.py` and `TriageEngine`:
 
-### Urban Operations
+| Component | Location | Status |
+|-----------|----------|--------|
+| Contracts (9 Pydantic v2 schemas) | `contracts/` | Connected |
+| Ports (6 ABC interfaces) | `ports/` | Connected |
+| DomainRegistry (3 domains) | `domain/registry.py` | Connected |
+| TriageEngine (179 lines) | `application/engine.py` | Connected |
+| ReliabilityPipeline | `reliability/pipeline.py` | Connected |
+| AutomationEvaluator | `reliability/automation.py` | Connected |
+| PromptBuilder | `prompts/builder.py` | Connected |
+| MockProvider (default) | `providers/mock.py` | Connected |
+| OllamaProvider | `providers/ollama.py` | Connected |
+| CloudProvider | `providers/cloud.py` | Connected |
+| SQLite persistence | `case_infra/persistence/` | Connected |
+| FastAPI API (11 endpoints) | `case_api/api/v1/app.py` | Connected |
+| Streamlit UI (display only) | `streamlit_app/` | Connected |
+| Evaluation framework | `evaluation/` | Connected |
 
-- Evidence validation: requires 1 text evidence
-- Urgency classification: keyword-based
-- Automation: DefaultAutomationPolicy (conservative, HUMAN_REVIEW default)
+### Implemented but Isolated
 
-### Infrastructure
+These modules are implemented, tested, but **not wired** into the main pipeline:
 
-- Evidence validation: requires non-empty evidence
-- Urgency classification: keyword-based
-- Automation: DefaultAutomationPolicy (conservative, HUMAN_REVIEW default)
+| Module | Files | Tests | Purpose |
+|--------|-------|-------|---------|
+| Logistics Intelligence | 8 files in `domain/` | 26 | Shipment classification, routing, carrier matching |
+| ML Adaptation | 7 files in `ml/` | 26 | Training abstractions, dataset pipeline |
+| Specialist Models | 2 files in `ml/` | 21 | Keyword-based classification/risk/routing |
+| Hybrid Decision Engine | 1 file in `hybrid/` | 18 | Multi-source decision combination |
+| Real Estate Domain | 1 file in `domain/` | 28 | Domain policy (not registered) |
+| Governance | 1 file in `governance/` | 28 | Security, compliance, RBAC |
+| Production | 1 file in `production/` | 28 | Circuit breaker, rate limiter, health checks |
+
+These demonstrate the architecture's extensibility. Wiring them requires explicit architectural decision with documented justification.
 
 ---
 
-## Providers
-
-| Provider | Type | Use Case |
-|----------|------|----------|
-| **MockProvider** | Deterministic | Testing, demo, evaluation |
-| **OllamaProvider** | Local LLM | Development, offline evaluation |
-| **CloudProvider** | API-based | Production (requires API key) |
-
-All providers implement the `LLMProvider` port. Swapping providers requires zero changes to core logic.
-
----
-
-## Installation
+## Quick Start
 
 ### Prerequisites
 
 - Python 3.11+
-- pip or conda
 
 ### Setup
 
 ```bash
-# Clone the repository
-git clone <repository-url>
+git clone https://github.com/juandelaf1/CASE.git
 cd CASE
-
-# Create virtual environment
 python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # Linux/Mac
-
-# Install dependencies
+source .venv/bin/activate        # Linux/Mac
+# .venv\Scripts\activate         # Windows
 pip install -e ".[dev]"
 ```
 
-### Verify Installation
+### Verify
 
 ```bash
-# Run tests
-pytest tests/ -v
+pytest tests/ -q --ignore=tests/unit/test_streamlit_client.py
+# Expected: 526 passed, 7 skipped, 0 failed
 
-# Check code quality
 ruff check src tests
-mypy src
+# Expected: All checks passed
+
+mypy src --ignore-missing-imports
+# Expected: Success: no issues found in 82 source files
 ```
 
----
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
-| `OLLAMA_MODEL` | `llama3.2` | Ollama model name |
-| `OPENAI_API_KEY` | — | Cloud provider API key |
-| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Cloud provider base URL |
-| `CASE_DB_PATH` | `case.db` | SQLite database path |
-
-### Switching Providers
-
-In `src/case_core/composition.py`:
-
-```python
-# Default: MockProvider (for testing/demo)
-provider: LLMProvider = MockProvider()
-
-# For Ollama:
-from case_core.providers.ollama import OllamaProvider
-provider = OllamaProvider(model="llama3.2")
-
-# For Cloud (OpenAI-compatible):
-from case_core.providers.cloud import CloudProvider
-provider = CloudProvider(api_key="your-key")
-```
-
----
-
-## Running
-
-### API Server
+### Run the API
 
 ```bash
 uvicorn case_api.api.v1.app:app --reload --host 0.0.0.0 --port 8000
+# API docs: http://localhost:8000/docs
 ```
 
-API docs available at: `http://localhost:8000/docs`
-
-### Streamlit UI
+### Run the UI
 
 ```bash
 cd streamlit_app
 streamlit run app.py
+```
+
+### Run a Demo
+
+```bash
+python examples/demo_auto_approve.py
+```
+
+---
+
+## Demos
+
+The `examples/` directory contains deterministic demo scripts that exercise the full pipeline:
+
+| Script | Scenario | Expected Outcome |
+|--------|----------|------------------|
+| `demo_auto_approve.py` | Low-risk logistics case with sufficient evidence | `AUTO_APPROVE` |
+| `demo_human_review.py` | Ambiguous case with medium confidence | `HUMAN_REVIEW` |
+| `demo_escalate.py` | Critical case with policy violation | `ESCALATE` |
+| `demo_invalid_output.py` | Malformed LLM output | Validation failure with retry |
+| `demo_hitl_lifecycle.py` | Full HITL workflow (approve → reject → modify) | Complete lifecycle |
+| `demo_all_domains.py` | Cases across all three registered domains | Domain-specific routing |
+
+Run any demo:
+
+```bash
+python examples/demo_auto_approve.py
 ```
 
 ---
@@ -293,59 +319,9 @@ streamlit run app.py
 
 ---
 
-## Testing
-
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test suite
-pytest tests/unit/test_behavioral.py -v
-pytest tests/integration/test_api.py -v
-
-# Run with coverage
-pytest tests/ --cov=src --cov-report=term-missing
-```
-
-### Test Summary
-
-| Suite | Tests | Description |
-|-------|-------|-------------|
-| Behavioral | 79 | End-to-end behavioral scenarios (BS001-BS030) |
-| Contracts | 23 | Pydantic schema validation |
-| Domain | 38 | Domain policy, registry, urgency |
-| Reliability | 26 | Pipeline validation, retry, timeout |
-| Security | 31 | Prompt injection, schema manipulation |
-| Bias | 14 | Decision invariance across counterfactuals |
-| Regression | 15 | Normal, edge, failure, injection cases |
-| Mock Provider | 30 | MockProvider scenarios and contracts |
-| Ollama Provider | 13 | Ollama contract and error mapping |
-| Cloud Provider | 28 | Cloud provider contract and errors |
-| API | 11 | Integration tests for all endpoints |
-| Triage Engine | 25 | Engine orchestration and automation |
-| Ports/Prompts/SQLite | 45 | Interface, prompt, persistence tests |
-| Governance | 28 | Security, compliance (isolated) |
-| Production | 28 | Circuit breaker, rate limiter (isolated) |
-| Hybrid Decision | 18 | Decision engine (isolated) |
-| Specialist Models | 21 | Keyword-based specialists (isolated) |
-| ML Adaptation | 26 | Training abstractions (isolated) |
-| Real Estate | 28 | Domain policy (isolated) |
-| Streamlit | 2 | Boundary tests |
-
-**Total: 526 passed, 7 skipped (Ollama integration), 0 failed**
-
----
-
 ## Evaluation
 
-CASE includes an evaluation framework for measuring decision quality:
-
-```python
-from case_core.evaluation.runner import EvaluationRunner
-
-runner = EvaluationRunner(provider=MockProvider())
-results = runner.run_dataset("logistics_normal_cases")
-```
+CASE includes a deterministic evaluation framework for measuring decision quality.
 
 ### Metrics
 
@@ -360,65 +336,133 @@ results = runner.run_dataset("logistics_normal_cases")
 
 ### Bias Evaluation
 
-10 counterfactual pairs testing whether irrelevant attribute changes (supplier name, customer name, wording, etc.) alter decision outcomes. Currently covers Logistics domain only.
+10 counterfactual pairs test whether irrelevant attribute changes (supplier name, customer name, wording) alter decision outcomes. Currently covers the Logistics domain only.
+
+### Scope
+
+Evaluation uses synthetic data with MockProvider. Results demonstrate architectural correctness, not production accuracy. Real LLM validation is not yet performed.
 
 ---
 
-## Examples
+## Providers
 
-See `examples/` directory:
+| Provider | Type | Use Case | Evidence |
+|----------|------|----------|----------|
+| MockProvider | Deterministic | Testing, demo, evaluation | 30 tests |
+| OllamaProvider | Local LLM | Development, offline evaluation | 13 tests + 5 integration |
+| CloudProvider | API-based | Production use (requires API key) | 28 tests |
 
-- `demo_auto_approve.py` — Low-risk case → AUTO_APPROVE
-- `demo_human_review.py` — Ambiguous case → HUMAN_REVIEW
-- `demo_escalate.py` — Critical case → ESCALATE
-- `demo_invalid_output.py` — Invalid LLM output → validation failure
-- `demo_hitl_lifecycle.py` — Full HITL workflow
-- `demo_all_domains.py` — Cases across all three domains
+All providers implement the `LLMProvider` port. Swapping providers requires zero changes to core logic.
 
-Run any example:
+### Switching Providers
+
+```python
+from case_core.composition import create_app_dependencies
+from case_core.providers.ollama import OllamaProvider
+from case_core.providers.cloud import CloudProvider
+
+# In composition.py, replace:
+#   provider = MockProvider()
+# with:
+#   provider = OllamaProvider(model="llama3.2")
+# or:
+#   provider = CloudProvider(api_key="your-key")
+```
+
+---
+
+## Domains
+
+| Domain | Policy | Routing | Automation | Bias Pairs |
+|--------|--------|---------|------------|------------|
+| **Logistics** | Full | 6 incident types | LogisticsAutomationPolicy (5 departments) | 10 pairs |
+| **Urban Operations** | Partial | Keyword urgency | DefaultAutomationPolicy (conservative) | 0 |
+| **Infrastructure** | Partial | Keyword urgency | DefaultAutomationPolicy (conservative) | 0 |
+
+### Logistics Domain Pack
+
+- **Incident Types:** delivery_delay, delivery_failure, stock_issue, warehouse_delay, damaged_goods, transport_disruption
+- **Departments:** logistics, warehouse, fleet, operations, customer_service
+- **Automation:** Full risk-based automation with domain-specific rules
+
+### Urban Operations & Infrastructure
+
+- Evidence validation: requires evidence items
+- Urgency classification: keyword-based
+- Automation: DefaultAutomationPolicy (conservative, `HUMAN_REVIEW` default)
+
+---
+
+## Testing
+
+### Quality Snapshot
+
+| Check | Result |
+|-------|--------|
+| pytest | 526 passed, 7 skipped, 0 failed |
+| ruff | 0 errors |
+| mypy | 0 errors (82 source files) |
+
+### Test Classification
+
+| Category | Suites | Description |
+|----------|--------|-------------|
+| Unit | domain, triage_engine, prompt_builder, reliability | Core pipeline tests |
+| Contract | contracts, ports, mock_provider, ollama_provider, cloud_provider | Interface/schema validation |
+| Integration | api, ollama_integration | End-to-end API tests |
+| Behavioral | behavioral | 30 behavioral scenarios (BS001-BS030) |
+| Security | security | 31 tests, 10 attack scenarios |
+| Bias | bias_evaluation | Counterfactual pair analysis |
+| Regression | regression | Normal, edge, failure, injection cases |
+| Persistence | sqlite | SQLite adapter tests |
+| Boundary | streamlit_boundary | Streamlit integration boundary |
+| Isolated | governance, hybrid_decision, ml_adaptation, production, real_estate_domain, specialist_models | Tests for isolated modules |
+
+### Running Tests
 
 ```bash
-python examples/demo_auto_approve.py
+# All tests
+pytest tests/ -q --ignore=tests/unit/test_streamlit_client.py
+
+# Specific suite
+pytest tests/unit/test_behavioral.py -v
+
+# With coverage
+pytest tests/ --cov=src --cov-report=term-missing
 ```
 
 ---
 
 ## Limitations
 
-### Scope Limitations
+### Scope (by design)
+
+| Limitation | Status | Notes |
+|------------|--------|-------|
+| Portfolio/research project | By design | Not a production system |
+| No authentication/authorization | By design | Not needed for demo scope |
+| No performance/load testing | By design | Not needed for demo scope |
+| SQLite only | By design | Single-tenant, no concurrent access |
+
+### Evaluation
 
 | Limitation | Status | Impact |
 |------------|--------|--------|
-| MockProvider primary evidence source | Active | All evaluations use synthetic responses |
-| Ollama integration not always available | Active | Local LLM requires Ollama running |
-| Real LLM behavior not fully validated | Active | Security/bias tested only with MockProvider |
-| No production deployment | By design | Academic/portfolio project |
-| No authentication/authorization | By design | Not needed for demo |
-| No rate limiting | By design | Not needed for demo |
-| No performance/load testing | By design | Not needed for demo |
-
-### Domain Limitations
-
-| Limitation | Status | Impact |
-|------------|--------|--------|
+| MockProvider as primary evidence source | Active | All evaluations use synthetic responses |
+| Real LLM behavior not validated | Active | Security/bias tested only with MockProvider |
 | Bias pairs logistics-only | Active | 0 pairs for Urban/Infrastructure |
-| No Urban/Infrastructure routing | Active | Uses generic classify_urgency only |
-| Generic automation for Urban/Infrastructure | Active | DefaultAutomationPolicy, not domain-specific |
-| No Urban/Infrastructure bias evaluation | Active | Cannot measure invariance for these domains |
+| Synthetic dataset (15 cases) | Active | Demonstrates framework, not production accuracy |
 
-### Technical Limitations
+### Domain Coverage
 
 | Limitation | Status | Impact |
 |------------|--------|--------|
-| SQLite only | Active | No concurrent production use |
-| No multi-tenant support | By design | Single-tenant demo |
-| No streaming responses | By design | Synchronous triage only |
-| No monitoring/observability | By design | Audit trail only |
-| OperationalTelemetry/LLMTelemetry unused | Active | Prepared for future observability |
+| Generic automation for Urban/Infrastructure | Active | DefaultAutomationPolicy, not domain-specific |
+| No Urban/Infrastructure routing logic | Active | Uses keyword urgency classification only |
 
 ### Isolated Modules
 
-The following modules are implemented and tested but NOT connected to the running pipeline:
+The following modules are implemented and tested but **not connected** to the running pipeline:
 
 | Module | Description |
 |--------|-------------|
@@ -426,11 +470,11 @@ The following modules are implemented and tested but NOT connected to the runnin
 | ML Adaptation | Training abstractions, dataset pipeline |
 | Specialist Models | Keyword-based classification/risk/routing |
 | Hybrid Decision Engine | Multi-source decision combination |
-| Real Estate Domain | Domain policy (not registered) |
+| Real Estate Domain | Domain policy (not registered in DomainRegistry) |
 | Governance | Security, compliance, access control |
 | Production | Circuit breaker, rate limiter, health checks |
 
-These demonstrate the architecture's extensibility. Wiring them requires explicit decision.
+These are not broken or incomplete. They are standalone implementations that demonstrate architectural extensibility. Wiring them requires explicit decision.
 
 ---
 
@@ -440,14 +484,14 @@ These demonstrate the architecture's extensibility. Wiring them requires explici
 CASE/
 ├── src/
 │   ├── case_core/
-│   │   ├── application/     # TriageEngine
+│   │   ├── application/     # TriageEngine (orchestrator)
 │   │   ├── contracts/       # Pydantic v2 schemas (9 files)
 │   │   ├── domain/          # DomainRegistry, DomainPacks
-│   │   ├── evaluation/      # Runner, metrics, reports, scenarios
+│   │   ├── evaluation/      # Runner, metrics, reports
 │   │   ├── ports/           # ABC interfaces (6 ports)
 │   │   ├── prompts/         # PromptBuilder
 │   │   ├── providers/       # Mock, Ollama, Cloud
-│   │   ├── reliability/     # Validation pipeline, automation evaluator
+│   │   ├── reliability/     # Pipeline, automation evaluator
 │   │   └── composition.py   # Dependency wiring
 │   ├── case_api/
 │   │   └── api/v1/          # FastAPI endpoints
@@ -456,53 +500,43 @@ CASE/
 ├── tests/
 │   ├── unit/                # 18 test files
 │   └── integration/         # 2 test files
-├── examples/                # Demo scripts
+├── examples/                # 6 demo scripts
 ├── streamlit_app/           # Streamlit UI
-├── docs/                    # Documentation
+├── docs/                    # Architecture, status, roadmap
 ├── pyproject.toml           # Project configuration
 └── README.md                # This file
 ```
 
 ---
 
-## Development
+## Documentation
 
-### Code Quality
+| Document | Purpose |
+|----------|---------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Technical architecture and layer descriptions |
+| [DEVELOPMENT_STATUS.md](docs/DEVELOPMENT_STATUS.md) | Detailed implementation state and test matrix |
+| [ROADMAP.md](docs/ROADMAP.md) | Phases, milestones, and future planning |
+| [DECISION_LOG.md](docs/DECISION_LOG.md) | Record of significant technical decisions (D001-D010) |
+| [CAPABILITY_AUDIT.md](docs/CAPABILITY_AUDIT.md) | Audit of isolated modules with integration proposals |
+| [CHANGELOG.md](CHANGELOG.md) | Complete version history |
+| [RELEASES.md](docs/RELEASES.md) | Release milestones and status |
+| [AGENT_CONTEXT.md](docs/AGENT_CONTEXT.md) | Repository state for AI agents and contributors |
 
-```bash
-# Linting
-ruff check src tests
+---
 
-# Type checking
-mypy src
+## Configuration
 
-# Formatting
-ruff format src tests
-```
+### Environment Variables
 
-### Quality Gates
-
-After any code change, all of the following must pass:
-
-```bash
-pytest tests/ -q           # 0 failures
-ruff check src tests       # 0 errors
-mypy src                   # 0 errors
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
+| `OLLAMA_MODEL` | `llama3.2` | Ollama model name |
+| `CASE_CLOUD_API_KEY` | — | Cloud provider API key |
+| `CASE_DB_PATH` | `case.db` | SQLite database path |
 
 ---
 
 ## License
 
 MIT — See [LICENSE](LICENSE) for details.
-
----
-
-## Credits
-
-CASE is an academic/portfolio project demonstrating:
-- Domain-agnostic AI decision orchestration
-- Risk-based automation with human oversight
-- Multi-stage LLM output validation
-- Security-aware prompt engineering
-- Bias evaluation through counterfactual analysis
