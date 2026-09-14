@@ -259,7 +259,21 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 
 ## Current Priority
 
-**POST-V1.0 — Integration Selection & Hardening.** Systematically evaluate isolated capabilities for integration.
+**POST-V1.0 — Public Deployment & Integration Selection.** Deploy public demo, then systematically evaluate isolated capabilities for integration.
+
+---
+
+## Public Deployment Status
+
+| Artifact | Status | URL |
+|----------|--------|-----|
+| GitHub Repository | PUBLIC | https://github.com/juandelaf1/CASE |
+| Docker Hub Image | PUBLISHED | https://hub.docker.com/r/juandelaf/case |
+| GitHub Release v1.0.0 | PUBLISHED | https://github.com/juandelaf1/CASE/releases/tag/v1.0.0 |
+| Render Deployment | CONFIGURED | Requires manual Render account setup |
+
+**Deployment Configuration:** `render.yaml` configured for Render free tier.
+**Manual Steps Required:** Create Render account, connect repo, deploy service.
 
 ---
 

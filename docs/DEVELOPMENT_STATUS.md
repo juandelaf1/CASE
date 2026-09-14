@@ -22,8 +22,8 @@
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch | `master` |
-| HEAD | `1a6f6d7` |
-| Commits | 19 |
+| HEAD | `4775be3` |
+| Commits | 22 |
 | Remote | NONE |
 | Working tree | Clean |
 
@@ -33,9 +33,9 @@
 
 | Check | Result |
 |-------|--------|
-| pytest | 526 passed, 7 skipped, 0 failures |
+| pytest | 568 passed, 7 skipped, 0 failures |
 | ruff | 0 errors |
-| mypy | 0 errors (82 source files) |
+| mypy | 0 errors (84 source files) |
 | Integration tests | 11 pass, 7 skipped (Ollama) |
 
 ---
@@ -222,10 +222,12 @@ These modules exist as standalone implementations. They are tested but NOT wired
 | test_sqlite.py | 10 | PASS | persistence |
 | test_streamlit_boundary.py | 2 | PASS | boundary |
 | test_triage_engine.py | 25 | PASS | unit |
+| test_validation.py | 24 | PASS | validation |
+| test_cost_model.py | 12 | PASS | unit |
 | test_api.py | 11 | PASS | integration |
 | test_ollama_integration.py | 7 | SKIP | integration |
 
-**Total: 526 passed, 7 skipped, 0 failures**
+**Total: 568 passed, 7 skipped, 0 failures**
 
 ### 10.2 Test Classification
 

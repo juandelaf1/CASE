@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: case-demo
+    runtime: image
+    image: juandelaf/case:latest
+    healthCheckPath: /health
+    envVars:
+      - key: CASE_DB_PATH
+        value: /data/case.db
+    disk:
+      mountPath: /data
+      sizeGB: 1
+    plan: free
+    autoDeploy: false
