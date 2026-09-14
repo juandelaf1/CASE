@@ -29,6 +29,14 @@ env/
 
 # SQLite runtime
 case_audit.db
+*.db
+
+# Benchmark/model evaluation artifacts
+benchmark_*.py
+diagnose_*.py
+smoke_*.py
+test_deepseek.py
+test_qwen*.py
 
 # OS-specific
 .DS_Store

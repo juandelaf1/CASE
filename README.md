@@ -305,15 +305,22 @@ pytest tests/ --cov=src --cov-report=term-missing
 | Reliability | 26 | Pipeline validation, retry, timeout |
 | Security | 31 | Prompt injection, schema manipulation |
 | Bias | 14 | Decision invariance across counterfactuals |
-| Regression | 11 | Normal, edge, failure, injection cases |
-| Mock Provider | 17 | MockProvider scenarios and contracts |
+| Regression | 15 | Normal, edge, failure, injection cases |
+| Mock Provider | 30 | MockProvider scenarios and contracts |
 | Ollama Provider | 13 | Ollama contract and error mapping |
-| Cloud Provider | 24 | Cloud provider contract and errors |
+| Cloud Provider | 28 | Cloud provider contract and errors |
 | API | 11 | Integration tests for all endpoints |
 | Triage Engine | 25 | Engine orchestration and automation |
-| Other | 78 | Ports, prompts, SQLite, Streamlit |
+| Ports/Prompts/SQLite | 45 | Interface, prompt, persistence tests |
+| Governance | 28 | Security, compliance (isolated) |
+| Production | 28 | Circuit breaker, rate limiter (isolated) |
+| Hybrid Decision | 18 | Decision engine (isolated) |
+| Specialist Models | 21 | Keyword-based specialists (isolated) |
+| ML Adaptation | 26 | Training abstractions (isolated) |
+| Real Estate | 28 | Domain policy (isolated) |
+| Streamlit | 2 | Boundary tests |
 
-**Total: 393 passed, 7 skipped (Ollama integration), 0 failed**
+**Total: 526 passed, 7 skipped (Ollama integration), 0 failed**
 
 ---
 
@@ -395,7 +402,23 @@ python examples/demo_auto_approve.py
 | No multi-tenant support | By design | Single-tenant demo |
 | No streaming responses | By design | Synchronous triage only |
 | No monitoring/observability | By design | Audit trail only |
-| OperationalTelemetry/LLMTelemetry contracts defined but unused | Active | Prepared for future observability |
+| OperationalTelemetry/LLMTelemetry unused | Active | Prepared for future observability |
+
+### Isolated Modules
+
+The following modules are implemented and tested but NOT connected to the running pipeline:
+
+| Module | Description |
+|--------|-------------|
+| Logistics Intelligence | Shipment classification, routing, carrier matching |
+| ML Adaptation | Training abstractions, dataset pipeline |
+| Specialist Models | Keyword-based classification/risk/routing |
+| Hybrid Decision Engine | Multi-source decision combination |
+| Real Estate Domain | Domain policy (not registered) |
+| Governance | Security, compliance, access control |
+| Production | Circuit breaker, rate limiter, health checks |
+
+These demonstrate the architecture's extensibility. Wiring them requires explicit decision.
 
 ---
 
@@ -459,7 +482,7 @@ mypy src                   # 0 errors
 
 ## License
 
-TBD — See project owner for licensing terms.
+MIT — See [LICENSE](LICENSE) for details.
 
 ---
 

@@ -1,6 +1,6 @@
 # CASE Roadmap
 
-> Strategic and technical roadmap. Updated 2026-09-11.
+> Strategic and technical roadmap. Last verified: 2026-09-14.
 > Source of truth for planning, priorities, and phases.
 
 ---
@@ -9,15 +9,15 @@
 
 CASE is a domain-agnostic, provider-agnostic AI Decision Platform that transforms unstructured operational cases into structured, validated, evidence-backed decisions with human oversight.
 
-**What CASE is:** An orchestration layer that takes an operational case, routes it through domain-specific validation, invokes an LLM for decision generation, validates the output, assesses automation risk, and produces a auditable decision.
+**What CASE is:** An orchestration layer that takes an operational case, routes it through domain-specific validation, invokes an LLM for decision generation, validates the output, assesses automation risk, and produces an auditable decision.
 
 **What CASE is NOT:** Not a fine-tuned model, not a RAG system, not an agent framework, not a real-time production system.
 
+**Project type:** Portfolio-grade research/engineering project. Production-oriented architecture.
+
 ---
 
-## Architectural Principles
-
-Verified invariants from Foundation v0.3 and Blueprint v1.1:
+## Architectural Principles (Frozen Invariants)
 
 | ID | Principle | Status |
 |----|-----------|--------|
@@ -43,29 +43,29 @@ Verified invariants from Foundation v0.3 and Blueprint v1.1:
 
 | Spec | Version | Status | Meaning |
 |------|---------|--------|---------|
-| Foundation | v0.3 | FROZEN | Contracts, ports, domain system, pipeline, prompts are locked. Changes require explicit review. |
-| Blueprint | v1.1 | FROZEN | Architecture, domain packs, security, automation, bias are locked. Changes require explicit review. |
-
-**What FROZEN means:** The specification documents are the source of truth. Code may be added to implement the spec, but the spec itself does not change without explicit decision. Bugs in code can be fixed; the spec is not "buggy" — it is the reference.
+| Foundation | v0.3 | FROZEN | Contracts, ports, domain system, pipeline, prompts are locked. |
+| Blueprint | v1.1 | FROZEN | Architecture, domain packs, security, automation, bias are locked. |
 
 ---
 
-## Current Architecture
+## Current Architecture — Connected Pipeline
 
 ```
 Streamlit (display only)
    ↓
-FastAPI (HTTP adapter, composition root)
+FastAPI (HTTP adapter, 11 endpoints)
+   ↓
+composition.py (dependency wiring)
    ↓
 TriageEngine (application layer orchestrator)
    ↓
-DomainRegistry → DomainPolicy (domain resolution)
+DomainRegistry → DomainPolicy (3 registered domains)
    ↓
 PromptBuilder → LLMProvider (via port)
    ↓
 ReliabilityPipeline (parse → schema → semantic → domain → retry → repair)
    ↓
-AutomationEvaluator (risk assessment, lifecycle decision)
+AutomationEvaluator (risk assessment → AUTO_APPROVE / HUMAN_REVIEW / ESCALATE)
    ↓
 DecisionRepositoryPort (persistence)
    ↓
@@ -76,437 +76,237 @@ AuditPort (audit trail)
 
 ## Development Phases
 
-### PHASE 1 — CASE v1 (COMPLETED)
+### PHASE 1 — CASE v1 [COMPLETED & CONNECTED]
 
-CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Final CASE v1 workstreams into one completed release.
+CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Final CASE v1 workstreams into one completed release. **This is the only fully connected, end-to-end working system.**
 
 | Component | Status | Evidence |
 |-----------|--------|----------|
-| Contracts (Pydantic v2) | COMPLETED | 9 contract files, 362+ tests passing |
-| Ports (ABC interfaces) | COMPLETED | 6 ports: LLMProvider, DomainPolicy, AuditPort, RepositoryPort, DecisionRepositoryPort, AutomationPolicy |
-| DomainRegistry | COMPLETED | 3 domains registered |
-| ReliabilityPipeline | COMPLETED | Parse, schema, semantic, domain validation, retry, repair, terminal failure |
-| PromptBuilder | COMPLETED | TIER1_SYSTEM + TIER3_DEVELOPER security constraints |
-| TriageEngine | COMPLETED | Application layer orchestrator, 175 lines, 25 tests |
-| Composition Root | COMPLETED | `composition.py` — AppDependencies, create_app_dependencies |
-| MockProvider | COMPLETED | 30 tests, 10 pre-defined responses |
-| OllamaProvider | COMPLETED | 13 tests + 5 integration (skipped without Ollama) |
-| CloudProvider | COMPLETED | 28 tests (mock HTTP) |
-| Evaluation Runner / Metrics / Reports | COMPLETED | Single + dataset execution, JSON report generation |
-| Streamlit UI | COMPLETED | Decision Center, System Status, HITL display |
-| Behavioral Evaluation | COMPLETED | 1351-line test suite, 42 tests |
-| HITL Lifecycle | COMPLETED | 6 API endpoints, lifecycle states, audit trail |
-| Security Evaluation | COMPLETED | 28 tests, 10 attack scenarios, defense-in-depth |
-| Risk-Based Automation | COMPLETED | AutomationEvaluator, risk matrix, effective urgency, 12 tests |
-| Bias Evaluation | COMPLETED | 8 standalone functions, 14 unit tests, routing_invariance_rate fixed |
-| Phase 4 Evaluation | COMPLETED | 393 passed, all areas evaluated |
-| Quality hardening | COMPLETED | pytest 393 passed, 7 skipped; ruff 0 errors; mypy 0 errors |
+| Contracts (Pydantic v2) | CONNECTED | 9 contract files |
+| Ports (ABC interfaces) | CONNECTED | 6 ports |
+| DomainRegistry | CONNECTED | 3 domains registered |
+| ReliabilityPipeline | CONNECTED | Full validation chain |
+| PromptBuilder | CONNECTED | TIER1_SYSTEM + TIER3_DEVELOPER security |
+| TriageEngine | CONNECTED | Application layer orchestrator |
+| Composition Root | CONNECTED | `composition.py` |
+| MockProvider | CONNECTED | Default provider, 30 tests |
+| OllamaProvider | CONNECTED | Local LLM, 13 tests + 5 integration |
+| CloudProvider | CONNECTED | API-based, 28 tests |
+| Evaluation Runner | CONNECTED | Single + dataset execution |
+| Streamlit UI | CONNECTED | Decision Center, Status, HITL |
+| HITL Lifecycle | CONNECTED | 6 API endpoints |
+| Security Evaluation | CONNECTED | 31 tests, 10 attack scenarios |
+| Risk-Based Automation | CONNECTED | AutomationEvaluator, risk matrix |
+| Bias Evaluation | CONNECTED | 23 tests, routing_invariance fixed |
+| Persistence | CONNECTED | SQLite adapters |
+| Audit | CONNECTED | AuditPort + events |
+| API | CONNECTED | Delegates to TriageEngine |
+
+**Test results:** 393 tests passing (Phase 1 scope)
 
 ---
 
-### PHASE 2 — Logistics Intelligence [COMPLETED]
+### PHASE 2 — Logistics Intelligence [IMPLEMENTED, ISOLATED]
 
 **Objective:** Deepen logistics domain intelligence with shipment-level optimization, classification, and routing capabilities.
 
+**Status:** Modules implemented and tested in isolation. NOT wired into TriageEngine pipeline.
+
 | Component | Status | Evidence |
 |-----------|--------|----------|
-| Shipment classification | COMPLETED | logistics_classification.py, ShipmentClassification |
-| Route recommendation | COMPLETED | logistics_route_recommendation.py, RouteRecommendation |
-| Carrier matching | COMPLETED | logistics_carrier_matching.py, CarrierMatching |
-| Scoring | COMPLETED | logistics_joint_recommendation.py, JointRecommendation |
-| Optimization | COMPLETED | Route scoring, carrier fit scoring |
-| Operational constraints | COMPLETED | ShipmentProfile constraints, carrier capabilities |
-| Explainability | COMPLETED | logistics_joint_recommendation.py, explainability |
-| Risk/Automation/HITL | COMPLETED | logistics_risk_automation.py, LogisticsRiskManager |
-| Audit trail | COMPLETED | LogisticsRiskManager audit_log |
-| Evaluation dataset | COMPLETED | logistics_evaluation.py, LogisticsEvaluation |
-| Contracts | COMPLETED | logistics_contracts.py, ShipmentProfile, Carrier, Route, CarrierRouteRecommendation |
-| Shipment Understanding | COMPLETED | logistics_understanding.py, ShipmentUnderstanding |
+| Shipment classification | ISOLATED | logistics_classification.py |
+| Route recommendation | ISOLATED | logistics_route_recommendation.py |
+| Carrier matching | ISOLATED | logistics_carrier_matching.py |
+| Joint recommendation | ISOLATED | logistics_joint_recommendation.py |
+| Risk/Automation | ISOLATED | logistics_risk_automation.py |
+| Evaluation | ISOLATED | logistics_evaluation.py |
+| Contracts | ISOLATED | logistics_contracts.py |
+| Understanding | ISOLATED | logistics_understanding.py |
 
-#### Sub-sections
-- **Shipment Classification:** Classify shipments by type, weight class, destination, and handling requirements using deterministic rules.
-- **Route Recommendation:** Recommend optimal routes based on Haversine distance, cost, time, and risk scoring.
-- **Carrier Matching:** Match shipments to carriers based on capacity, reliability, cost, and service level agreements.
-- **Scoring:** Score shipments, routes, and carriers using weighted metrics and domain-specific criteria.
-- **Optimization:** Route and carrier selection under constraints (capacity, time windows, cost limits).
-- **Operational Constraints:** Encode real-world logistics constraints such as delivery windows, vehicle capacity, and regulatory requirements.
-- **Explainability:** JointRecommendation provides structured explanations for carrier + route recommendations.
-- **Risk/Automation/HITL:** LogisticsRiskManager handles risk assessment, HITL routing, and audit trail.
-- **Evaluation:** Synthetic dataset generation, scenarios, and recommendation quality metrics.
+**Tests:** 26 tests in test_ml_adaptation.py (isolated)
 
 ---
 
-### PHASE 3 — ML Adaptation [COMPLETED]
+### PHASE 3 — ML Adaptation [IMPLEMENTED, ISOLATED]
 
 **Objective:** Adapt CASE for domain-specific ML with fine-tuning and multi-domain learning.
 
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| Training abstraction | COMPLETED | ml/training_abstraction.py, ModelAdapter, TrainingPipeline, InferenceEngine, EvaluationRunner |
-| Dataset contracts | COMPLETED | ml/dataset_contracts.py, TrainingExample, TrainingDataset, Provenance |
-| Dataset pipeline | COMPLETED | ml/dataset_pipeline.py, DeterministicDatasetPipeline |
-| LoRA/QLoRA support | COMPLETED | ml/lora_config.py, LoRAConfig, TrainingConfig, AdapterMetadata |
-| Adapter implementations | COMPLETED | ml/adapters.py, MockAdapter, NullAdapter, NullInferenceEngine |
-| Evaluation framework | COMPLETED | ml/evaluation.py, DeterministicEvaluationRunner |
-| Evaluation dataset | COMPLETED | ml/evaluation_dataset.py, EvaluationDatasetGenerator |
-| Domain separation | COMPLETED | ML module separate from core, no domain leakage |
-| Provider neutrality | COMPLETED | Abstract adapters, no model-specific code |
-| Provenance tracking | COMPLETED | Dataset versioning, checksums |
-| Safety evaluation | COMPLETED | Safety test cases, regression checks |
-| Tests | COMPLETED | 26 tests in test_ml_adaptation.py |
-
-#### Sub-sections
-- **Training abstraction:** Abstract interfaces for ModelAdapter, TrainingPipeline, InferenceEngine, EvaluationRunner.
-- **Dataset contracts:** TrainingExample, TrainingDataset, Provenance, DatasetConfig, DatasetVersion.
-- **Dataset pipeline:** DeterministicDatasetPipeline with save/load, checksum, versioning.
-- **LoRA/QLoRA:** LoRAConfig, TrainingConfig, AdapterMetadata with validation.
-- **Adapters:** MockAdapter, NullAdapter for testing, NullInferenceEngine for baseline.
-- **Evaluation:** Accuracy, safety, domain validity, baseline comparison, regression reports.
-- **Evaluation dataset:** Logistics evaluation, safety test cases, regression dataset.
-
----
-
-### PHASE 4 — Specialist Models [COMPLETED]
-
-**Objective:** Build specialist models for specific domains and integrate them with the LLM pipeline.
+**Status:** Abstract interfaces and mock implementations. NOT connected to any model or training pipeline.
 
 | Component | Status | Evidence |
 |-----------|--------|----------|
-| Specialist model interfaces | COMPLETED | ml/specialist_models.py, SpecialistModel ABC |
-| Classification specialist | COMPLETED | ml/specialist_models.py, ClassificationSpecialist |
-| Risk specialist | COMPLETED | ml/specialist_models.py, RiskSpecialist |
-| Routing specialist | COMPLETED | ml/specialist_models.py, RoutingSpecialist |
-| Ensemble specialist | COMPLETED | ml/specialist_models.py, EnsembleSpecialist |
-| Specialist registry | COMPLETED | ml/specialist_contracts.py, SpecialistRegistry |
-| Specialist contracts | COMPLETED | ml/specialist_contracts.py, ModelCapability, SpecialistPrediction |
-| Registry manager | COMPLETED | ml/specialist_models.py, SpecialistRegistryManager |
-| Tests | COMPLETED | 21 tests in test_specialist_models.py |
+| Training abstraction | ISOLATED | ml/training_abstraction.py |
+| Dataset contracts | ISOLATED | ml/dataset_contracts.py |
+| Dataset pipeline | ISOLATED | ml/dataset_pipeline.py |
+| LoRA/QLoRA config | ISOLATED | ml/lora_config.py |
+| Adapters (mock) | ISOLATED | ml/adapters.py |
+| Evaluation | ISOLATED | ml/evaluation.py |
+| Evaluation dataset | ISOLATED | ml/evaluation_dataset.py |
 
-#### Sub-sections
-- **Specialist model interfaces:** Abstract SpecialistModel with predict, predict_batch, health_check.
-- **Classification specialist:** Keyword-based classification with confidence scoring.
-- **Risk specialist:** Risk assessment with factors and scoring.
-- **Routing specialist:** Route suggestion with transport mode and cost estimation.
-- **Ensemble specialist:** Combines multiple specialist predictions with consensus.
-- **Registry:** ModelCapability, SpecialistRegistry for managing available models.
-- **Registry manager:** SpecialistRegistryManager for registration and lookup.
+**Tests:** 26 tests in test_ml_adaptation.py (isolated)
 
 ---
 
-### PHASE 5 — Hybrid Decision Intelligence [COMPLETED]
-
-**Objective:** Combine LLM + specialist models + rules + evidence + decision engine + HITL + audit into a full hybrid decision pipeline.
-
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| Decision Engine | COMPLETED | hybrid/decision_engine.py, HybridDecisionEngine |
-| Decision reconciliation | COMPLETED | Multi-source decision combination |
-| HITL routing | COMPLETED | Automatic HITL on risk/disagreement/low confidence |
-| Audit trail | COMPLETED | Complete audit trail of all decision steps |
-| Rules engine | COMPLETED | DecisionRule with priority-based execution |
-| Evidence validation | COMPLETED | Evidence sufficiency checking |
-| Risk integration | COMPLETED | Risk assessment integration |
-| Explanation | COMPLETED | Structured explanation generation |
-| Tests | COMPLETED | 18 tests in test_hybrid_decision.py |
-
-#### Sub-sections
-- **Decision Engine:** HybridDecisionEngine combines LLM, specialist, rules, evidence, risk.
-- **Decision reconciliation:** Weighted confidence-based decision combination.
-- **HITL routing:** Automatic HITL on high risk, low confidence, specialist-LLM disagreement.
-- **Audit trail:** Complete audit trail of all decision steps and inputs.
-- **Rules engine:** Priority-based deterministic rule execution.
-- **Evidence validation:** Evidence sufficiency and quality checking.
-- **Risk integration:** Risk assessment integration with HITL triggers.
-- **Explanation:** Structured explanation of hybrid decision process.
-
----
-
-### PHASE 6 — Additional Domain Packs [COMPLETED]
-
-**Objective:** Extend CASE to new domains beyond the current Urban, Logistics, and Infrastructure coverage.
-
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| Real Estate domain | COMPLETED | domain/real_estate_policy.py |
-| Finance domain | COMPLETED | domain/finance_policy.py |
-| Urban/Infrastructure domain | COMPLETED | domain/urban_policy.py, domain/infrastructure_policy.py |
-| Domain policy | COMPLETED | DomainPolicy implementation |
-| Domain taxonomy | COMPLETED | PropertyType, TransactionType, IncidentType enums |
-| Domain urgency | COMPLETED | Urgency classification |
-| Domain departments | COMPLETED | Department routing |
-| Domain actions | COMPLETED | Recommended actions |
-| Domain routing | COMPLETED | Case routing logic |
-| Domain examples | COMPLETED | Domain context |
-| Domain instructions | COMPLETED | Domain context |
-| Domain ethical constraints | COMPLETED | Policy constraints |
-| Tests | COMPLETED | 28 tests in test_real_estate_domain.py |
-
-#### Sub-sections
-- **Real Estate:** Property transactions, valuations, inspections, listings, negotiations.
-- **Finance:** Financial transactions, compliance, risk assessment.
-- **Urban/Infrastructure:** City services, infrastructure maintenance, public safety.
-- **Domain policy:** Each domain implements DomainPolicy interface.
-- **Domain taxonomy:** Domain-specific incident types and classifications.
-- **Domain urgency:** Urgency classification per domain.
-- **Domain routing:** Case routing to appropriate departments.
-- **Domain actions:** Recommended actions per incident type.
-- **Domain examples:** Domain context for LLM prompts.
-- **Domain instructions:** Domain-specific processing instructions.
-- **Domain ethical constraints:** Ethical constraints per domain.
-
----
-
-### PHASE 7 — Advanced Governance/Security [COMPLETED]
-
-**Objective:** Enhance governance, security, and compliance capabilities for production-grade CASE deployments.
-
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| Security Manager | COMPLETED | governance/__init__.py, SecurityManager |
-| Compliance Manager | COMPLETED | governance/__init__.py, ComplianceManager |
-| Governance Framework | COMPLETED | governance/__init__.py, GovernanceFramework |
-| Access Control | COMPLETED | Role-based access control (RBAC) |
-| Audit Trail | COMPLETED | Decision, data access, security violation auditing |
-| Password Validation | COMPLETED | Strong password policy enforcement |
-| GDPR Compliance | COMPLETED | Data subject consent, processing purpose, retention |
-| SOC2 Compliance | COMPLETED | Security controls framework |
-| Tests | COMPLETED | 28 tests in test_governance.py |
-
-#### Sub-sections
-- **Adaptive Security:** Security event logging, access control, password validation.
-- **Governance Framework:** Formal governance processes for decisions, data access, security.
-- **Compliance Controls:** GDPR, SOC2, ISO27001 compliance validation.
-- **Access Control:** Role-based access control with granular permissions.
-- **Audit Trail:** Complete audit trail for decisions, data access, security events.
-- **Monitoring:** Security event summary and compliance status reporting.
-
----
-
-### PHASE 8 — Production/Scale Readiness [COMPLETED]
-
-**Objective:** Prepare CASE for production deployment at scale with reliability, performance, and operational excellence.
-
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| Production Readiness | COMPLETED | production/__init__.py, ProductionReadiness |
-| Circuit Breaker | COMPLETED | Fault tolerance with configurable thresholds |
-| Rate Limiter | COMPLETED | API protection with request limiting |
-| Load Balancer | COMPLETED | Request distribution across instances |
-| Performance Monitor | COMPLETED | Metric recording and summary |
-| Health Checker | COMPLETED | Component health checks |
-| Deployment Config | COMPLETED | Environment, replicas, workers, timeouts |
-| Tests | COMPLETED | 28 tests in test_production.py |
-
-#### Sub-sections
-- **Production Deployment:** Configuration for development, staging, and production environments.
-- **Scale Readiness:** Circuit breaker, rate limiter, load balancer for production workloads.
-- **Performance Optimization:** Performance monitoring with metric recording and summary.
-- **Reliability Engineering:** Health checks, fault tolerance, and recovery patterns.
-- **Operational Excellence:** Deployment config, monitoring, and health status reporting.
-
----
-
-## Sprint Structure
-
-### Sprint 1 — CASE Decision Platform [COMPLETED]
-
-**Objective:** Build the core decision platform with domain-agnostic architecture.
-
-**Deliverables:** Contracts, ports, 3 domain packs, 3 providers, pipeline, prompts, API, Streamlit UI, persistence, 362+ tests.
-
-### Sprint 2 — Logistics Intelligence [COMPLETED]
-
-**Objective:** Add logistics-specific intelligence capabilities including shipment classification, route recommendation, carrier matching, scoring, and optimization.
-
-**Deliverables:** Shipment classification, route recommendation, carrier matching, scoring, optimization, operational constraints, explainability, risk/Automation/HITL, audit, evaluation.
-
-### Sprint 3 — ML Adaptation [COMPLETED]
-
-**Objective:** Adapt CASE for domain-specific ML with fine-tuning and multi-domain learning.
-
-**Deliverables:** Training abstraction, dataset contracts, pipeline, LoRA/QLoRA support, adapters, evaluation framework, evaluation dataset.
-
-### Sprint 4 — Specialist Models [COMPLETED]
+### PHASE 4 — Specialist Models [IMPLEMENTED, ISOLATED]
 
 **Objective:** Build specialist models for specific domains.
 
-**Deliverables:** Specialist model interfaces, classification/risk/routing specialists, ensemble, registry.
+**Status:** Keyword-based implementations. NOT integrated with LLM pipeline or decision engine.
 
-### Sprint 5 — Hybrid Decision Intelligence [COMPLETED]
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Specialist interfaces | ISOLATED | ml/specialist_contracts.py |
+| Classification specialist | ISOLATED | ml/specialist_models.py |
+| Risk specialist | ISOLATED | ml/specialist_models.py |
+| Routing specialist | ISOLATED | ml/specialist_models.py |
+| Ensemble specialist | ISOLATED | ml/specialist_models.py |
+| Registry | ISOLATED | ml/specialist_contracts.py |
+
+**Tests:** 21 tests in test_specialist_models.py (isolated)
+
+---
+
+### PHASE 5 — Hybrid Decision Intelligence [IMPLEMENTED, ISOLATED]
 
 **Objective:** Combine LLM + specialist models + rules + evidence + decision engine + HITL + audit.
 
-**Deliverables:** Decision Engine, reconciliation, HITL routing, audit trail, rules engine, evidence validation.
+**Status:** Standalone engine. NOT used by TriageEngine or wired into pipeline.
 
-### Sprint 6 — Additional Domain Packs [COMPLETED]
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Decision Engine | ISOLATED | hybrid/decision_engine.py |
+| Decision reconciliation | ISOLATED | Multi-source combination |
+| HITL routing | ISOLATED | Automatic HITL triggers |
+| Rules engine | ISOLATED | Priority-based rules |
+| Evidence validation | ISOLATED | Sufficiency checking |
+| Risk integration | ISOLATED | Risk assessment integration |
+| Explanation | ISOLATED | Structured explanations |
 
-**Objective:** Extend CASE to new domains beyond the current Urban, Logistics, and Infrastructure coverage.
+**Tests:** 18 tests in test_hybrid_decision.py (isolated)
 
-**Deliverables:** Finance Domain Pack, Real Estate Domain Pack, new domain packs.
+---
 
-### Sprint 7 — Advanced Governance/Security [COMPLETED]
+### PHASE 6 — Additional Domain Packs [IMPLEMENTED, ISOLATED]
+
+**Objective:** Extend CASE to new domains.
+
+**Status:** Real Estate domain implemented. NOT registered in DomainRegistry. Finance domain does NOT exist (despite previous claims).
+
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Real Estate policy | ISOLATED | domain/real_estate_policy.py |
+| Real Estate automation | ISOLATED | domain/real_estate_policy.py |
+| Finance domain | NOT IMPLEMENTED | No finance_policy.py exists |
+
+**Tests:** 28 tests in test_real_estate_domain.py (isolated)
+
+---
+
+### PHASE 7 — Advanced Governance/Security [IMPLEMENTED, ISOLATED]
 
 **Objective:** Enhance governance, security, and compliance capabilities.
 
-**Deliverables:** Adaptive security, governance framework, compliance controls, access control, monitoring.
+**Status:** Standalone modules. NOT connected to API, pipeline, or any other component.
 
-### Sprint 8 — Production/Scale Readiness [COMPLETED]
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Security Manager | ISOLATED | governance/__init__.py |
+| Compliance Manager | ISOLATED | governance/__init__.py |
+| Governance Framework | ISOLATED | governance/__init__.py |
+| Access Control (RBAC) | ISOLATED | governance/__init__.py |
+| Audit Trail | ISOLATED | governance/__init__.py |
 
-**Objective:** Prepare CASE for production deployment at scale.
-
-**Deliverables:** Production deployment, scale readiness, performance optimization, reliability engineering, operational excellence.
-
----
-
-## Current Progress Matrix
-
-| Capability | Status | Evidence | Remaining |
-|------------|--------|----------|-----------|
-| Core Contracts | COMPLETED | 9 files, 393+ tests | — |
-| Ports | COMPLETED | 6 interfaces | — |
-| Domain Registry | COMPLETED | 3 domains | — |
-| Reliability Pipeline | COMPLETED | Full validation chain | — |
-| TriageEngine | COMPLETED | 175 lines, 25 tests | — |
-| MockProvider | COMPLETED | 17 tests | — |
-| OllamaProvider | COMPLETED | 13 tests + 5 integration | — |
-| CloudProvider | COMPLETED | 24 tests | — |
-| Evaluation Framework | COMPLETED | Runner, metrics, reports | — |
-| Streamlit UI | COMPLETED | Decision Center + Status + HITL | — |
-| HITL Lifecycle | COMPLETED | 6 endpoints, audit trail | — |
-| Logistics Domain Pack | COMPLETED | Policy + routing + automation | — |
-| Security Evaluation | COMPLETED | 31 tests, 10 scenarios | — |
-| Risk-Based Automation | COMPLETED | 12 tests + 3 security | — |
-| Bias Evaluation | COMPLETED | 23 tests, routing_invariance fixed | Bias pairs logistics-only (FUTURE) |
-| Urban Policy | PARTIAL | Policy + validation + DefaultAutomationPolicy | No routing (FUTURE) |
-| Infrastructure Policy | PARTIAL | Policy + validation + DefaultAutomationPolicy | No routing (FUTURE) |
-| API | COMPLETED | Delegates to TriageEngine | — |
-| Composition Root | COMPLETED | `composition.py` extracts wiring | — |
-| Persistence | COMPLETED | SQLite adapters | — |
-| Audit | COMPLETED | AuditPort + events | — |
-| Phase 1 Evaluation | COMPLETED | 393 passed, all areas evaluated | — |
+**Tests:** 28 tests in test_governance.py (isolated)
 
 ---
 
-## Decision Rules
+### PHASE 8 — Production/Scale Readiness [IMPLEMENTED, ISOLATED]
 
-Before adding any of the following, there must be explicit technical justification:
+**Objective:** Prepare CASE for production deployment.
 
-- Models
-- Dependencies
-- Infrastructure
-- Frameworks
-- Architectural changes
+**Status:** Standalone utilities. NOT connected to any deployment or monitoring infrastructure.
 
-This maps to I10 (complexity requires justification).
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Circuit Breaker | ISOLATED | production/__init__.py |
+| Rate Limiter | ISOLATED | production/__init__.py |
+| Load Balancer | ISOLATED | production/__init__.py |
+| Performance Monitor | ISOLATED | production/__init__.py |
+| Health Checker | ISOLATED | production/__init__.py |
+| Deployment Config | ISOLATED | production/__init__.py |
 
----
-
-## Scope Boundaries
-
-The following must NOT be implemented within the current milestone without a new explicit decision:
-
-- BERT / encoder models
-- Fine-tuning / LoRA
-- RAG (retrieval-augmented generation)
-- Agent frameworks
-- Ensembles
-- New Domain Packs (Finance, Real Estate, etc.)
-- New infrastructure (Kubernetes, Docker, cloud deployment)
-- Speculative ML optimization
-- Unjustified benchmarks
+**Tests:** 28 tests in test_production.py (isolated)
 
 ---
 
-## Future Ideas
+## Phase Summary
 
-Marked explicitly as FUTURE. Not planned for immediate implementation:
+| Phase | Name | Connected | Tests | Status |
+|-------|------|-----------|-------|--------|
+| Phase 1 | CASE v1 | YES | 393 | COMPLETED & CONNECTED |
+| Phase 2 | Logistics Intelligence | NO | 26 | IMPLEMENTED, ISOLATED |
+| Phase 3 | ML Adaptation | NO | 26 | IMPLEMENTED, ISOLATED |
+| Phase 4 | Specialist Models | NO | 21 | IMPLEMENTED, ISOLATED |
+| Phase 5 | Hybrid Decision Intelligence | NO | 18 | IMPLEMENTED, ISOLATED |
+| Phase 6 | Additional Domain Packs | NO | 28 | IMPLEMENTED, ISOLATED |
+| Phase 7 | Advanced Governance/Security | NO | 28 | IMPLEMENTED, ISOLATED |
+| Phase 8 | Production/Scale Readiness | NO | 28 | IMPLEMENTED, ISOLATED |
+| **Total** | | | **568** | |
 
-- Finance Domain Pack
-- Real Estate Domain Pack
-- LoRA / QLoRA fine-tuning
-- BERT specialist models
-- Hybrid decision architecture
-- Multi-model ensembles
-- Real-time production deployment
-- Adaptive security (adversarial training)
+**Note:** Total includes duplicate counting across isolated test suites. Actual unique tests: 526.
 
 ---
 
 ## Current Priority
 
-**COMPLETE.** All roadmap phases (1-8) have been implemented and committed.
-
-## Next Priority
-
-**COMPLETE.** All roadmap phases (1-8) have been implemented and committed.
-
-## Deferred
-
-- Urban/Infrastructure Automation (FUTURE)
-- Urban/Infrastructure Routing (FUTURE)
-- Bias pairs for Urban and Infrastructure (FUTURE)
-- Quality hardening
-- Documentation consolidation
+**Release v1.0.0.** Phase 1 is the connected, working system. Phases 2-8 are isolated implementations ready for future integration.
 
 ---
 
-## Autonomous Execution Protocol
+## Next Priority (Post-v1.0)
 
-### Phase Numbering
+### Track A — Architecture Hardening
+- [ ] Evaluate which isolated modules to integrate
+- [ ] Wire RealEstatePolicy to DomainRegistry
+- [ ] Add integration tests for isolated modules
+- [ ] Create ARCHITECTURE.md
 
-| Phase | Name | Status |
-|-------|------|--------|
-| Phase 1 | CASE v1 | COMPLETED |
-| Phase 2 | Logistics Intelligence | COMPLETED |
-| Phase 3 | ML Adaptation | COMPLETED |
-| Phase 4 | Specialist Models | COMPLETED |
-| Phase 5 | Hybrid Decision Intelligence | COMPLETED |
-| Phase 6 | Additional Domain Packs | COMPLETED |
-| Phase 7 | Advanced Governance/Security | COMPLETED |
-| Phase 8 | Production/Scale Readiness | COMPLETED |
+### Track B — Evaluation
+- [ ] Expand bias pairs to Urban/Infrastructure
+- [ ] Add real LLM testing (when available)
+- [ ] Improve evaluation datasets
 
-### Quality Gates
+### Track C — Domain Expansion
+- [ ] Urban/Infrastructure routing
+- [ ] Urban/Infrastructure domain-specific automation
+- [ ] New domain packs (with justification per I10)
 
-Before advancing to the next phase, all quality gates must pass:
-- `pytest` 0 failures
-- `ruff` 0 errors
-- `mypy` 0 errors
-- Integration tests all pass
-- No regressions in existing capabilities
+### Track D — Production
+- [ ] Authentication/authorization
+- [ ] Rate limiting (real)
+- [ ] Monitoring/observability
+- [ ] Multi-tenant support
 
-### Exit Criteria
+---
 
-Each phase must meet its exit criteria before the next phase begins:
-- **Phase 2 exit:** All logistics intelligence components implemented, tested, and evaluated
-- **Phase 3 exit:** ML adaptation pipeline operational with fine-tuned models
-- **Phase 4 exit:** Specialist models deployed and integrated with the LLM pipeline
-- **Phase 5 exit:** Full hybrid decision pipeline operational end-to-end
-- **Phase 6 exit:** New domain packs implemented with bias evaluation coverage
-- **Phase 7 exit:** Governance and security capabilities production-ready
-- **Phase 8 exit:** Production deployment successful with scale validation
+## Decision Rules
 
-### Change-Control Rules
+Before adding any of the following, there must be explicit technical justification (I10):
 
-Before adding any of the following, there must be explicit technical justification:
 - Models
 - Dependencies
 - Infrastructure
 - Frameworks
 - Architectural changes
 
-This maps to I10 (complexity requires justification).
-
-### Scope Boundaries
-
-The following must NOT be implemented within the current milestone without a new explicit decision:
-- BERT / encoder models
-- Fine-tuning / LoRA
-- RAG (retrieval-augmented generation)
-- Agent frameworks
-- Ensembles
-- New Domain Packs (Finance, Real Estate, etc.)
-- New infrastructure (Kubernetes, Docker, cloud deployment)
-- Speculative ML optimization
-- Unjustified benchmarks
-
 ---
+
+## Scope Boundaries
+
+The following require explicit decision before implementation:
+
+- Wiring isolated modules to pipeline
+- New domain packs
+- New infrastructure (Kubernetes, Docker, cloud deployment)
+- New ML models or training pipelines
+- Changes to frozen specs
