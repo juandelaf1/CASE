@@ -1,203 +1,152 @@
 from __future__ import annotations
 
+import json
+
 import streamlit as st
 
-from streamlit_app.components.decision import (
-    render_decision,
-    render_error,
-    render_evidence,
-    render_manual_review,
+from streamlit_app.client import CASEClient
+from streamlit_app.ui.components import (
+    render_case_decision,
+    render_down_arrow,
+    render_field_row,
+    render_metric_cards,
+    render_model_proposal,
+    render_section_close,
+    render_section_header,
 )
-from streamlit_app.components.state import get_client
 
-URGENCY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 
-DOMAIN_DESCRIPTIONS = {
-    "urban_operations": "Urban infrastructure and services",
-    "logistics": "Supply chain and transportation",
-    "infrastructure": "Critical infrastructure assessment",
-}
+def _get_client() -> CASEClient:
+    api_url = st.session_state.get("case_api_url", "http://localhost:8000")
+    return CASEClient(base_url=api_url)
 
 
 def render() -> None:
-    st.header("Decision Center")
+    st.markdown('<div class="case-page-title">Triage</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="case-page-subtitle">Submit a case and inspect the full decision pipeline</div>',
+        unsafe_allow_html=True,
+    )
 
-    client = get_client()
+    client = _get_client()
+    domains = client.list_domains_sync()
 
-    try:
-        domains = client.list_domains_sync()
-    except Exception:
-        st.error("Cannot connect to CASE API. Please ensure the backend is running.")
-        return
+    tab_submit, tab_lookup = st.tabs(["New Case", "Lookup Case"])
 
-    if not domains:
-        st.warning("No domains available.")
-        return
+    with tab_submit:
+        _render_submit(client, domains)
 
-    _render_case_form(client, domains)
-    _render_audit_section(client)
+    with tab_lookup:
+        _render_lookup(client)
 
 
-def _render_case_form(client, domains: list[str]) -> None:
+def _render_submit(client: CASEClient, domains: list[str]) -> None:
     with st.form("triage_form"):
-        domain = st.selectbox(
-            "Domain",
-            domains,
-            format_func=lambda d: DOMAIN_DESCRIPTIONS.get(d, d),
-        )
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            report_text = st.text_area(
+                "Report Text",
+                height=120,
+                placeholder="Describe the case to triage...",
+            )
+        with col2:
+            domain = st.selectbox("Domain", options=domains if domains else ["default"])
+            urgency = st.selectbox("Urgency", options=["LOW", "MEDIUM", "HIGH", "CRITICAL"], index=1)
 
-        report_text = st.text_area(
-            "Case Report",
-            height=150,
-            placeholder="Describe the operational case...",
-            help="Required. The system will analyze this report.",
-        )
-
-        urgency = st.selectbox(
-            "Reported Urgency",
-            URGENCY_OPTIONS,
-            index=1,
-            help="Your assessment of how urgent this case is.",
-        )
-
-        evidence_items = _render_evidence_section()
-
-        external_reference = st.text_input(
-            "External Reference (optional)",
-            placeholder="e.g., TICKET-2026-001",
-            help="Your own reference number for this case.",
-        )
-
-        submitted = st.form_submit_button("Submit for Triage")
+        metadata_raw = st.text_area("Metadata (JSON, optional)", height=68, placeholder='{"key": "value"}')
+        submitted = st.form_submit_button("Submit Case", type="primary", use_container_width=True)
 
     if submitted:
         if not report_text.strip():
-            st.error("Please provide a case report.")
+            st.error("Report text is required")
             return
 
-        with st.spinner("Analyzing case..."):
+        metadata = None
+        if metadata_raw.strip():
+            try:
+                metadata = json.loads(metadata_raw)
+            except json.JSONDecodeError:
+                st.error("Invalid JSON in metadata")
+                return
+
+        with st.spinner("Processing through CASE pipeline..."):
             result = client.triage_sync(
-                report_text=report_text.strip(),
+                report_text=report_text,
                 domain=domain,
                 urgency=urgency,
-                external_reference=external_reference.strip() if external_reference else None,
-                evidence=evidence_items if evidence_items else None,
+                metadata=metadata,
             )
 
         if result.get("error"):
             detail = result.get("detail", {})
-            if isinstance(detail, dict) and detail.get("requires_manual_review"):
-                render_manual_review(detail)
-            else:
-                render_error(detail)
-        else:
-            data = result.get("data", {})
-            render_decision(data)
-            render_evidence(data)
+            st.error(f"Error: {detail.get('error', 'Unknown error')}")
+            st.caption(f"Category: {detail.get('category', 'N/A')}")
+            return
 
-            st.session_state["last_case_id"] = data.get("case_id")
+        data = result["data"]
+        st.session_state["last_triage"] = data
+        _render_triage_result(data)
 
 
-def _render_evidence_section() -> list[dict]:
-    st.markdown("**Evidence**")
-    evidence_items: list[dict] = []
-
-    if "evidence_count" not in st.session_state:
-        st.session_state.evidence_count = 0
-
-    col_add, col_clear = st.columns([1, 1])
-    with col_add:
-        if st.form_submit_button("+ Add evidence", use_container_width=True):
-            st.session_state.evidence_count += 1
-            st.rerun()
-    with col_clear:
-        if st.session_state.evidence_count > 0 and st.form_submit_button("Clear all", use_container_width=True):
-            st.session_state.evidence_count = 0
-            st.rerun()
-
-    for i in range(st.session_state.evidence_count):
-        with st.container():
-            st.markdown(f"**Evidence {i + 1}**")
-            ev_col1, ev_col2 = st.columns(2)
-            with ev_col1:
-                ev_type = st.selectbox(
-                    "Type",
-                    ["text", "image", "document", "sensor"],
-                    key=f"ev_type_{i}",
-                )
-                ev_source = st.text_input(
-                    "Source",
-                    placeholder="e.g., field_inspector",
-                    key=f"ev_source_{i}",
-                )
-            with ev_col2:
-                ev_content = st.text_area(
-                    "Content",
-                    height=68,
-                    placeholder="Evidence description...",
-                    key=f"ev_content_{i}",
-                )
-                ev_confidence = st.slider(
-                    "Confidence",
-                    0.0,
-                    1.0,
-                    0.9,
-                    key=f"ev_conf_{i}",
-                )
-            if ev_content.strip():
-                evidence_items.append({
-                    "id": f"ev-{i + 1}",
-                    "type": ev_type,
-                    "content": ev_content.strip(),
-                    "source": ev_source.strip() or "user_input",
-                    "confidence": ev_confidence,
-                    "extracted_at": "2026-09-14T12:00:00Z",
-                })
-
-    return evidence_items
+def _render_lookup(client: CASEClient) -> None:
+    case_id = st.text_input("Case ID", placeholder="CASE-XXXXXXXX")
+    if st.button("Lookup", type="primary") and case_id:
+        with st.spinner("Fetching case..."):
+            pending = client.list_pending_review_sync(limit=200)
+            for d in pending.get("decisions", []):
+                if d.get("case_id") == case_id:
+                    st.session_state["last_triage"] = d
+                    _render_triage_result(d)
+                    return
+        st.warning(f"No decision found for {case_id}")
 
 
-def _render_audit_section(client) -> None:
-    case_id = st.session_state.get("last_case_id")
-    if not case_id:
-        return
+def _render_triage_result(data: dict) -> None:
+    case_id = data.get("case_id", "N/A")
+    domain = data.get("domain", "N/A")
+    ms = data.get("processing_time_ms", 0)
 
-    with st.expander("Audit Trail", expanded=False):
-        try:
-            audit = client.get_audit_events_sync(case_id)
-            events = audit.get("events", [])
-            if events:
-                for event in events:
-                    event_type = event.get("event_type", "unknown")
-                    timestamp = event.get("timestamp", "N/A")
-                    actor = event.get("actor", "system")
-                    details = event.get("details", {})
+    render_metric_cards([
+        {"label": "Case ID", "value": case_id, "icon": "\U0001f4cb", "color": "#4f8cf7"},
+        {"label": "Domain", "value": domain, "icon": "\U0001f3af", "color": "#a78bfa"},
+        {"label": "Processing", "value": f"{ms:.1f} ms", "icon": "\u23f1\ufe0f", "color": "#22d3ee"},
+    ])
 
-                    st.markdown(f"**{event_type}** — {timestamp} (by {actor})")
-                    if details:
-                        summary = _summarize_event_details(event_type, details)
-                        if summary:
-                            st.caption(summary)
-            else:
-                st.info("No audit events recorded.")
-        except Exception:
-            st.info("Could not load audit events.")
+    st.markdown("<br>", unsafe_allow_html=True)
 
+    original_ai = data.get("original_ai_proposal")
+    if original_ai:
+        render_model_proposal(original_ai)
+        render_down_arrow()
+    else:
+        render_section_header("MODEL PROPOSAL", "LLM", "case-section-proposal")
+        st.caption("No separate AI proposal recorded — decision was produced directly.")
+        render_section_close()
+        render_down_arrow()
 
-def _summarize_event_details(event_type: str, details: dict) -> str:
-    if event_type == "AI_GENERATED":
-        return f"Action: {details.get('action')}, Confidence: {details.get('confidence')}"
-    if event_type == "AUTOMATION_ASSESSED":
-        risk = details.get("risk_level", "unknown")
-        decision = details.get("automation_decision", "unknown")
-        factors = details.get("factors", [])
-        return f"Risk: {risk}, Decision: {decision}, Factors: {', '.join(factors)}"
-    if event_type in ("AUTO_APPROVED", "AUTO_HUMAN_REVIEW", "AUTO_ESCALATED"):
-        return details.get("justification", "")
-    if event_type == "FINAL_DECISION":
-        return f"Action: {details.get('action')}, Lifecycle: {details.get('lifecycle')}"
-    if event_type == "HITL_MODIFIED":
-        return f"Actor: {details.get('actor')}, Changed: {details.get('original_action')} → {details.get('new_action')}"
-    if event_type == "HITL_APPROVED":
-        return f"Actor: {details.get('actor')}, Justification: {details.get('justification', '')}"
-    return ""
+    render_section_header("VALIDATION", "\u2713", "case-section-validation")
+    confidence = data.get("confidence", 0)
+    lifecycle = data.get("lifecycle", "ai_proposed")
+    urgency = data.get("urgency", "N/A")
+
+    render_field_row("Confidence", f"{confidence:.0%}")
+    render_field_row("Urgency", urgency)
+    render_field_row("Lifecycle", lifecycle.replace("_", " ").upper())
+    render_section_close()
+    render_down_arrow()
+
+    render_case_decision(data)
+
+    human_override = data.get("human_override")
+    if human_override:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### Human Override")
+        with st.container(border=True):
+            render_field_row("Actor", human_override.get("actor", "N/A"))
+            render_field_row("Justification", human_override.get("justification", "N/A"))
+            render_field_row("Original Action", human_override.get("original_action", "N/A"))
+            render_field_row("Original Urgency", human_override.get("original_urgency", "N/A"))
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    with st.expander("Raw Response"):
+        st.json(data)

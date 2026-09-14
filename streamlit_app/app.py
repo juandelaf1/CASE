@@ -2,26 +2,48 @@ from __future__ import annotations
 
 import streamlit as st
 
-from streamlit_app.views import evaluation, status, triage
-from streamlit_app.components.hitl import hitl_list
+from streamlit_app.ui.theme import inject_global_css
 
 st.set_page_config(
-    page_title="CASE — Decision Center",
-    page_icon="⚖️",
+    page_title="CASE — Control Room",
+    page_icon="\u2697\ufe0f",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-st.title("CASE — Decision Center")
-st.markdown("*AI-assisted operational case triage*")
+inject_global_css()
 
-tab1, tab2, tab3 = st.tabs(["Decision Center", "Provider Evaluation", "System Status"])
+PAGES = {
+    "\U0001f3e0 Control Room": "control_room",
+    "\u2696\ufe0f Triage": "triage",
+    "\U0001f464 Human Review": "human_review",
+    "\U0001f4cb Audit Trail": "audit_trail",
+}
 
-with tab1:
-    triage.render()
-    hitl_list()
+with st.sidebar:
+    st.markdown("## CASE")
+    st.caption("Case Assessment and Structured Evaluation")
+    st.divider()
+    selection = st.radio("Navigate", list(PAGES.keys()), label_visibility="collapsed")
+    st.divider()
+    api_url = st.text_input("API URL", value="http://localhost:8000", key="api_url_input")
+    st.session_state["case_api_url"] = api_url
 
-with tab2:
-    evaluation.render()
+page = PAGES[selection]
 
-with tab3:
-    status.render()
+if page == "control_room":
+    from streamlit_app.views.control_room import render
+
+    render()
+elif page == "triage":
+    from streamlit_app.views.triage import render
+
+    render()
+elif page == "human_review":
+    from streamlit_app.views.human_review import render
+
+    render()
+elif page == "audit_trail":
+    from streamlit_app.views.audit_trail import render
+
+    render()
