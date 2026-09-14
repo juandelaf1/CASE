@@ -81,6 +81,13 @@ class InMemoryDecisionRepository(DecisionRepositoryPort):
             if hasattr(d, "lifecycle") and d.lifecycle == DecisionLifecycle.UNDER_REVIEW
         ][:limit]
 
+    async def list_decisions(self, limit: int = 50, offset: int = 0) -> list[object]:
+        all_d = sorted(self.decisions.values(), key=lambda d: getattr(d, "processing_time_ms", 0), reverse=True)
+        return all_d[offset:offset + limit]
+
+    async def count_decisions(self) -> int:
+        return len(self.decisions)
+
     async def update_lifecycle(self, decision_id: str, lifecycle: str, actor: str = "human", justification: str = "", original_action: str = "", original_urgency: str = "", original_confidence: float = 0.0, original_evidence_summary: str = "") -> None:
         if decision_id in self.decisions:
             self.decisions[decision_id].lifecycle = DecisionLifecycle(lifecycle)

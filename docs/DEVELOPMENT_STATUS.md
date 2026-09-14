@@ -308,3 +308,4 @@ These modules exist as standalone implementations. They are tested but NOT wired
 - LICENSE
 - API documentation (OpenAPI)
 - Contributing guide
+- Future Evolution Register (`docs/FUTURE_EVOLUTION.md`) — strategic technology decisions

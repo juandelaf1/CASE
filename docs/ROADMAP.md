@@ -359,3 +359,11 @@ The following require explicit decision before implementation:
 - New infrastructure (Kubernetes, Docker, cloud deployment)
 - New ML models or training pipelines
 - Changes to frozen specs
+
+---
+
+## Future Evolution Register
+
+Strategic technology decisions are maintained in `docs/FUTURE_EVOLUTION.md`. Any agent introducing new technology, training a model, migrating a database, adding a provider, connecting another project, creating a domain pack, or introducing agentic capabilities MUST read that document first.
+
+Technology is introduced ONLY when: real problem, real data, baseline, evidence, architectural decision, implementation, measurement. Never the other way around.

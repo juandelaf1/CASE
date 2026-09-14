@@ -34,7 +34,7 @@ MAX_JUSTIFICATION_LENGTH = 5000
 
 
 @app.get("/")
-def root():
+def root() -> dict[str, str]:
     return {
         "name": "CASE — Case Assessment and Structured Evaluation",
         "version": VERSION,
@@ -214,6 +214,32 @@ async def health() -> dict[str, str]:
 @app.get("/domains")
 async def list_domains() -> dict[str, list[str]]:
     return {"domains": registry.list_domains()}
+
+
+@app.get("/api/v1/cases")
+async def list_cases(limit: int = 50, offset: int = 0) -> dict[str, object]:
+    decisions = await decision_repo.list_decisions(limit=limit, offset=offset)
+    total = await decision_repo.count_decisions()
+    return {
+        "decisions": [d.model_dump_ext() for d in decisions],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@app.get("/api/v1/cases/{case_id}")
+async def get_case(case_id: str) -> dict[str, object]:
+    decision = await decision_repo.get_decision_by_case(case_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail=f"No decision found for case: {case_id}")
+    audit_events = await audit_adapter.get_events_by_case(case_id)
+    return {
+        "case_id": case_id,
+        "decision": decision.model_dump_ext(),
+        "audit_events": [e.model_dump() for e in audit_events],
+        "audit_count": len(audit_events),
+    }
 
 
 @app.post("/api/v1/triage")

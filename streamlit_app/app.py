@@ -16,6 +16,7 @@ inject_global_css()
 PAGES = {
     "\U0001f3e0 Control Room": "control_room",
     "\u2696\ufe0f Triage": "triage",
+    "\U0001f50d Case Explorer": "case_explorer",
     "\U0001f464 Human Review": "human_review",
     "\U0001f4cb Audit Trail": "audit_trail",
 }
@@ -37,6 +38,10 @@ if page == "control_room":
     render()
 elif page == "triage":
     from streamlit_app.views.triage import render
+
+    render()
+elif page == "case_explorer":
+    from streamlit_app.views.case_explorer import render
 
     render()
 elif page == "human_review":

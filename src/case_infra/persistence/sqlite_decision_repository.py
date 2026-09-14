@@ -106,6 +106,23 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         conn.close()
         return [self._row_to_decision(row) for row in rows]
 
+    async def list_decisions(self, limit: int = 50, offset: int = 0) -> list[TriageDecision]:
+        conn = sqlite3.connect(self._db_path)
+        cursor = conn.execute(
+            "SELECT * FROM decisions ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        return [self._row_to_decision(row) for row in rows]
+
+    async def count_decisions(self) -> int:
+        conn = sqlite3.connect(self._db_path)
+        cursor = conn.execute("SELECT COUNT(*) FROM decisions")
+        row = cursor.fetchone()
+        conn.close()
+        return int(row[0]) if row else 0
+
     async def update_lifecycle(self, decision_id: str, lifecycle: str, actor: str = "human", justification: str = "", original_action: str = "", original_urgency: str = "", original_confidence: float = 0.0, original_evidence_summary: str = "") -> None:
         decision = await self.get_decision(decision_id)
         if decision and decision.original_ai_proposal is None:
