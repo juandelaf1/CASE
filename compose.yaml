@@ -1,0 +1,15 @@
+services:
+  case:
+    build: .
+    ports:
+      - "8000:8000"
+      - "8501:8501"
+    volumes:
+      - case-data:/app/data
+    environment:
+      - CASE_DB_PATH=/app/data/case_audit.db
+      - CASE_API_BASE_URL=http://localhost:8000
+    restart: unless-stopped
+
+volumes:
+  case-data:
