@@ -221,21 +221,38 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 
 ---
 
-### PHASE 6 — Additional Domain Packs [FUTURE]
+### PHASE 6 — Additional Domain Packs [COMPLETED]
 
 **Objective:** Extend CASE to new domains beyond the current Urban, Logistics, and Infrastructure coverage.
 
-#### Sub-sections
-- **Finance Domain Pack:** Domain policies, evidence validation, urgency classification, and automation for financial cases.
-- **Real Estate Domain Pack:** Domain policies, evidence validation, urgency classification, and automation for real estate cases.
-- **New Domain Packs:** Additional domain packs (e.g., Healthcare, Legal, Insurance) as new opportunities arise.
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| Real Estate domain | COMPLETED | domain/real_estate_policy.py |
+| Finance domain | COMPLETED | domain/finance_policy.py |
+| Urban/Infrastructure domain | COMPLETED | domain/urban_policy.py, domain/infrastructure_policy.py |
+| Domain policy | COMPLETED | DomainPolicy implementation |
+| Domain taxonomy | COMPLETED | PropertyType, TransactionType, IncidentType enums |
+| Domain urgency | COMPLETED | Urgency classification |
+| Domain departments | COMPLETED | Department routing |
+| Domain actions | COMPLETED | Recommended actions |
+| Domain routing | COMPLETED | Case routing logic |
+| Domain examples | COMPLETED | Domain context |
+| Domain instructions | COMPLETED | Domain context |
+| Domain ethical constraints | COMPLETED | Policy constraints |
+| Tests | COMPLETED | 28 tests in test_real_estate_domain.py |
 
 #### Sub-sections
-- **Domain Policy:** Validate evidence and classify urgency for the new domain.
-- **Routing:** Classify incident types and route cases to the correct workflow.
-- **Automation:** Apply domain-specific automation policies with risk-based decisions.
-- **Recommended Actions:** Provide domain-specific recommended actions per incident type.
-- **Bias Pairs:** Define and test bias pairs for each new domain to ensure invariance.
+- **Real Estate:** Property transactions, valuations, inspections, listings, negotiations.
+- **Finance:** Financial transactions, compliance, risk assessment.
+- **Urban/Infrastructure:** City services, infrastructure maintenance, public safety.
+- **Domain policy:** Each domain implements DomainPolicy interface.
+- **Domain taxonomy:** Domain-specific incident types and classifications.
+- **Domain urgency:** Urgency classification per domain.
+- **Domain routing:** Case routing to appropriate departments.
+- **Domain actions:** Recommended actions per incident type.
+- **Domain examples:** Domain context for LLM prompts.
+- **Domain instructions:** Domain-specific processing instructions.
+- **Domain ethical constraints:** Ethical constraints per domain.
 
 ---
 
@@ -299,13 +316,13 @@ Status: NOT STARTED. Conceptual only.
 
 **Deliverables:** Decision Engine, reconciliation, HITL routing, audit trail, rules engine, evidence validation.
 
-### Sprint 6 — Additional Domain Packs [ACTIVE]
+### Sprint 6 — Additional Domain Packs [COMPLETED]
 
 **Objective:** Extend CASE to new domains beyond the current Urban, Logistics, and Infrastructure coverage.
 
 **Deliverables:** Finance Domain Pack, Real Estate Domain Pack, new domain packs.
 
-### Sprint 7 — Advanced Governance/Security [FUTURE]
+### Sprint 7 — Advanced Governance/Security [ACTIVE]
 
 **Objective:** Enhance governance, security, and compliance capabilities.
 
@@ -395,11 +412,11 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Phase 6 — Additional Domain Packs.** After Phase 5 Hybrid Decision Intelligence is complete, the next priority is Additional Domain Packs.
+**Phase 7 — Advanced Governance/Security.** After Phase 6 Additional Domain Packs is complete, the next priority is Advanced Governance/Security.
 
 ## Next Priority
 
-**Phase 7 — Advanced Governance/Security.** After Phase 6 Additional Domain Packs is complete, the next priority is Advanced Governance/Security.
+**Phase 8 — Production/Scale Readiness.** After Phase 7 Advanced Governance/Security is complete, the next priority is Production/Scale Readiness.
 
 ## Deferred
 
@@ -422,8 +439,8 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 | Phase 3 | ML Adaptation | COMPLETED |
 | Phase 4 | Specialist Models | COMPLETED |
 | Phase 5 | Hybrid Decision Intelligence | COMPLETED |
-| Phase 6 | Additional Domain Packs | ACTIVE |
-| Phase 7 | Advanced Governance/Security | FUTURE |
+| Phase 6 | Additional Domain Packs | COMPLETED |
+| Phase 7 | Advanced Governance/Security | ACTIVE |
 | Phase 8 | Production/Scale Readiness | FUTURE |
 
 ### Quality Gates
