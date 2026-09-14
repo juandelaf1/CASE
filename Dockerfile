@@ -24,13 +24,11 @@ COPY streamlit_app/ ./streamlit_app/
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data
-
-# Create non-root user
+# Create non-root user and data directories
 RUN groupadd -r caseuser && \
     useradd -r -g caseuser -d /app -s /sbin/nologin caseuser && \
-    chown -R caseuser:caseuser /app
+    mkdir -p /app/data /data && \
+    chown -R caseuser:caseuser /app /data
 
 USER caseuser
 
