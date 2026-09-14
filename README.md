@@ -134,10 +134,6 @@ graph TB
     RP --> AE
     TE --> DB
     TE --> AUD
-
-    style TE fill:#f9f,stroke:#333,stroke-width:2px
-    style RP fill:#bbf,stroke:#333,stroke-width:2px
-    style AE fill:#fbb,stroke:#333,stroke-width:2px
 ```
 
 ### Connected vs. Isolated
