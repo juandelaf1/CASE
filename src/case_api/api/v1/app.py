@@ -33,6 +33,18 @@ MAX_EVIDENCE_CONTENT_LENGTH = 10000
 MAX_JUSTIFICATION_LENGTH = 5000
 
 
+@app.get("/")
+def root():
+    return {
+        "name": "CASE — Case Assessment and Structured Evaluation",
+        "version": VERSION,
+        "docs": "/docs",
+        "health": "/health",
+        "triage": "/api/v1/triage",
+        "domains": "/domains",
+    }
+
+
 def _generate_case_id() -> str:
     short = uuid.uuid4().hex[:8].upper()
     return f"CASE-{short}"
