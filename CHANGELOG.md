@@ -148,4 +148,4 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 |---------|--------|-------------|
 | v0.1.0 | `02f193e` | Initial release |
 | v0.2.0 | `ecd85b9` | Isolated modules implemented |
-| v1.0.0 | pending | Release preparation |
+| v1.0.0 | `31fdce9` | Release preparation |

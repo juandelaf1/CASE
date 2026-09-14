@@ -22,8 +22,8 @@
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch | `master` |
-| HEAD | `ecd85b9` |
-| Commits | 18 |
+| HEAD | `1a6f6d7` |
+| Commits | 19 |
 | Remote | NONE |
 | Working tree | Clean |
 
@@ -251,10 +251,10 @@ These modules exist as standalone implementations. They are tested but NOT wired
 3. **Urban/Infrastructure missing routing** — No `classify_incident_type()` method
 4. **Bias pairs logistics-only** — Zero pairs for Urban or Infrastructure
 5. **OperationalTelemetry/LLMTelemetry unused** — Defined but not used in pipeline
-6. **No CHANGELOG for phases 2-8** — Only v0.1.0 documented
-7. **No LICENSE file** — License TBD
-8. **No ARCHITECTURE.md** — Missing technical architecture doc
-9. **No DECISION_LOG.md** — Missing decision record
+6. ~~**No CHANGELOG for phases 2-8**~~ — RESOLVED in v1.0.0
+7. ~~**No LICENSE file**~~ — RESOLVED in v1.0.0
+8. ~~**No ARCHITECTURE.md**~~ — RESOLVED in v1.0.0
+9. ~~**No DECISION_LOG.md**~~ — RESOLVED in v1.0.0
 
 ---
 

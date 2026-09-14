@@ -24,8 +24,8 @@ CASE (Case Assessment and Structured Evaluation) is a domain-agnostic, provider-
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch | `master` |
-| HEAD | `ecd85b9` |
-| Commits | 18 |
+| HEAD | `1a6f6d7` |
+| Commits | 19 |
 | Remote | NONE |
 | Working tree | Clean |
 | Python | 3.13.12 via `C:\Users\JUAN\miniconda3\python.exe` |

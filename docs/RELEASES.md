@@ -4,9 +4,9 @@
 
 ---
 
-## v1.0.0 — [PENDING]
+## v1.0.0 — 2026-09-14
 
-**Target:** Public release milestone.
+**Status:** Released.
 
 **Date:** 2026-09-14
 
