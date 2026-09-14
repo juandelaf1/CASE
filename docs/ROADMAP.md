@@ -104,26 +104,35 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 
 ---
 
-### PHASE 2 — Logistics Intelligence [ACTIVE]
+### PHASE 2 — Logistics Intelligence [COMPLETED]
 
 **Objective:** Deepen logistics domain intelligence with shipment-level optimization, classification, and routing capabilities.
 
 | Component | Status | Evidence |
 |-----------|--------|----------|
-| Shipment classification | NOT STARTED | New capability in Phase 2 |
-| Route recommendation | NOT STARTED | New capability in Phase 2 |
-| Carrier matching | NOT STARTED | New capability in Phase 2 |
-| Scoring | NOT STARTED | New capability in Phase 2 |
-| Optimization | NOT STARTED | New capability in Phase 2 |
-| Operational constraints | NOT STARTED | New capability in Phase 2 |
+| Shipment classification | COMPLETED | logistics_classification.py, ShipmentClassification |
+| Route recommendation | COMPLETED | logistics_route_recommendation.py, RouteRecommendation |
+| Carrier matching | COMPLETED | logistics_carrier_matching.py, CarrierMatching |
+| Scoring | COMPLETED | logistics_joint_recommendation.py, JointRecommendation |
+| Optimization | COMPLETED | Route scoring, carrier fit scoring |
+| Operational constraints | COMPLETED | ShipmentProfile constraints, carrier capabilities |
+| Explainability | COMPLETED | logistics_joint_recommendation.py, explainability |
+| Risk/Automation/HITL | COMPLETED | logistics_risk_automation.py, LogisticsRiskManager |
+| Audit trail | COMPLETED | LogisticsRiskManager audit_log |
+| Evaluation dataset | COMPLETED | logistics_evaluation.py, LogisticsEvaluation |
+| Contracts | COMPLETED | logistics_contracts.py, ShipmentProfile, Carrier, Route, CarrierRouteRecommendation |
+| Shipment Understanding | COMPLETED | logistics_understanding.py, ShipmentUnderstanding |
 
 #### Sub-sections
-- **Shipment Classification:** Classify shipments by type, weight class, destination, and handling requirements using the LogisticsPolicy domain pack.
-- **Route Recommendation:** Recommend optimal routes based on cost, time, carrier availability, and operational constraints.
+- **Shipment Classification:** Classify shipments by type, weight class, destination, and handling requirements using deterministic rules.
+- **Route Recommendation:** Recommend optimal routes based on Haversine distance, cost, time, and risk scoring.
 - **Carrier Matching:** Match shipments to carriers based on capacity, reliability, cost, and service level agreements.
 - **Scoring:** Score shipments, routes, and carriers using weighted metrics and domain-specific criteria.
-- **Optimization:** Optimize route and carrier selection under constraints (capacity, time windows, cost limits).
+- **Optimization:** Route and carrier selection under constraints (capacity, time windows, cost limits).
 - **Operational Constraints:** Encode real-world logistics constraints such as delivery windows, vehicle capacity, and regulatory requirements.
+- **Explainability:** JointRecommendation provides structured explanations for carrier + route recommendations.
+- **Risk/Automation/HITL:** LogisticsRiskManager handles risk assessment, HITL routing, and audit trail.
+- **Evaluation:** Synthetic dataset generation, scenarios, and recommendation quality metrics.
 
 ---
 
@@ -238,13 +247,13 @@ Status: NOT STARTED. Conceptual only.
 
 **Deliverables:** Contracts, ports, 3 domain packs, 3 providers, pipeline, prompts, API, Streamlit UI, persistence, 362+ tests.
 
-### Sprint 2 — Logistics Intelligence [ACTIVE]
+### Sprint 2 — Logistics Intelligence [COMPLETED]
 
 **Objective:** Add logistics-specific intelligence capabilities including shipment classification, route recommendation, carrier matching, scoring, and optimization.
 
-**Deliverables:** Shipment classification, route recommendation, carrier matching, scoring, optimization, operational constraints.
+**Deliverables:** Shipment classification, route recommendation, carrier matching, scoring, optimization, operational constraints, explainability, risk/Automation/HITL, audit, evaluation.
 
-### Sprint 3 — ML Adaptation [FUTURE]
+### Sprint 3 — ML Adaptation [ACTIVE]
 
 **Objective:** Adapt CASE for domain-specific ML with fine-tuning and multi-domain learning.
 
@@ -347,7 +356,6 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 - Finance Domain Pack
 - Real Estate Domain Pack
-- Logistics Intelligence (Sprint 2)
 - LoRA / QLoRA fine-tuning
 - BERT specialist models
 - Hybrid decision architecture
@@ -359,11 +367,11 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 
 ## Current Priority
 
-**Phase 2 — Logistics Intelligence.** Current objective is deepening logistics domain intelligence with shipment classification, route recommendation, carrier matching, scoring, optimization, and operational constraints.
+**Phase 3 — ML Adaptation.** After Phase 2 Logistics Intelligence is complete, the next priority is ML Adaptation for domain-specific fine-tuning.
 
 ## Next Priority
 
-**Phase 3 — ML Adaptation.** After Phase 2 Logistics Intelligence is complete, the next priority is ML Adaptation for domain-specific fine-tuning.
+**Phase 4 — Specialist Models.** After Phase 3 ML Adaptation is complete, the next priority is Specialist Models.
 
 ## Deferred
 
@@ -382,8 +390,8 @@ Marked explicitly as FUTURE. Not planned for immediate implementation:
 | Phase | Name | Status |
 |-------|------|--------|
 | Phase 1 | CASE v1 | COMPLETED |
-| Phase 2 | Logistics Intelligence | ACTIVE |
-| Phase 3 | ML Adaptation | FUTURE |
+| Phase 2 | Logistics Intelligence | COMPLETED |
+| Phase 3 | ML Adaptation | ACTIVE |
 | Phase 4 | Specialist Models | FUTURE |
 | Phase 5 | Hybrid Decision Intelligence | FUTURE |
 | Phase 6 | Additional Domain Packs | FUTURE |

@@ -76,13 +76,13 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform. It transforms
 
 ## CURRENT PRIORITY
 
-**Phase 2 — Logistics Intelligence.** Current objective is deepening logistics domain intelligence with shipment classification, route recommendation, carrier matching, scoring, optimization, and operational constraints.
+**Phase 3 — ML Adaptation.** After Phase 2 Logistics Intelligence is complete, the next priority is ML Adaptation for domain-specific fine-tuning.
 
 ---
 
 ## NEXT PRIORITY
 
-**Phase 3 — ML Adaptation.** After Phase 2 Logistics Intelligence is complete, the next priority is ML Adaptation for domain-specific fine-tuning.
+**Phase 4 — Specialist Models.** After Phase 3 ML Adaptation is complete, the next priority is Specialist Models.
 
 ---
 
@@ -168,10 +168,10 @@ If a task is interrupted or you lose context:
 ## CURRENT ROADMAP POINTER
 
 ```
-CURRENT PHASE: Phase 2 — Logistics Intelligence [ACTIVE]
-CURRENT SPRINT: Sprint 2 — Logistics Intelligence [ACTIVE]
-CURRENT TASK: Implement logistics intelligence capabilities (shipment classification, route recommendation, carrier matching, scoring, optimization)
-NEXT TASK: Phase 3 — ML Adaptation
+CURRENT PHASE: Phase 3 — ML Adaptation [ACTIVE]
+CURRENT SPRINT: Sprint 3 — ML Adaptation [ACTIVE]
+CURRENT TASK: Implement ML adaptation pipeline with dataset contracts, training abstractions, evaluation framework
+NEXT TASK: Phase 4 — Specialist Models
 ```
 
 ---
@@ -182,8 +182,8 @@ NEXT TASK: Phase 3 — ML Adaptation
 | Phase | Name | Status |
 |-------|------|--------|
 | Phase 1 | CASE v1 | COMPLETED |
-| Phase 2 | Logistics Intelligence | ACTIVE |
-| Phase 3 | ML Adaptation | FUTURE |
+| Phase 2 | Logistics Intelligence | COMPLETED |
+| Phase 3 | ML Adaptation | ACTIVE |
 | Phase 4 | Specialist Models | FUTURE |
 | Phase 5 | Hybrid Decision Intelligence | FUTURE |
 | Phase 6 | Additional Domain Packs | FUTURE |
