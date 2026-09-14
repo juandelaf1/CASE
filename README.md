@@ -84,40 +84,40 @@ The architectural insight is that **uncertainty should increase human involvemen
 
 ```mermaid
 graph TB
-    subgraph "Presentation Layer"
-        UI[Streamlit UI<br/>display only]
+    subgraph Presentation
+        UI[Streamlit UI]
     end
 
-    subgraph "API Layer"
-        API[FastAPI<br/>11 endpoints]
+    subgraph API
+        API[FastAPI]
     end
 
-    subgraph "Application Layer"
-        CR[Composition Root<br/>dependency wiring]
-        TE[TriageEngine<br/>orchestrator]
+    subgraph Application
+        CR[Composition Root]
+        TE[TriageEngine]
     end
 
-    subgraph "Domain Layer"
-        DR[DomainRegistry<br/>3 domains]
+    subgraph Domain
+        DR[DomainRegistry]
         DP1[UrbanPolicy]
         DP2[LogisticsPolicy]
         DP3[InfrastructurePolicy]
     end
 
-    subgraph "Intelligence Layer"
-        PB[PromptBuilder<br/>security constraints]
-        LLM[LLMProvider port]
+    subgraph Intelligence
+        PB[PromptBuilder]
+        LLM[LLMProvider]
         MP[MockProvider]
         OP[OllamaProvider]
         CP[CloudProvider]
     end
 
-    subgraph "Reliability Layer"
-        RP[ReliabilityPipeline<br/>validation chain]
-        AE[AutomationEvaluator<br/>risk assessment]
+    subgraph Reliability
+        RP[ReliabilityPipeline]
+        AE[AutomationEvaluator]
     end
 
-    subgraph "Persistence Layer"
+    subgraph Persistence
         DB[(SQLite)]
         AUD[AuditPort]
     end
@@ -126,14 +126,18 @@ graph TB
     API --> CR
     CR --> TE
     TE --> DR
-    DR --> DP1 & DP2 & DP3
     TE --> PB
-    PB --> LLM
-    LLM --> MP & OP & CP
     TE --> RP
-    RP --> AE
     TE --> DB
     TE --> AUD
+    DR --> DP1
+    DR --> DP2
+    DR --> DP3
+    PB --> LLM
+    LLM --> MP
+    LLM --> OP
+    LLM --> CP
+    RP --> AE
 ```
 
 ### Connected vs. Isolated
