@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+import tempfile
 
 import pytest
 
@@ -139,3 +140,62 @@ class TestSQLiteAuditAdapter:
         asyncio.run(adapter.log_event(event))
         events = asyncio.run(adapter.get_events_by_case("case-001"))
         assert events[0].details == {"key": "value", "nested": {"a": 1}}
+
+
+class TestSQLiteConfigurablePath:
+    def test_custom_db_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = os.path.join(tmpdir, "custom.db")
+            adapter = SQLiteAuditAdapter(db_path=db_path)
+            event = _make_audit_event()
+            asyncio.run(adapter.log_event(event))
+            events = asyncio.run(adapter.get_events_by_case("case-001"))
+            assert len(events) == 1
+            assert os.path.exists(db_path)
+
+    def test_nested_db_path_creates_parent(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = os.path.join(tmpdir, "subdir", "nested", "audit.db")
+            adapter = SQLiteAuditAdapter(db_path=db_path)
+            event = _make_audit_event()
+            asyncio.run(adapter.log_event(event))
+            assert os.path.exists(db_path)
+
+    def test_both_adapters_share_db_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = os.path.join(tmpdir, "shared.db")
+            audit = SQLiteAuditAdapter(db_path=db_path)
+            from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
+            SQLiteDecisionRepository(db_path=db_path)
+            event = _make_audit_event()
+            asyncio.run(audit.log_event(event))
+            events = asyncio.run(audit.get_events_by_case("case-001"))
+            assert len(events) == 1
+            assert os.path.exists(db_path)
+
+
+class TestCompositionDbPath:
+    def test_get_db_path_reads_env(self, monkeypatch):
+        monkeypatch.setenv("CASE_DB_PATH", "/tmp/test_case_path.db")
+        from case_core.composition import _get_db_path
+        result = _get_db_path()
+        assert result == "/tmp/test_case_path.db"
+        if os.path.exists("/tmp/test_case_path.db"):
+            os.remove("/tmp/test_case_path.db")
+
+    def test_get_db_path_default(self, monkeypatch):
+        monkeypatch.delenv("CASE_DB_PATH", raising=False)
+        from case_core.composition import _get_db_path
+        result = _get_db_path()
+        assert result == "case_audit.db"
+        if os.path.exists("case_audit.db"):
+            os.remove("case_audit.db")
+
+    def test_get_db_path_creates_parent_dir(self, monkeypatch):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = os.path.join(tmpdir, "data", "case.db")
+            monkeypatch.setenv("CASE_DB_PATH", db_path)
+            from case_core.composition import _get_db_path
+            result = _get_db_path()
+            assert result == db_path
+            assert os.path.isdir(os.path.dirname(db_path))

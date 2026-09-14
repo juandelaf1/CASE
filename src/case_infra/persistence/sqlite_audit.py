@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from pathlib import Path
 
 from case_core.contracts.audit import AuditEvent
 from case_core.ports.audit import AuditPort
@@ -8,6 +9,7 @@ from case_core.ports.audit import AuditPort
 class SQLiteAuditAdapter(AuditPort):
     def __init__(self, db_path: str = "case_audit.db") -> None:
         self._db_path = db_path
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
     def _init_db(self) -> None:

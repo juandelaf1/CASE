@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from pathlib import Path
 
 from case_core.contracts.decision import AIProposal, HumanOverride, TriageDecision
 from case_core.contracts.lifecycle import DecisionLifecycle
@@ -9,6 +10,7 @@ from case_core.ports.decision_repository import DecisionRepositoryPort
 class SQLiteDecisionRepository(DecisionRepositoryPort):
     def __init__(self, db_path: str = "case_audit.db") -> None:
         self._db_path = db_path
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
     def _init_db(self) -> None:

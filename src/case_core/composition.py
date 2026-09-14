@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
+from pathlib import Path
 
 from case_core.application.engine import TriageEngine
 from case_core.domain.default_automation import DefaultAutomationPolicy
@@ -29,6 +31,12 @@ def _resolve_automation_policy(domain: str) -> AutomationPolicy | None:
     return _AUTOMATION_POLICIES.get(domain)
 
 
+def _get_db_path() -> str:
+    db_path = os.environ.get("CASE_DB_PATH", "case_audit.db")
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+    return db_path
+
+
 @dataclass
 class AppDependencies:
     engine: TriageEngine
@@ -44,8 +52,9 @@ def create_app_dependencies() -> AppDependencies:
     registry.register(InfrastructurePolicy())
 
     provider: LLMProvider = MockProvider()
-    audit_adapter = SQLiteAuditAdapter()
-    decision_repo = SQLiteDecisionRepository()
+    db_path = _get_db_path()
+    audit_adapter = SQLiteAuditAdapter(db_path=db_path)
+    decision_repo = SQLiteDecisionRepository(db_path=db_path)
 
     engine = TriageEngine(
         domain_registry=registry,
