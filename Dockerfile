@@ -36,6 +36,7 @@ USER caseuser
 
 ENV CASE_DB_PATH=/app/data/case_audit.db
 ENV CASE_API_BASE_URL=http://localhost:8000
+ENV PYTHONPATH=/app
 
 EXPOSE 8000 8501
 
