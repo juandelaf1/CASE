@@ -78,3 +78,4 @@ All notable changes to CASE will be documented in this file.
 | v1.0.0 | 568 passed | 0 errors | 0 errors |
 | Phase 2 | 594 passed | 0 errors | 0 errors |
 | Phase 3 | 608 passed | 0 errors | 0 errors |
+| Phase 4 | 671 passed | 0 errors | 0 errors |

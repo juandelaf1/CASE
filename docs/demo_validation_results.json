@@ -1,0 +1,152 @@
+{
+  "A": {
+    "label": "A",
+    "record_id": "82721",
+    "stages": {
+      "load_record": "OK",
+      "to_profile": "OK",
+      "classify": "OK",
+      "create_case": "OK",
+      "triage": "OK",
+      "decision": "OK",
+      "risk": "N/A",
+      "audit": "OK",
+      "hitl": "NOT_REQUIRED"
+    },
+    "errors": [],
+    "profile": {
+      "shipment_id": "USAID-82721",
+      "destination": "Mozambique",
+      "weight_kg": 150.0,
+      "cargo_type": "GENERAL",
+      "priority": "STANDARD",
+      "declared_value_usd": 7976.8,
+      "constraints": []
+    },
+    "classification": {
+      "shipment_type": "general_freight",
+      "logistics_class": "standard",
+      "risk_level": "LOW",
+      "complexity_score": 1.0,
+      "handling_category": "standard"
+    },
+    "needs_verification": false,
+    "case": {
+      "case_id": "LOG-82721",
+      "domain": "logistics",
+      "urgency": "LOW",
+      "evidence_count": 3,
+      "status": "received"
+    },
+    "decision": {
+      "action": "approve",
+      "urgency": "MEDIUM",
+      "confidence": 0.85,
+      "reason": "Standard urban maintenance case with sufficient evidence",
+      "lifecycle": "under_review"
+    },
+    "audit_events": "logged_via_audit_port"
+  },
+  "B": {
+    "label": "B",
+    "record_id": "4",
+    "stages": {
+      "load_record": "OK",
+      "to_profile": "OK",
+      "classify": "OK",
+      "create_case": "OK",
+      "triage": "OK",
+      "decision": "OK",
+      "risk": "N/A",
+      "audit": "OK",
+      "hitl": "NOT_REQUIRED"
+    },
+    "errors": [],
+    "profile": {
+      "shipment_id": "USAID-4",
+      "destination": "C\u00f4te d'Ivoire",
+      "weight_kg": 171.0,
+      "cargo_type": "FRAGILE",
+      "priority": "STANDARD",
+      "declared_value_usd": 40000.0,
+      "constraints": [
+        "direct_drop",
+        "ex_works"
+      ]
+    },
+    "classification": {
+      "shipment_type": "fragile_cargo",
+      "logistics_class": "standard",
+      "risk_level": "LOW",
+      "complexity_score": 1.0,
+      "handling_category": "standard"
+    },
+    "needs_verification": false,
+    "case": {
+      "case_id": "LOG-4",
+      "domain": "logistics",
+      "urgency": "LOW",
+      "evidence_count": 3,
+      "status": "received"
+    },
+    "decision": {
+      "action": "approve",
+      "urgency": "MEDIUM",
+      "confidence": 0.85,
+      "reason": "Standard urban maintenance case with sufficient evidence",
+      "lifecycle": "under_review"
+    },
+    "audit_events": "logged_via_audit_port"
+  },
+  "C": {
+    "label": "C",
+    "record_id": "108",
+    "stages": {
+      "load_record": "OK",
+      "to_profile": "OK",
+      "classify": "OK",
+      "create_case": "OK",
+      "triage": "OK",
+      "decision": "OK",
+      "risk": "N/A",
+      "audit": "OK",
+      "hitl": "NOT_REQUIRED"
+    },
+    "errors": [],
+    "profile": {
+      "shipment_id": "USAID-108",
+      "destination": "C\u00f4te d'Ivoire",
+      "weight_kg": 2126.0,
+      "cargo_type": "GENERAL",
+      "priority": "HIGH",
+      "declared_value_usd": 140581.5,
+      "constraints": [
+        "direct_drop",
+        "heavy_shipment"
+      ]
+    },
+    "classification": {
+      "shipment_type": "heavy_freight",
+      "logistics_class": "lager",
+      "risk_level": "LOW",
+      "complexity_score": 1.0,
+      "handling_category": "priority"
+    },
+    "needs_verification": true,
+    "case": {
+      "case_id": "LOG-108",
+      "domain": "logistics",
+      "urgency": "LOW",
+      "evidence_count": 3,
+      "status": "received"
+    },
+    "decision": {
+      "action": "approve",
+      "urgency": "MEDIUM",
+      "confidence": 0.85,
+      "reason": "Standard urban maintenance case with sufficient evidence",
+      "lifecycle": "under_review"
+    },
+    "audit_events": "logged_via_audit_port"
+  }
+}

@@ -21,8 +21,8 @@
 | Field | Value |
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
-| Branch | `case/phase-2-evidence-capabilities` |
-| HEAD | `dbbbfb5` |
+| Branch | `master` |
+| HEAD | `43c7c29` |
 | Remote | `origin` (GitHub) |
 | Working tree | Clean |
 
@@ -32,10 +32,10 @@
 
 | Check | Result |
 |-------|--------|
-| pytest | 568 passed, 7 skipped, 0 failures |
-| ruff | 0 errors |
-| mypy | 0 errors (84 source files) |
-| Integration tests | 11 pass, 7 skipped (Ollama) |
+| pytest | 671 passed, 14 skipped, 0 failures |
+| ruff | 0 errors (3 pre-existing unused imports in test_groq_live.py) |
+| mypy | 0 errors (92 source files) |
+| Integration tests | 11 pass, 7 skipped (Ollama/Groq) |
 
 ---
 
@@ -52,7 +52,7 @@ composition.py (dependency wiring)
    ↓
 TriageEngine (application layer orchestrator)
    ↓
-DomainRegistry → DomainPolicy (3 registered domains)
+DomainRegistry → DomainPolicy (4 registered domains: urban, logistics, infrastructure, seismic_risk)
    ↓
 PromptBuilder → LLMProvider (via port)
    ↓
@@ -63,9 +63,23 @@ AutomationEvaluator (risk assessment → AUTO_APPROVE / HUMAN_REVIEW / ESCALATE)
 DecisionRepositoryPort (persistence)
    ↓
 AuditPort (audit trail)
+
+External Adapters (NOT part of core pipeline):
+   USAIDAdapter → LogisticsPipeline → OperationalCase → TriageEngine
+   USGSEarthquakeAdapter → SeismicRiskPolicy → TriageEngine
 ```
 
-### 4.2 Isolated Modules (Not Connected to Pipeline)
+### 4.2 External Adapters (Phase 4 — Connected via Composition)
+
+These adapters are connected to the pipeline via composition.py and route through TriageEngine.
+
+| Adapter | Location | Purpose | Status |
+|---------|----------|---------|--------|
+| USAIDAdapter | `logistics_adapter/usaid_adapter.py` | Load real USAID SCMS shipment data | CONNECTED |
+| LogisticsPipeline | `logistics_adapter/pipeline.py` | Profile → Classification → OperationalCase | CONNECTED |
+| USGSEarthquakeAdapter | `usgs_adapter/client.py` | Fetch real-time earthquake data from USGS FDSNWS | CONNECTED |
+
+### 4.3 Isolated Modules (Not Connected to Pipeline)
 
 These modules exist as standalone implementations. They are tested but NOT wired into the running system.
 
@@ -116,8 +130,10 @@ These modules exist as standalone implementations. They are tested but NOT wired
 | UrbanPolicy | CONNECTED | validate_evidence(), classify_urgency(), get_domain_context() |
 | LogisticsPolicy | CONNECTED | validate_evidence(), classify_urgency(), get_domain_context(), classify_incident_type(), get_recommended_actions() |
 | InfrastructurePolicy | CONNECTED | validate_evidence(), classify_urgency(), get_domain_context() |
+| SeismicRiskPolicy | CONNECTED | validate_evidence(), classify_urgency(), get_domain_context() (Phase 4) |
 | LogisticsAutomationPolicy | CONNECTED | assess_risk(), _requires_hitl(), _decide_automation(), 5 departments |
 | DefaultAutomationPolicy | CONNECTED | Conservative generic policy for Urban/Infrastructure |
+| SeismicAutomationPolicy | CONNECTED | assess_risk(), risk-based automation for seismic events (Phase 4) |
 | RealEstatePolicy | ISOLATED | Implemented but NOT registered in DomainRegistry |
 
 ---
@@ -131,9 +147,9 @@ These modules exist as standalone implementations. They are tested but NOT wired
 | File | `src/case_core/composition.py` (63 lines) |
 | Function | `create_app_dependencies() -> AppDependencies` |
 | Returns | `AppDependencies` dataclass: engine, registry, audit_adapter, decision_repo |
-| Registered Domains | UrbanPolicy, LogisticsPolicy, InfrastructurePolicy |
+| Registered Domains | UrbanPolicy, LogisticsPolicy, InfrastructurePolicy, SeismicRiskPolicy |
 | Default Provider | MockProvider |
-| Automation Policies | LogisticsAutomationPolicy (logistics), DefaultAutomationPolicy (urban, infrastructure) |
+| Automation Policies | LogisticsAutomationPolicy (logistics), DefaultAutomationPolicy (urban, infrastructure), SeismicAutomationPolicy (seismic_risk) |
 
 ### 6.2 TriageEngine (`src/case_core/application/engine.py`)
 
@@ -156,6 +172,7 @@ These modules exist as standalone implementations. They are tested but NOT wired
 | MockProvider | `providers/mock.py` | 30 | CONNECTED (default) |
 | OllamaProvider | `providers/ollama.py` | 13 + 5 integration | CONNECTED (via swap) |
 | CloudProvider | `providers/cloud.py` | 28 | CONNECTED (via swap) |
+| GroqProvider | `providers/groq.py` | 26 + 7 live | CONNECTED (via swap) |
 
 ---
 
@@ -225,8 +242,12 @@ These modules exist as standalone implementations. They are tested but NOT wired
 | test_cost_model.py | 12 | PASS | unit |
 | test_api.py | 11 | PASS | integration |
 | test_ollama_integration.py | 7 | SKIP | integration |
+| test_groq_live.py | 7 | SKIP | integration (no key) |
+| test_seismic_domain.py | 50 | PASS | unit (Phase 4) |
+| test_logistics_pipeline.py | 27 | PASS | unit (Phase 4) |
+| test_seismic_usgs.py | 5 | SKIP | integration (Phase 4) |
 
-**Total: 568 passed, 7 skipped, 0 failures**
+**Total: 671 passed, 14 skipped, 0 failures**
 
 ### 10.2 Test Classification
 
@@ -242,6 +263,7 @@ These modules exist as standalone implementations. They are tested but NOT wired
 | **Persistence** | test_sqlite | SQLite adapter tests |
 | **Boundary** | test_streamlit_boundary | Streamlit integration boundary |
 | **Isolated** | test_governance, test_hybrid_decision, test_ml_adaptation, test_production, test_real_estate_domain, test_specialist_models | Tests for isolated modules |
+| **Phase 4** | test_seismic_domain, test_logistics_pipeline, test_seismic_usgs | Real data integration tests |
 
 ---
 
@@ -262,6 +284,7 @@ These modules exist as standalone implementations. They are tested but NOT wired
 ## 12. Known Limitations
 
 - MockProvider primary evidence source (not real LLMs)
+- Phase 4 demo cases executed with MockProvider (Groq/Ollama unavailable) — NOT validated with real LLM
 - Offline evaluation (15 cases, CPU-only)
 - Security/bias tested only with MockProvider
 - No production deployment
