@@ -7,6 +7,15 @@ All notable changes to CASE will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Phase 4: Seismic Risk Integration (first real external data integration)
+  - USGS Earthquake Hazards API adapter (`src/usgs_adapter/client.py`)
+  - SeismicRiskPolicy domain policy (`src/case_core/domain/seismic_policy.py`)
+  - SeismicAutomationPolicy automation policy (`src/case_core/domain/seismic_automation.py`)
+  - 50 new unit tests (seismic domain + USGS client, mocked)
+  - 5 integration tests (live USGS API + full pipeline with mock provider)
+  - Phase 4 Portfolio Discovery, Integration Candidates, Integration Proposal
+  - Domain registered in composition.py (4th domain: seismic_risk)
+  - Total tests: 644 passed (+50), 14 skipped
 - Phase 3: Real Provider Integration
   - GroqProvider implementation (OpenAI-compatible)
   - Live provider tests (7/7 pass)
@@ -19,6 +28,7 @@ All notable changes to CASE will be documented in this file.
 ### Changed
 - Default Groq model: `qwen/qwen3.8-27b`
 - Provider selection via `CASE_PROVIDER` env var
+- Registered 4th domain: `seismic_risk` in DomainRegistry
 
 ### Fixed
 - Groq structured output schema compliance (additionalProperties:false)

@@ -10,6 +10,8 @@ from case_core.domain.infrastructure_policy import InfrastructurePolicy
 from case_core.domain.logistics_automation import LogisticsAutomationPolicy
 from case_core.domain.logistics_policy import LogisticsPolicy
 from case_core.domain.registry import DomainRegistry
+from case_core.domain.seismic_automation import SeismicAutomationPolicy
+from case_core.domain.seismic_policy import SeismicRiskPolicy
 from case_core.domain.urban_policy import UrbanPolicy
 from case_core.ports.automation import AutomationPolicy
 from case_core.ports.llm import LLMProvider
@@ -21,11 +23,13 @@ from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepo
 
 _LOGISTICS_AUTOMATION = LogisticsAutomationPolicy()
 _DEFAULT_AUTOMATION = DefaultAutomationPolicy()
+_SEISMIC_AUTOMATION = SeismicAutomationPolicy()
 
 _AUTOMATION_POLICIES: dict[str, AutomationPolicy] = {
     "logistics": _LOGISTICS_AUTOMATION,
     "urban_operations": _DEFAULT_AUTOMATION,
     "infrastructure": _DEFAULT_AUTOMATION,
+    "seismic_risk": _SEISMIC_AUTOMATION,
 }
 
 
@@ -68,6 +72,7 @@ def create_app_dependencies() -> AppDependencies:
     registry.register(UrbanPolicy())
     registry.register(LogisticsPolicy())
     registry.register(InfrastructurePolicy())
+    registry.register(SeismicRiskPolicy())
 
     provider: LLMProvider = _resolve_provider()
     db_path = _get_db_path()
