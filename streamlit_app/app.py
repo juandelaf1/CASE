@@ -20,6 +20,7 @@ PAGES = {
     "\U0001f464 Human Review": "human_review",
     "\U0001f4cb Audit Trail": "audit_trail",
     "\U0001f52c Provider Lab": "provider_lab",
+    "\U0001f4ca Evaluation Lab": "evaluation",
 }
 
 with st.sidebar:
@@ -55,5 +56,9 @@ elif page == "audit_trail":
     render()
 elif page == "provider_lab":
     from streamlit_app.views.provider_lab import render
+
+    render()
+elif page == "evaluation":
+    from streamlit_app.views.evaluation import render
 
     render()
