@@ -21,6 +21,7 @@ PAGES = {
     "\U0001f4cb Audit Trail": "audit_trail",
     "\U0001f52c Provider Lab": "provider_lab",
     "\U0001f4ca Evaluation Lab": "evaluation",
+    "\u2696\ufe0f Counterfactual Lab": "counterfactual",
 }
 
 with st.sidebar:
@@ -60,5 +61,9 @@ elif page == "provider_lab":
     render()
 elif page == "evaluation":
     from streamlit_app.views.evaluation import render
+
+    render()
+elif page == "counterfactual":
+    from streamlit_app.views.counterfactual import render
 
     render()
