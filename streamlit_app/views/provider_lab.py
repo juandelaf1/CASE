@@ -15,10 +15,18 @@ def _get_client() -> CASEClient:
     return CASEClient(base_url=api_url)
 
 
+def _provider_status_badge(name: str, is_mock: bool) -> str:
+    if is_mock:
+        return "MOCK"
+    if name in ("groq", "ollama", "cloud"):
+        return "REAL"
+    return "UNKNOWN"
+
+
 def render() -> None:
     st.markdown('<div class="case-page-title">Provider Lab</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="case-page-subtitle">Provider configuration and real telemetry from triage runs</div>',
+        '<div class="case-page-subtitle">Provider configuration, availability, and real telemetry</div>',
         unsafe_allow_html=True,
     )
 
@@ -45,10 +53,13 @@ def render() -> None:
                 st.markdown(f"**{name}**")
                 st.caption(f"Model: `{model}`")
             with c2:
-                if is_mock:
+                status = _provider_status_badge(name, is_mock)
+                if status == "MOCK":
                     st.warning("Deterministic test/demo provider — not a real LLM")
+                elif status == "REAL":
+                    st.success("Real LLM provider — live inference")
                 else:
-                    st.success("Active LLM provider")
+                    st.info("Provider status unknown")
             with c3:
                 if name == active:
                     st.markdown("**ACTIVE**")
@@ -77,20 +88,47 @@ def render() -> None:
                 with st.container(border=True):
                     render_field_row("Provider", provider_info.get("provider", "N/A"))
                     render_field_row("Model", provider_info.get("model", "N/A"))
-                    render_field_row("Prompt Tokens", str(provider_info.get("prompt_tokens", "N/A")))
-                    render_field_row("Completion Tokens", str(provider_info.get("completion_tokens", "N/A")))
-                    render_field_row("Total Tokens", str(provider_info.get("total_tokens", "N/A")))
-                    render_field_row("Latency", f"{provider_info.get('latency_ms', 0):.1f} ms")
+
+                    latency = provider_info.get("latency_ms", 0)
+                    render_field_row("Latency", f"{latency:.1f} ms" if latency else "N/A")
+
+                    prompt_tokens = provider_info.get("prompt_tokens", 0)
+                    completion_tokens = provider_info.get("completion_tokens", 0)
+                    total_tokens = provider_info.get("total_tokens", 0)
+                    if total_tokens:
+                        render_field_row("Tokens", f"{prompt_tokens} prompt / {completion_tokens} completion / {total_tokens} total")
+                    else:
+                        render_field_row("Tokens", "NOT AVAILABLE")
+
                     render_field_row("Finish Reason", provider_info.get("finish_reason", "N/A"))
+
+                    error = provider_info.get("error")
+                    if error:
+                        st.error(f"Provider error: {error}")
             else:
                 st.info("No provider telemetry recorded for the last case.")
     except Exception:
         st.info("Could not load recent telemetry.")
 
-    with st.expander("About Provider Telemetry"):
-        st.markdown(
-            "Provider telemetry (model, tokens, latency) is captured from the actual "
-            "LLM response during triage and stored in the decision metadata. "
-            "With MockProvider, values are deterministic placeholders — not real LLM metrics. "
-            "For real telemetry, configure OllamaProvider or a cloud provider."
-        )
+    with st.expander("Provider Configuration"):
+        st.markdown("""
+**Supported Providers:**
+
+| Provider | Env Vars | Status |
+|----------|----------|--------|
+| MockProvider | (none) | CONNECTED — deterministic test/demo |
+| GroqProvider | `CASE_GROQ_API_KEY`, `CASE_GROQ_MODEL` | CONNECTED — real inference |
+| OllamaProvider | `CASE_OLLAMA_BASE_URL` | TESTED_ISOLATED — local LLM |
+| CloudProvider | `CASE_CLOUD_API_KEY`, `CASE_CLOUD_BASE_URL` | TESTED_ISOLATED — OpenAI-compatible |
+
+**How to enable Groq:**
+
+```bash
+export CASE_PROVIDER=groq
+export CASE_GROQ_API_KEY=gsk_...
+export CASE_GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+**Important:** CASE validation remains active regardless of provider.
+The provider may be probabilistic — the system around it remains controlled.
+""")
