@@ -34,7 +34,7 @@ MAX_JUSTIFICATION_LENGTH = 5000
 
 
 @app.get("/")
-def root():
+def root() -> dict[str, str]:
     return {
         "name": "CASE — Case Assessment and Structured Evaluation",
         "version": VERSION,

@@ -13,6 +13,8 @@ from case_core.domain.registry import DomainRegistry
 from case_core.domain.urban_policy import UrbanPolicy
 from case_core.ports.automation import AutomationPolicy
 from case_core.ports.llm import LLMProvider
+from case_core.providers.cloud import CloudProvider
+from case_core.providers.groq import GroqProvider
 from case_core.providers.mock import MockProvider
 from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter
 from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
@@ -45,13 +47,28 @@ class AppDependencies:
     decision_repo: SQLiteDecisionRepository
 
 
+def _resolve_provider() -> LLMProvider:
+    provider_name = os.environ.get("CASE_PROVIDER", "mock").lower()
+
+    if provider_name == "groq":
+        return GroqProvider()
+    elif provider_name == "cloud":
+        return CloudProvider()
+    elif provider_name == "ollama":
+        from case_core.providers.ollama import OllamaProvider
+
+        return OllamaProvider()
+    else:
+        return MockProvider()
+
+
 def create_app_dependencies() -> AppDependencies:
     registry = DomainRegistry()
     registry.register(UrbanPolicy())
     registry.register(LogisticsPolicy())
     registry.register(InfrastructurePolicy())
 
-    provider: LLMProvider = MockProvider()
+    provider: LLMProvider = _resolve_provider()
     db_path = _get_db_path()
     audit_adapter = SQLiteAuditAdapter(db_path=db_path)
     decision_repo = SQLiteDecisionRepository(db_path=db_path)
