@@ -30,7 +30,7 @@ def _mock_groq_response(content: str, finish_reason: str = "stop") -> dict:
         "id": "chatcmpl-groq-test123",
         "object": "chat.completion",
         "created": 1234567890,
-        "model": "llama-3.3-70b-versatile",
+        "model": "qwen/qwen3.8-27b",
         "choices": [
             {
                 "index": 0,
@@ -48,7 +48,7 @@ class TestGroqProviderConstruction:
         with patch.dict(os.environ, {"CASE_GROQ_API_KEY": "test-key"}):
             provider = GroqProvider()
             assert provider.name == "groq"
-            assert provider.model == "llama-3.3-70b-versatile"
+            assert provider.model == "qwen/qwen3.8-27b"
             assert provider.api_key == "test-key"
             assert provider.base_url == GROQ_BASE_URL
 
@@ -139,7 +139,7 @@ class TestGroqProviderSuccessMapping:
         assert response.usage.total_tokens == 80
         assert response.finish_reason == "stop"
         assert response.provider == "groq"
-        assert response.model == "llama-3.3-70b-versatile"
+        assert response.model == "qwen/qwen3.8-27b"
         assert response.latency_ms >= 0
 
     @pytest.mark.asyncio

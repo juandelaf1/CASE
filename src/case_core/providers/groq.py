@@ -14,6 +14,22 @@ from case_core.ports.llm import LLMProvider
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 
+def _add_additional_properties_false(schema: dict[str, Any]) -> dict[str, Any]:
+    """Recursively add additionalProperties: false to all objects in schema.
+
+    Groq structured output requires this on every object type.
+    """
+    result = dict(schema)
+    if result.get("type") == "object" and "properties" in result:
+        result["additionalProperties"] = False
+        for key, prop in result["properties"].items():
+            if isinstance(prop, dict):
+                result["properties"][key] = _add_additional_properties_false(prop)
+    if "items" in result and isinstance(result["items"], dict):
+        result["items"] = _add_additional_properties_false(result["items"])
+    return result
+
+
 class GroqProvider(LLMProvider):
     """Groq provider — OpenAI-compatible API with low-latency inference.
 
@@ -33,7 +49,7 @@ class GroqProvider(LLMProvider):
         timeout_seconds: float = 30.0,
     ) -> None:
         self._api_key = api_key or os.environ.get("CASE_GROQ_API_KEY", "")
-        self._model = model or os.environ.get("CASE_GROQ_MODEL", "llama-3.3-70b-versatile")
+        self._model = model or os.environ.get("CASE_GROQ_MODEL", "qwen/qwen3.8-27b")
         self._base_url = (base_url or os.environ.get("CASE_GROQ_BASE_URL", GROQ_BASE_URL)).rstrip("/")
         self._timeout_seconds = timeout_seconds
 
@@ -68,12 +84,13 @@ class GroqProvider(LLMProvider):
         }
 
         if request.response_schema:
+            groq_schema = _add_additional_properties_false(request.response_schema)
             payload["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {
                     "name": "case_decision",
                     "strict": True,
-                    "schema": request.response_schema,
+                    "schema": groq_schema,
                 },
             }
         else:
