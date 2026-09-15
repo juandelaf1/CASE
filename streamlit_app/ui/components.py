@@ -177,3 +177,21 @@ def render_down_arrow() -> None:
 
 def render_empty_state(message: str) -> None:
     st.markdown(f'<div class="case-empty-state">{message}</div>', unsafe_allow_html=True)
+
+
+def render_api_health_check(client: Any) -> bool:
+    try:
+        health = client.health_sync()
+        if health.get("status") != "ok":
+            st.warning("CASE API is not healthy.")
+            return False
+        return True
+    except Exception:
+        st.error("Cannot connect to CASE API.")
+        return False
+
+
+def render_error_state(message: str, detail: str = "") -> None:
+    st.error(message)
+    if detail:
+        st.caption(detail)

@@ -6,6 +6,7 @@ import streamlit as st
 
 from streamlit_app.client import CASEClient
 from streamlit_app.evaluation.scenarios.bias import BIAS_PAIRS
+from streamlit_app.ui.components import render_api_health_check
 
 
 def _get_client() -> CASEClient:
@@ -29,13 +30,7 @@ def render() -> None:
 
     client = _get_client()
 
-    try:
-        health = client.health_sync()
-        if health.get("status") != "ok":
-            st.warning("CASE API is not healthy.")
-            return
-    except Exception:
-        st.error("Cannot connect to CASE API.")
+    if not render_api_health_check(client):
         return
 
     st.markdown("---")

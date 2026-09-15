@@ -4,6 +4,7 @@ import streamlit as st
 
 from streamlit_app.client import CASEClient
 from streamlit_app.ui.components import (
+    render_api_health_check,
     render_empty_state,
     render_field_row,
 )
@@ -23,12 +24,11 @@ def render() -> None:
 
     client = _get_client()
 
+    if not render_api_health_check(client):
+        return
+
     with st.spinner("Loading provider info..."):
-        try:
-            providers_data = client.list_providers_sync()
-        except Exception:
-            st.error("Cannot connect to CASE API")
-            return
+        providers_data = client.list_providers_sync()
 
     providers = providers_data.get("providers", [])
     active = providers_data.get("active_provider", "unknown")
