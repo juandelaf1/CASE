@@ -14,27 +14,47 @@ st.set_page_config(
 inject_global_css()
 
 PAGES = {
-    "\U0001f3e0 Control Room": "control_room",
-    "\u2696\ufe0f Triage": "triage",
-    "\U0001f50d Case Explorer": "case_explorer",
-    "\U0001f464 Human Review": "human_review",
-    "\U0001f4cb Audit Trail": "audit_trail",
-    "\U0001f52c Provider Lab": "provider_lab",
-    "\U0001f4ca Evaluation Lab": "evaluation",
-    "\u2696\ufe0f Counterfactual Lab": "counterfactual",
-    "\U0001f3d7\ufe0f Architecture": "architecture",
+    "Operations": {
+        "\U0001f3e0 Control Room": "control_room",
+        "\u2696\ufe0f Triage": "triage",
+        "\U0001f50d Case Explorer": "case_explorer",
+        "\U0001f464 Human Review": "human_review",
+        "\U0001f4cb Audit Trail": "audit_trail",
+    },
+    "Intelligence": {
+        "\U0001f52c Provider Lab": "provider_lab",
+        "\U0001f4ca Evaluation Lab": "evaluation",
+        "\u2696\ufe0f Counterfactual Lab": "counterfactual",
+    },
+    "Engineering": {
+        "\U0001f3d7\ufe0f Architecture": "architecture",
+    },
 }
+
+ALL_PAGES = {}
+for section_pages in PAGES.values():
+    ALL_PAGES.update(section_pages)
 
 with st.sidebar:
     st.markdown("## CASE")
     st.caption("Case Assessment and Structured Evaluation")
     st.divider()
-    selection = st.radio("Navigate", list(PAGES.keys()), label_visibility="collapsed")
-    st.divider()
+
+    selection = None
+    for section, pages in PAGES.items():
+        st.markdown(f"**{section}**")
+        for label in pages:
+            if st.sidebar.button(label, key=f"nav_{pages[label]}", use_container_width=True):
+                st.session_state["current_page"] = pages[label]
+        st.divider()
+
     api_url = st.text_input("API URL", value="http://localhost:8000", key="api_url_input")
     st.session_state["case_api_url"] = api_url
 
-page = PAGES[selection]
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = "control_room"
+
+page = st.session_state["current_page"]
 
 if page == "control_room":
     from streamlit_app.views.control_room import render
