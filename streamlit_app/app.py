@@ -25,6 +25,7 @@ PAGES = {
         "\U0001f52c Provider Lab": "provider_lab",
         "\U0001f4ca Evaluation Lab": "evaluation",
         "\u2696\ufe0f Counterfactual Lab": "counterfactual",
+        "\u2194\ufe0f Provider Comparison": "comparison",
     },
     "Engineering": {
         "\U0001f3d7\ufe0f Architecture": "architecture",
@@ -90,5 +91,9 @@ elif page == "counterfactual":
     render()
 elif page == "architecture":
     from streamlit_app.views.architecture import render
+
+    render()
+elif page == "comparison":
+    from streamlit_app.views.comparison import render
 
     render()
