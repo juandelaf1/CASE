@@ -86,6 +86,18 @@ class CASEClient:
             data = response.json()
             return data.get("domains", [])
 
+    def list_providers_sync(self) -> dict[str, Any]:
+        with httpx.Client(timeout=self._timeout) as client:
+            response = client.get(f"{self._base_url}/api/v1/providers")
+            response.raise_for_status()
+            return response.json()
+
+    async def list_providers(self) -> dict[str, Any]:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            response = await client.get(f"{self._base_url}/api/v1/providers")
+            response.raise_for_status()
+            return response.json()
+
     def triage_sync(
         self,
         report_text: str,
@@ -316,5 +328,43 @@ class CASEClient:
             )
             if response.status_code == 404:
                 return {"error": True, "detail": "Decision not found"}
+            response.raise_for_status()
+            return response.json()
+
+    def list_cases_sync(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
+        with httpx.Client(timeout=self._timeout) as client:
+            response = client.get(
+                f"{self._base_url}/api/v1/cases",
+                params={"limit": limit, "offset": offset},
+            )
+            response.raise_for_status()
+            return response.json()
+
+    def get_case_sync(self, case_id: str) -> dict[str, Any]:
+        with httpx.Client(timeout=self._timeout) as client:
+            response = client.get(
+                f"{self._base_url}/api/v1/cases/{case_id}",
+            )
+            if response.status_code == 404:
+                return {"error": True, "detail": f"No decision found for case: {case_id}"}
+            response.raise_for_status()
+            return response.json()
+
+    async def list_cases(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            response = await client.get(
+                f"{self._base_url}/api/v1/cases",
+                params={"limit": limit, "offset": offset},
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def get_case(self, case_id: str) -> dict[str, Any]:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            response = await client.get(
+                f"{self._base_url}/api/v1/cases/{case_id}",
+            )
+            if response.status_code == 404:
+                return {"error": True, "detail": f"No decision found for case: {case_id}"}
             response.raise_for_status()
             return response.json()

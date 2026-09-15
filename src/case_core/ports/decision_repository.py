@@ -23,5 +23,13 @@ class DecisionRepositoryPort(ABC):
         ...
 
     @abstractmethod
+    async def list_decisions(self, limit: int = 50, offset: int = 0) -> list[TriageDecision]:
+        ...
+
+    @abstractmethod
+    async def count_decisions(self) -> int:
+        ...
+
+    @abstractmethod
     async def update_lifecycle(self, decision_id: str, lifecycle: str, actor: str = "human", justification: str = "", original_action: str = "", original_urgency: str = "", original_confidence: float = 0.0, original_evidence_summary: str = "") -> None:
         ...

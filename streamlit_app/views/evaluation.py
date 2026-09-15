@@ -4,7 +4,8 @@ from typing import Any
 
 import streamlit as st
 
-from streamlit_app.components.state import get_client
+from streamlit_app.client import CASEClient
+from streamlit_app.ui.components import render_api_health_check
 
 EVAL_CASES = [
     {
@@ -38,45 +39,65 @@ EVAL_CASES = [
         "expected_decision": "reject",
         "expected_urgency": "LOW",
         "expected_failure": True,
-        "failure_reason": "Urban domain requires evidence; this case has none. A real provider would reject or escalate.",
+        "failure_reason": "Urban domain requires evidence; this case has none. Terminal failure is expected behavior.",
     },
 ]
 
 
+def _get_client() -> CASEClient:
+    api_url = st.session_state.get("case_api_url", "http://localhost:8000")
+    return CASEClient(base_url=api_url)
+
+
 def render() -> None:
-    st.header("Provider Evaluation")
-    st.markdown("*Test the triage pipeline with representative cases*")
+    st.markdown('<div class="case-page-title">Evaluation Lab</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="case-page-subtitle">Test the triage pipeline with representative cases</div>',
+        unsafe_allow_html=True,
+    )
 
-    client = get_client()
+    st.info(
+        "**Data Source:** SYNTHETIC — deterministic test cases. "
+        "**Provider:** MockProvider (deterministic responses, not real LLM analysis). "
+        "**Scope:** urban_operations domain only."
+    )
 
-    try:
-        health = client.health_sync()
-        if health.get("status") != "ok":
-            st.warning("CASE API is not healthy.")
-            return
-    except Exception:
-        st.error("Cannot connect to CASE API.")
+    client = _get_client()
+
+    if not render_api_health_check(client):
         return
 
     st.markdown("---")
-    st.markdown("### Pipeline Evaluation")
-    st.markdown(
-        "Runs 3 cases through the full triage pipeline. "
-        "With MockProvider, responses are deterministic and do not reflect real LLM analysis."
+    st.markdown("#### Pipeline Evaluation")
+    st.caption(
+        "Runs 3 synthetic cases through the full triage pipeline. "
+        "Results demonstrate pipeline behavior, not LLM quality."
     )
 
-    if st.button("Run Evaluation", key="run_quick_eval"):
+    if st.button("Run Evaluation", key="run_quick_eval", type="primary"):
         results = _run_evaluation(client)
         _render_results(results)
 
+    with st.expander("Metric Definitions"):
+        st.markdown("""
+| Metric | Formula | Exclusions |
+|--------|---------|------------|
+| Decision Match | actual_decision == expected_decision | Expected failures |
+| Urgency Match | actual_urgency == expected_urgency | Expected failures |
+| Pipeline Success | cases_without_error / total_cases | None |
+| Error Rate | cases_with_error / total_cases | None |
 
-def _run_evaluation(client) -> list[dict[str, Any]]:
+**Expected failures** are cases where terminal failure is the correct behavior (e.g., missing required evidence). These are excluded from accuracy calculations.
+""")
+
+
+def _run_evaluation(client: CASEClient) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
 
     with st.spinner("Running evaluation..."):
         for i, test_case in enumerate(EVAL_CASES):
             try:
-                payload = {
+                payload: dict[str, Any] = {
                     "report_text": test_case["report_text"],
                     "domain": test_case["domain"],
                     "urgency": test_case["urgency"],
@@ -89,19 +110,21 @@ def _run_evaluation(client) -> list[dict[str, Any]]:
                 if result.get("error"):
                     detail = result.get("detail", {})
                     error_msg = detail.get("error", "Unknown error") if isinstance(detail, dict) else str(detail)
+                    is_expected = test_case.get("expected_failure", False)
                     results.append({
                         "index": i,
                         "description": test_case["description"],
                         "expected_decision": test_case["expected_decision"],
                         "expected_urgency": test_case["expected_urgency"],
-                        "expected_failure": test_case.get("expected_failure", False),
+                        "expected_failure": is_expected,
                         "failure_reason": test_case.get("failure_reason", ""),
-                        "status": "error",
+                        "status": "expected_behavior" if is_expected else "unexpected_error",
                         "actual_decision": None,
                         "actual_urgency": None,
                         "error": error_msg,
                         "confidence": 0,
                         "processing_time_ms": 0,
+                        "provider_info": None,
                     })
                     continue
 
@@ -136,6 +159,7 @@ def _run_evaluation(client) -> list[dict[str, Any]]:
                     "error": None,
                     "confidence": data.get("confidence", 0),
                     "processing_time_ms": data.get("processing_time_ms", 0),
+                    "provider_info": data.get("provider_info"),
                 })
             except Exception as e:
                 results.append({
@@ -145,12 +169,13 @@ def _run_evaluation(client) -> list[dict[str, Any]]:
                     "expected_urgency": test_case["expected_urgency"],
                     "expected_failure": test_case.get("expected_failure", False),
                     "failure_reason": test_case.get("failure_reason", ""),
-                    "status": "error",
+                    "status": "unexpected_error",
                     "actual_decision": None,
                     "actual_urgency": None,
                     "error": str(e),
                     "confidence": 0,
                     "processing_time_ms": 0,
+                    "provider_info": None,
                 })
 
     return results
@@ -166,22 +191,31 @@ def _render_results(results: list[dict[str, Any]]) -> None:
         "partial_match": ("warn", "Decision matches"),
         "mismatch": ("error", "Mismatch"),
         "expected_behavior": ("info", "Expected"),
-        "error": ("error", "Error"),
+        "unexpected_error": ("error", "Unexpected error"),
     }
 
-    st.markdown("### Results")
+    st.markdown("#### Results")
+
+    valid_results = [r for r in results if not r["expected_failure"] and r["status"] != "unexpected_error"]
+    expected_failures = [r for r in results if r["expected_failure"]]
+    unexpected_errors = [r for r in results if r["status"] == "unexpected_error"]
 
     for r in results:
         status_type, status_text = status_labels.get(r["status"], ("info", r["status"]))
 
-        with st.container():
+        with st.container(border=True):
             st.markdown(f"**{r['description']}**")
 
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.caption("Decision")
                 if r["actual_decision"]:
+                    match = r["actual_decision"] == r["expected_decision"]
                     st.markdown(f"`{r['actual_decision']}` (expected `{r['expected_decision']}`)")
+                    if match:
+                        st.success("Match")
+                    else:
+                        st.error("Mismatch")
                 elif r["error"]:
                     st.error(r["error"][:100])
             with col2:
@@ -206,20 +240,41 @@ def _render_results(results: list[dict[str, Any]]) -> None:
             if r["failure_reason"]:
                 st.caption(r["failure_reason"])
 
-            st.divider()
+            pi = r.get("provider_info")
+            if pi:
+                st.caption(f"Provider: {pi.get('provider', 'N/A')} | Model: {pi.get('model', 'N/A')} | Tokens: {pi.get('total_tokens', 0)}")
+
+    st.markdown("---")
+    st.markdown("#### Summary Metrics")
 
     total = len(results)
-    matches = sum(1 for r in results if r["status"] in ("match", "expected_behavior"))
-    errors = sum(1 for r in results if r["status"] == "error")
+    successful = len([r for r in results if r["status"] not in ("unexpected_error",)])
+    errors = len(unexpected_errors)
+    matches = len([r for r in valid_results if r["status"] == "match"])
+    valid_count = len(valid_results)
 
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Pipeline Success", f"{total - errors}/{total}")
-    m2.metric("Exact Matches", f"{matches}/{total}")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Pipeline Success", f"{successful}/{total}")
+    m2.metric("Decision Accuracy", f"{matches}/{valid_count}" if valid_count else "N/A")
     m3.metric("Errors", f"{errors}/{total}")
+    m4.metric("Expected Failures", f"{len(expected_failures)}")
 
-    with st.expander("About MockProvider"):
-        st.markdown(
-            "MockProvider returns deterministic responses for testing the pipeline. "
-            "It does not perform real LLM analysis. "
-            "For accurate evaluation, use OllamaProvider or a cloud provider."
-        )
+    if expected_failures:
+        st.markdown("**Expected Failures:**")
+        for r in expected_failures:
+            st.caption(f"- {r['description']}: {r['failure_reason']}")
+
+    if unexpected_errors:
+        st.markdown("**Unexpected Errors:**")
+        for r in unexpected_errors:
+            st.error(f"- {r['description']}: {r['error']}")
+
+    with st.expander("Limitations"):
+        st.markdown("""
+- MockProvider returns deterministic responses; does not reflect real LLM analysis
+- Only 3 synthetic cases in urban_operations domain
+- No cross-domain evaluation
+- No real-world data
+- Cost estimates are illustrative only (based on default pricing, not actual usage)
+- For accurate evaluation, use OllamaProvider or a cloud provider with real cases
+""")

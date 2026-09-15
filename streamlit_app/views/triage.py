@@ -137,6 +137,17 @@ def _render_triage_result(data: dict) -> None:
 
     render_case_decision(data)
 
+    provider_info = data.get("provider_info")
+    if provider_info:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### Provider Telemetry")
+        with st.container(border=True):
+            render_field_row("Provider", provider_info.get("provider", "N/A"))
+            render_field_row("Model", provider_info.get("model", "N/A"))
+            render_field_row("Tokens", f"{provider_info.get('total_tokens', 0)} (prompt: {provider_info.get('prompt_tokens', 0)}, completion: {provider_info.get('completion_tokens', 0)})")
+            render_field_row("Latency", f"{provider_info.get('latency_ms', 0):.1f} ms")
+            render_field_row("Finish Reason", provider_info.get("finish_reason", "N/A"))
+
     human_override = data.get("human_override")
     if human_override:
         st.markdown("<br>", unsafe_allow_html=True)

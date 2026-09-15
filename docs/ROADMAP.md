@@ -243,23 +243,22 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 
 | Phase | Name | Connected | Tests | Status |
 |-------|------|-----------|-------|--------|
-| Phase 1 | CASE v1 | YES | 393 | COMPLETED & CONNECTED |
-| Phase 2 | Logistics Intelligence | NO | 26 | IMPLEMENTED, ISOLATED |
-| Phase 3 | ML Adaptation | NO | 26 | IMPLEMENTED, ISOLATED |
-| Phase 4 | Specialist Models | NO | 21 | IMPLEMENTED, ISOLATED |
-| Phase 5 | Hybrid Decision Intelligence | NO | 18 | IMPLEMENTED, ISOLATED |
-| Phase 6 | Additional Domain Packs | NO | 28 | IMPLEMENTED, ISOLATED |
-| Phase 7 | Advanced Governance/Security | NO | 28 | IMPLEMENTED, ISOLATED |
-| Phase 8 | Production/Scale Readiness | NO | 28 | IMPLEMENTED, ISOLATED |
+| Phase 1 | CASE v1 + Streamlit UI | YES | 393 | COMPLETED & CONNECTED |
+| Phase 2 | Evidence Capabilities | YES | 568 | COMPLETED & CONNECTED |
+| Isolated | Logistics Intelligence | NO | 26 | IMPLEMENTED, ISOLATED |
+| Isolated | ML Adaptation | NO | 26 | IMPLEMENTED, ISOLATED |
+| Isolated | Specialist Models | NO | 21 | IMPLEMENTED, ISOLATED |
+| Isolated | Hybrid Decision Intelligence | NO | 18 | IMPLEMENTED, ISOLATED |
+| Isolated | Additional Domain Packs | NO | 28 | IMPLEMENTED, ISOLATED |
+| Isolated | Advanced Governance/Security | NO | 28 | IMPLEMENTED, ISOLATED |
+| Isolated | Production/Scale Readiness | NO | 28 | IMPLEMENTED, ISOLATED |
 | **Total** | | | **568** | |
-
-**Note:** Total includes duplicate counting across isolated test suites. Actual unique tests: 526.
 
 ---
 
 ## Current Priority
 
-**POST-V1.0 — Public Deployment & Integration Selection.** Deploy public demo, then systematically evaluate isolated capabilities for integration.
+**Phase 3 — Proposed.** See `docs/PHASE3_PROPOSAL.md` for options: Real Provider Integration, Multi-Domain Expansion, Streamlit Deployment, or Advanced Evaluation.
 
 ---
 
@@ -270,10 +269,8 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 | GitHub Repository | PUBLIC | https://github.com/juandelaf1/CASE |
 | Docker Hub Image | PUBLISHED | https://hub.docker.com/r/juandelaf/case |
 | GitHub Release v1.0.0 | PUBLISHED | https://github.com/juandelaf1/CASE/releases/tag/v1.0.0 |
-| Render Deployment | CONFIGURED | Requires manual Render account setup |
-
-**Deployment Configuration:** `render.yaml` configured for Render free tier.
-**Manual Steps Required:** Create Render account, connect repo, deploy service.
+| Render API | LIVE | https://case-xhvh.onrender.com |
+| Render Streamlit UI | CONFIGURED | Requires manual Render service creation |
 
 ---
 
@@ -359,3 +356,11 @@ The following require explicit decision before implementation:
 - New infrastructure (Kubernetes, Docker, cloud deployment)
 - New ML models or training pipelines
 - Changes to frozen specs
+
+---
+
+## Future Evolution Register
+
+Strategic technology decisions are maintained in `docs/FUTURE_EVOLUTION.md`. Any agent introducing new technology, training a model, migrating a database, adding a provider, connecting another project, creating a domain pack, or introducing agentic capabilities MUST read that document first.
+
+Technology is introduced ONLY when: real problem, real data, baseline, evidence, architectural decision, implementation, measurement. Never the other way around.

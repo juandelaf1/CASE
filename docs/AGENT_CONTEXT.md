@@ -235,3 +235,9 @@ This file must be updated when:
 - A new phase begins
 - A significant architectural decision is made
 - The working tree state changes materially
+
+---
+
+## Future Evolution Register
+
+Strategic technology decisions (LoRA, PostgreSQL, PostGIS, LangGraph, Agentic, Multimodal, Specialist Models, etc.) are maintained in `docs/FUTURE_EVOLUTION.md`. Any agent introducing new technology MUST read that document first. Technology is introduced ONLY when: real problem, real data, baseline, evidence, architectural decision, implementation, measurement.

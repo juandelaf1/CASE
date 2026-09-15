@@ -24,6 +24,7 @@ engine = _deps.engine
 registry = _deps.registry
 audit_adapter = _deps.audit_adapter
 decision_repo = _deps.decision_repo
+provider = _deps.provider
 
 VALID_EVIDENCE_TYPES = {t.value for t in EvidenceType}
 VALID_URGENCY_LEVELS = {u.value for u in UrgencyLevel}
@@ -137,6 +138,7 @@ class TriageDecisionResponse(BaseModel):
     processing_time_ms: float
     original_ai_proposal: dict[str, Any] | None = None
     human_override: dict[str, Any] | None = None
+    provider_info: dict[str, Any] | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -216,6 +218,46 @@ async def list_domains() -> dict[str, list[str]]:
     return {"domains": registry.list_domains()}
 
 
+@app.get("/api/v1/providers")
+async def list_providers() -> dict[str, object]:
+    return {
+        "providers": [
+            {
+                "name": provider.name,
+                "model": provider.model,
+                "is_mock": provider.name == "mock",
+            }
+        ],
+        "active_provider": provider.name,
+    }
+
+
+@app.get("/api/v1/cases")
+async def list_cases(limit: int = 50, offset: int = 0) -> dict[str, object]:
+    decisions = await decision_repo.list_decisions(limit=limit, offset=offset)
+    total = await decision_repo.count_decisions()
+    return {
+        "decisions": [d.model_dump_ext() for d in decisions],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@app.get("/api/v1/cases/{case_id}")
+async def get_case(case_id: str) -> dict[str, object]:
+    decision = await decision_repo.get_decision_by_case(case_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail=f"No decision found for case: {case_id}")
+    audit_events = await audit_adapter.get_events_by_case(case_id)
+    return {
+        "case_id": case_id,
+        "decision": decision.model_dump_ext(),
+        "audit_events": [e.model_dump() for e in audit_events],
+        "audit_count": len(audit_events),
+    }
+
+
 @app.post("/api/v1/triage")
 async def triage(request: TriageRequest) -> TriageDecisionResponse:
     if not registry.validate_domain(request.domain):
@@ -291,6 +333,7 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
         processing_time_ms=decision.processing_time_ms,
         original_ai_proposal=decision.original_ai_proposal.model_dump() if decision.original_ai_proposal else None,
         human_override=decision.human_override.model_dump() if decision.human_override else None,
+        provider_info=decision.metadata.get("provider_info"),
     )
 
 

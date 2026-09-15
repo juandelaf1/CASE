@@ -153,6 +153,16 @@ class TriageEngine:
             evidence_summary=decision.evidence_summary,
         )
 
+        decision.metadata["provider_info"] = {
+            "provider": llm_response.provider,
+            "model": llm_response.model,
+            "prompt_tokens": llm_response.usage.prompt_tokens,
+            "completion_tokens": llm_response.usage.completion_tokens,
+            "total_tokens": llm_response.usage.total_tokens,
+            "latency_ms": llm_response.latency_ms,
+            "finish_reason": llm_response.finish_reason,
+        }
+
         if self._decision_repository is not None:
             await self._decision_repository.save_decision(decision)
 
