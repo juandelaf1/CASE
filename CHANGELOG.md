@@ -7,7 +7,14 @@ All notable changes to CASE will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Phase 4: Seismic Risk Integration (first real external data integration)
+- Phase 4: Logistics Integration (PRIMARY — real external data, main use case)
+  - USAID SCMS Delivery History adapter (`src/logistics_adapter/usaid_adapter.py`)
+  - Logistics pipeline (`src/logistics_adapter/pipeline.py`)
+  - 10,324 real shipment records (public domain, USAID/PEPFAR)
+  - Wires existing ShipmentClassification into CASE pipeline
+  - 27 new unit tests (adapter, pipeline, classification, architecture)
+  - Total tests: 671 passed (+27), 14 skipped
+- Phase 4: Seismic Risk Integration (SECONDARY — proof of domain generalization)
   - USGS Earthquake Hazards API adapter (`src/usgs_adapter/client.py`)
   - SeismicRiskPolicy domain policy (`src/case_core/domain/seismic_policy.py`)
   - SeismicAutomationPolicy automation policy (`src/case_core/domain/seismic_automation.py`)
