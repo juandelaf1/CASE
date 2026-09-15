@@ -1,6 +1,6 @@
 # CASE Development Status
 
-> Detailed technical snapshot. Last verified: 2026-09-14.
+> Detailed technical snapshot. Last verified: 2026-09-15.
 > Source of truth for current implementation state.
 
 ---
@@ -21,10 +21,9 @@
 | Field | Value |
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
-| Branch | `master` |
-| HEAD | `4775be3` |
-| Commits | 22 |
-| Remote | NONE |
+| Branch | `case/phase-2-evidence-capabilities` |
+| HEAD | `dbbbfb5` |
+| Remote | `origin` (GitHub) |
 | Working tree | Clean |
 
 ---
