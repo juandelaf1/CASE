@@ -7,6 +7,12 @@ All notable changes to CASE will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Phase 4: Error Analysis + Specialist Model Decision
+  - 3 real USAID cases analyzed through full CASE pipeline (normal, ambiguous, critical)
+  - Error analysis script (`scripts/phase4_error_analysis.py`)
+  - Specialist Model Decision: NOT JUSTIFIED (no evidence of systematic LLM errors)
+  - Demo cases documentation (3 reproducible cases for Friday demo)
+  - Total tests: 671 passed, 14 skipped
 - Phase 4: Logistics Integration (PRIMARY — real external data, main use case)
   - USAID SCMS Delivery History adapter (`src/logistics_adapter/usaid_adapter.py`)
   - Logistics pipeline (`src/logistics_adapter/pipeline.py`)
