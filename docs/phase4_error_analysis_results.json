@@ -1,0 +1,224 @@
+[
+  {
+    "label": "A",
+    "record_id": "82721",
+    "record_summary": "Truck ARV/Adult to Mozambique, 150kg, $7,977",
+    "profile_summary": "cargo=GENERAL, priority=STANDARD, handling=NONE, constraints=[]",
+    "classification": {
+      "shipment_type": "general_freight",
+      "logistics_class": "standard",
+      "risk_level": "LOW",
+      "complexity_score": 1.0,
+      "handling_category": "standard"
+    },
+    "needs_verification": false,
+    "initial_urgency": "LOW",
+    "stages": [
+      {
+        "stage": "domain_resolution",
+        "status": "ok",
+        "output": "LogisticsPolicy resolved for domain='logistics'",
+        "error": null,
+        "duration_ms": 0.0073909759521484375
+      },
+      {
+        "stage": "evidence_validation",
+        "status": "ok",
+        "output": "Evidence validated",
+        "error": null,
+        "duration_ms": 0.0069141387939453125
+      },
+      {
+        "stage": "triage_engine",
+        "status": "ok",
+        "output": "action=approve, urgency=MEDIUM, confidence=0.85",
+        "error": null,
+        "duration_ms": 32.747745513916016
+      },
+      {
+        "stage": "risk_assessment",
+        "status": "ok",
+        "output": "risk=MEDIUM, automation=human_review, hitl=False",
+        "error": null,
+        "duration_ms": 0.07176399230957031
+      }
+    ],
+    "final_decision": {
+      "decision_id": "dec-LOG-82721",
+      "action": "approve",
+      "reason": "Standard urban maintenance case with sufficient evidence",
+      "urgency": "MEDIUM",
+      "confidence": 0.85,
+      "evidence_summary": "Report text validated, single evidence item provided",
+      "lifecycle": "under_review",
+      "processing_time_ms": 5.253791809082031,
+      "provider_info": {
+        "provider": "mock",
+        "model": "mock-v1",
+        "prompt_tokens": 1185,
+        "completion_tokens": 52,
+        "total_tokens": 1237,
+        "latency_ms": 0.2868175506591797,
+        "finish_reason": "stop"
+      }
+    },
+    "final_risk": {
+      "risk_level": "MEDIUM",
+      "automation_decision": "human_review",
+      "requires_hitl": false,
+      "factors": [
+        "urgency_medium"
+      ],
+      "justification": "Risk: MEDIUM; Decision: human_review; Factors: urgency_medium"
+    },
+    "errors": []
+  },
+  {
+    "label": "B",
+    "record_id": "4",
+    "record_summary": "Air HRDT/HIV test to C\u00f4te d'Ivoire, 171kg, $40,000",
+    "profile_summary": "cargo=FRAGILE, priority=STANDARD, handling=NONE, constraints=['direct_drop', 'ex_works']",
+    "classification": {
+      "shipment_type": "fragile_cargo",
+      "logistics_class": "standard",
+      "risk_level": "LOW",
+      "complexity_score": 1.0,
+      "handling_category": "standard"
+    },
+    "needs_verification": false,
+    "initial_urgency": "LOW",
+    "stages": [
+      {
+        "stage": "domain_resolution",
+        "status": "ok",
+        "output": "LogisticsPolicy resolved for domain='logistics'",
+        "error": null,
+        "duration_ms": 0.007152557373046875
+      },
+      {
+        "stage": "evidence_validation",
+        "status": "ok",
+        "output": "Evidence validated",
+        "error": null,
+        "duration_ms": 0.0054836273193359375
+      },
+      {
+        "stage": "triage_engine",
+        "status": "ok",
+        "output": "action=approve, urgency=MEDIUM, confidence=0.85",
+        "error": null,
+        "duration_ms": 29.299020767211914
+      },
+      {
+        "stage": "risk_assessment",
+        "status": "ok",
+        "output": "risk=MEDIUM, automation=human_review, hitl=False",
+        "error": null,
+        "duration_ms": 0.03981590270996094
+      }
+    ],
+    "final_decision": {
+      "decision_id": "dec-LOG-4",
+      "action": "approve",
+      "reason": "Standard urban maintenance case with sufficient evidence",
+      "urgency": "MEDIUM",
+      "confidence": 0.85,
+      "evidence_summary": "Report text validated, single evidence item provided",
+      "lifecycle": "under_review",
+      "processing_time_ms": 3.753185272216797,
+      "provider_info": {
+        "provider": "mock",
+        "model": "mock-v1",
+        "prompt_tokens": 1190,
+        "completion_tokens": 52,
+        "total_tokens": 1242,
+        "latency_ms": 0.06628036499023438,
+        "finish_reason": "stop"
+      }
+    },
+    "final_risk": {
+      "risk_level": "MEDIUM",
+      "automation_decision": "human_review",
+      "requires_hitl": false,
+      "factors": [
+        "urgency_medium"
+      ],
+      "justification": "Risk: MEDIUM; Decision: human_review; Factors: urgency_medium"
+    },
+    "errors": []
+  },
+  {
+    "label": "C",
+    "record_id": "108",
+    "record_summary": "Air ARV/Pediatric to C\u00f4te d'Ivoire, 2126kg, $140,582",
+    "profile_summary": "cargo=GENERAL, priority=HIGH, handling=NONE, constraints=['direct_drop', 'heavy_shipment']",
+    "classification": {
+      "shipment_type": "heavy_freight",
+      "logistics_class": "lager",
+      "risk_level": "LOW",
+      "complexity_score": 1.0,
+      "handling_category": "priority"
+    },
+    "needs_verification": true,
+    "initial_urgency": "LOW",
+    "stages": [
+      {
+        "stage": "domain_resolution",
+        "status": "ok",
+        "output": "LogisticsPolicy resolved for domain='logistics'",
+        "error": null,
+        "duration_ms": 0.00476837158203125
+      },
+      {
+        "stage": "evidence_validation",
+        "status": "ok",
+        "output": "Evidence validated",
+        "error": null,
+        "duration_ms": 0.0050067901611328125
+      },
+      {
+        "stage": "triage_engine",
+        "status": "ok",
+        "output": "action=approve, urgency=MEDIUM, confidence=0.85",
+        "error": null,
+        "duration_ms": 25.74920654296875
+      },
+      {
+        "stage": "risk_assessment",
+        "status": "ok",
+        "output": "risk=MEDIUM, automation=human_review, hitl=False",
+        "error": null,
+        "duration_ms": 0.064849853515625
+      }
+    ],
+    "final_decision": {
+      "decision_id": "dec-LOG-108",
+      "action": "approve",
+      "reason": "Standard urban maintenance case with sufficient evidence",
+      "urgency": "MEDIUM",
+      "confidence": 0.85,
+      "evidence_summary": "Report text validated, single evidence item provided",
+      "lifecycle": "under_review",
+      "processing_time_ms": 3.1023025512695312,
+      "provider_info": {
+        "provider": "mock",
+        "model": "mock-v1",
+        "prompt_tokens": 1187,
+        "completion_tokens": 52,
+        "total_tokens": 1239,
+        "latency_ms": 0.09322166442871094,
+        "finish_reason": "stop"
+      }
+    },
+    "final_risk": {
+      "risk_level": "MEDIUM",
+      "automation_decision": "human_review",
+      "requires_hitl": false,
+      "factors": [
+        "urgency_medium"
+      ],
+      "justification": "Risk: MEDIUM; Decision: human_review; Factors: urgency_medium"
+    },
+    "errors": []
+  }
+]
