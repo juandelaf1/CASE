@@ -43,6 +43,7 @@ class AppDependencies:
     registry: DomainRegistry
     audit_adapter: SQLiteAuditAdapter
     decision_repo: SQLiteDecisionRepository
+    provider: LLMProvider
 
 
 def create_app_dependencies() -> AppDependencies:
@@ -69,4 +70,5 @@ def create_app_dependencies() -> AppDependencies:
         registry=registry,
         audit_adapter=audit_adapter,
         decision_repo=decision_repo,
+        provider=provider,
     )

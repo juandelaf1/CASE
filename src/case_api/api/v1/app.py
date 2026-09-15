@@ -24,6 +24,7 @@ engine = _deps.engine
 registry = _deps.registry
 audit_adapter = _deps.audit_adapter
 decision_repo = _deps.decision_repo
+provider = _deps.provider
 
 VALID_EVIDENCE_TYPES = {t.value for t in EvidenceType}
 VALID_URGENCY_LEVELS = {u.value for u in UrgencyLevel}
@@ -137,6 +138,7 @@ class TriageDecisionResponse(BaseModel):
     processing_time_ms: float
     original_ai_proposal: dict[str, Any] | None = None
     human_override: dict[str, Any] | None = None
+    provider_info: dict[str, Any] | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -214,6 +216,20 @@ async def health() -> dict[str, str]:
 @app.get("/domains")
 async def list_domains() -> dict[str, list[str]]:
     return {"domains": registry.list_domains()}
+
+
+@app.get("/api/v1/providers")
+async def list_providers() -> dict[str, object]:
+    return {
+        "providers": [
+            {
+                "name": provider.name,
+                "model": provider.model,
+                "is_mock": provider.name == "mock",
+            }
+        ],
+        "active_provider": provider.name,
+    }
 
 
 @app.get("/api/v1/cases")
@@ -317,6 +333,7 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
         processing_time_ms=decision.processing_time_ms,
         original_ai_proposal=decision.original_ai_proposal.model_dump() if decision.original_ai_proposal else None,
         human_override=decision.human_override.model_dump() if decision.human_override else None,
+        provider_info=decision.metadata.get("provider_info"),
     )
 
 

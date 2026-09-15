@@ -86,6 +86,18 @@ class CASEClient:
             data = response.json()
             return data.get("domains", [])
 
+    def list_providers_sync(self) -> dict[str, Any]:
+        with httpx.Client(timeout=self._timeout) as client:
+            response = client.get(f"{self._base_url}/api/v1/providers")
+            response.raise_for_status()
+            return response.json()
+
+    async def list_providers(self) -> dict[str, Any]:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            response = await client.get(f"{self._base_url}/api/v1/providers")
+            response.raise_for_status()
+            return response.json()
+
     def triage_sync(
         self,
         report_text: str,
