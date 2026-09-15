@@ -4,22 +4,26 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from case_core.application.engine import TriageEngine
-from case_core.domain.default_automation import DefaultAutomationPolicy
-from case_core.domain.infrastructure_policy import InfrastructurePolicy
-from case_core.domain.logistics_automation import LogisticsAutomationPolicy
-from case_core.domain.logistics_policy import LogisticsPolicy
-from case_core.domain.registry import DomainRegistry
-from case_core.domain.seismic_automation import SeismicAutomationPolicy
-from case_core.domain.seismic_policy import SeismicRiskPolicy
-from case_core.domain.urban_policy import UrbanPolicy
-from case_core.ports.automation import AutomationPolicy
-from case_core.ports.llm import LLMProvider
-from case_core.providers.cloud import CloudProvider
-from case_core.providers.groq import GroqProvider
-from case_core.providers.mock import MockProvider
-from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter
-from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
+from dotenv import load_dotenv
+
+load_dotenv(override=False)
+
+from case_core.application.engine import TriageEngine  # noqa: E402
+from case_core.domain.default_automation import DefaultAutomationPolicy  # noqa: E402
+from case_core.domain.infrastructure_policy import InfrastructurePolicy  # noqa: E402
+from case_core.domain.logistics_automation import LogisticsAutomationPolicy  # noqa: E402
+from case_core.domain.logistics_policy import LogisticsPolicy  # noqa: E402
+from case_core.domain.registry import DomainRegistry  # noqa: E402
+from case_core.domain.seismic_automation import SeismicAutomationPolicy  # noqa: E402
+from case_core.domain.seismic_policy import SeismicRiskPolicy  # noqa: E402
+from case_core.domain.urban_policy import UrbanPolicy  # noqa: E402
+from case_core.ports.automation import AutomationPolicy  # noqa: E402
+from case_core.ports.llm import LLMProvider  # noqa: E402
+from case_core.providers.cloud import CloudProvider  # noqa: E402
+from case_core.providers.groq import GroqProvider  # noqa: E402
+from case_core.providers.mock import MockProvider  # noqa: E402
+from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter  # noqa: E402
+from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository  # noqa: E402
 
 _LOGISTICS_AUTOMATION = LogisticsAutomationPolicy()
 _DEFAULT_AUTOMATION = DefaultAutomationPolicy()

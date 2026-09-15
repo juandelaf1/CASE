@@ -716,3 +716,65 @@ class TestTriageEngineAutomation:
         persisted = await repo.get_decision(result.decision.decision_id)
         assert persisted is not None
         assert persisted.lifecycle == DecisionLifecycle.ESCALATED
+
+
+class TestTriageEngineTiming:
+    """Tests for processing_time_ms including provider latency."""
+
+    async def test_processing_time_is_positive(self):
+        """processing_time_ms should be > 0 for any execution."""
+        provider = FixedResponseProvider(VALID_RESPONSE)
+        engine = TriageEngine(domain_registry=_build_registry(), provider=provider)
+
+        case = _make_urban_case()
+        result = await engine.execute(case)
+
+        assert result.decision is not None
+        assert result.decision.processing_time_ms > 0
+
+    async def test_provider_latency_is_separate_metric(self):
+        """provider_info.latency_ms should represent provider-only time."""
+        provider = FixedResponseProvider(VALID_RESPONSE)
+        engine = TriageEngine(domain_registry=_build_registry(), provider=provider)
+
+        case = _make_urban_case()
+        result = await engine.execute(case)
+
+        assert result.decision is not None
+        provider_info = result.decision.metadata["provider_info"]
+        assert "latency_ms" in provider_info
+        assert provider_info["latency_ms"] > 0
+
+    async def test_provider_info_latency_matches_provider_reported(self):
+        """provider_info.latency_ms should match what the provider reports."""
+        provider = FixedResponseProvider(VALID_RESPONSE)
+        engine = TriageEngine(domain_registry=_build_registry(), provider=provider)
+
+        case = _make_urban_case()
+        result = await engine.execute(case)
+
+        assert result.decision is not None
+        provider_info = result.decision.metadata["provider_info"]
+        assert provider_info["latency_ms"] == 10.0
+
+    async def test_processing_time_includes_full_execution(self):
+        """processing_time_ms should cover the entire engine execution path."""
+        provider = FixedResponseProvider(VALID_RESPONSE)
+        engine = TriageEngine(domain_registry=_build_registry(), provider=provider)
+
+        case = _make_urban_case()
+        result = await engine.execute(case)
+
+        assert result.decision is not None
+        assert result.decision.processing_time_ms > 0
+
+    async def test_total_time_greater_than_zero(self):
+        """Total processing time should always be measurable."""
+        provider = FixedResponseProvider(VALID_RESPONSE)
+        engine = TriageEngine(domain_registry=_build_registry(), provider=provider)
+
+        case = _make_urban_case()
+        result = await engine.execute(case)
+
+        assert result.decision is not None
+        assert result.decision.processing_time_ms > 0

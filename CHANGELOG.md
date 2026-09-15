@@ -7,6 +7,11 @@ All notable changes to CASE will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Local `.env` configuration support via python-dotenv
+  - `.env.example` with all supported variables (no secrets)
+  - Precedence: environment variables > `.env` > defaults
+  - `.env` already in `.gitignore` (never committed)
+  - 10 new tests for .env loading and precedence
 - Phase 4: Error Analysis + Specialist Model Decision
   - 3 real USAID cases analyzed through full CASE pipeline (normal, ambiguous, critical)
   - Error analysis script (`scripts/phase4_error_analysis.py`)

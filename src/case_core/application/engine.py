@@ -96,6 +96,8 @@ class TriageEngine:
         domain_policy: DomainPolicy,
         result: TriageResult,
     ) -> TriageResult:
+        engine_start = self._time_fn()
+
         case.status = ProcessingLifecycle.PROMPT_BUILDING
         result.processing_lifecycle = ProcessingLifecycle.PROMPT_BUILDING
 
@@ -152,6 +154,8 @@ class TriageEngine:
             confidence=decision.confidence,
             evidence_summary=decision.evidence_summary,
         )
+
+        decision.processing_time_ms = (self._time_fn() - engine_start) * 1000
 
         decision.metadata["provider_info"] = {
             "provider": llm_response.provider,
