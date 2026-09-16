@@ -18,8 +18,8 @@
 </p>
 
 <p align="center">
-  <strong>526 passed · 7 skipped · 0 failed</strong><br>
-  <sub>ruff 0 errors · mypy 0 errors · 82 source files</sub>
+  <strong>680 passed · 7 skipped · 12 failed</strong><br>
+  <sub>ruff 0 errors · mypy 0 errors · 93 source files</sub>
 </p>
 
 ---
@@ -88,8 +88,8 @@ graph TB
         UI[Streamlit UI]
     end
 
-    subgraph API
-        API[FastAPI]
+    subgraph API_LAYER
+        FASTAPI[FastAPI]
     end
 
     subgraph Application
@@ -102,12 +102,18 @@ graph TB
         DP1[UrbanPolicy]
         DP2[LogisticsPolicy]
         DP3[InfrastructurePolicy]
+        DP4[SeismicRiskPolicy]
     end
 
     subgraph Intelligence
+        REACT[ReAct Pre-checks]
         PB[PromptBuilder]
-        LLM[LLMProvider]
+        LLM[LLMProvider ABC]
+    end
+
+    subgraph Providers
         MP[MockProvider]
+        GP[GroqProvider]
         OP[OllamaProvider]
         CP[CloudProvider]
     end
@@ -118,31 +124,92 @@ graph TB
     end
 
     subgraph Persistence
+        DRP[DecisionRepositoryPort]
+        AUP[AuditPort]
+        SDR[SQLiteDecisionRepository]
+        SAU[SQLiteAuditAdapter]
         DB[(SQLite)]
-        AUD[AuditPort]
     end
 
-    UI --> API
-    API --> CR
+    UI -->|HTTP| FASTAPI
+    FASTAPI --> CR
     CR --> TE
     TE --> DR
+    TE --> REACT
     TE --> PB
     TE --> RP
-    TE --> DB
-    TE --> AUD
+    TE --> DRP
+    TE --> AUP
     DR --> DP1
     DR --> DP2
     DR --> DP3
+    DR --> DP4
+    REACT -.->|context| PB
     PB --> LLM
-    LLM --> MP
-    LLM --> OP
-    LLM --> CP
+    LLM -.-> MP
+    LLM -.-> GP
+    LLM -.-> OP
+    LLM -.-> CP
     RP --> AE
+    DRP --> SDR
+    AUP --> SAU
+    SDR --> DB
+    SAU --> DB
 ```
 
-### Connected vs. Isolated
+> **Connected vs. Isolated:** This diagram shows the **connected execution path** — components wired via `composition.py` and executed by `TriageEngine`. Dashed lines indicate that providers are alternative implementations of the `LLMProvider` ABC, selected at startup via `CASE_PROVIDER` env var. CASE also contains implemented and tested modules that are **not** connected to this pipeline. See [Project Status](#project-status) for the complete distinction.
 
-The diagram above shows the **connected execution path** — components that are wired together and run as a system. CASE also contains implemented and tested modules that are **not** connected to this pipeline. See [Project Status](#project-status) for the complete distinction.
+```mermaid
+classDiagram
+    class LLMProvider {
+        <<ABC>>
+        +complete(LLMRequest) LLMResponse
+        +health_check() bool
+    }
+    class MockProvider {
+        +complete(LLMRequest) LLMResponse
+    }
+    class GroqProvider {
+        +complete(LLMRequest) LLMResponse
+    }
+    class OllamaProvider {
+        +complete(LLMRequest) LLMResponse
+    }
+    class CloudProvider {
+        +complete(LLMRequest) LLMResponse
+    }
+    LLMProvider <|-- MockProvider
+    LLMProvider <|-- GroqProvider
+    LLMProvider <|-- OllamaProvider
+    LLMProvider <|-- CloudProvider
+```
+
+```mermaid
+classDiagram
+    class DecisionRepositoryPort {
+        <<ABC>>
+        +save_decision(TriageDecision)
+        +get_decision(str) TriageDecision
+        +update_lifecycle(str, DecisionLifecycle)
+    }
+    class AuditPort {
+        <<ABC>>
+        +log_event(AuditEvent)
+        +get_events_by_case(str) List~AuditEvent~
+    }
+    class SQLiteDecisionRepository {
+        +save_decision(TriageDecision)
+        +get_decision(str) TriageDecision
+    }
+    class SQLiteAuditAdapter {
+        +log_event(AuditEvent)
+        +get_events_by_case(str) List~AuditEvent~
+    }
+    DecisionRepositoryPort <|-- SQLiteDecisionRepository
+    AuditPort <|-- SQLiteAuditAdapter
+    SQLiteDecisionRepository --> SQLite
+    SQLiteAuditAdapter --> SQLite
+```
 
 ---
 
@@ -151,26 +218,27 @@ The diagram above shows the **connected execution path** — components that are
 ```mermaid
 flowchart LR
     A[Case Received] --> B[Domain Resolution]
-    B --> C[Prompt Construction]
-    C --> D[LLM Proposal]
-    D --> E{JSON Parse}
-    E -->|fail| F[Retry / Repair]
-    E -->|pass| G{Schema Validation}
-    G -->|fail| F
-    G -->|pass| H{Semantic Validation}
-    H -->|fail| F
-    H -->|pass| I{Domain Validation}
-    I -->|fail| F
-    I -->|pass| J[Risk Assessment]
-    F -->|exhausted| K[Terminal Failure]
-    J --> L{Automation Decision}
-    L -->|AUTO_APPROVE| M[Approve & Persist]
-    L -->|HUMAN_REVIEW| N[Route to Human]
-    L -->|ESCALATE| O[Escalate to Supervisor]
-    M --> P[Audit Log]
-    N --> P
-    O --> P
-    K --> P
+    B --> C[ReAct Pre-checks]
+    C --> D[Prompt Construction]
+    D --> E[LLM Proposal]
+    E --> F{JSON Parse}
+    F -->|fail| G[Retry / Repair]
+    F -->|pass| H{Schema Validation}
+    H -->|fail| G
+    H -->|pass| I{Semantic Validation}
+    I -->|fail| G
+    I -->|pass| J{Domain Validation}
+    J -->|fail| G
+    J -->|pass| K[Risk Assessment]
+    G -->|exhausted| L[Terminal Failure]
+    K --> M{Automation Decision}
+    M -->|AUTO_APPROVE| N[Approve & Persist]
+    M -->|HUMAN_REVIEW| O[Route to Human]
+    M -->|ESCALATE| P[Escalate to Supervisor]
+    N --> Q[Audit Log]
+    O --> Q
+    P --> Q
+    L --> Q
 ```
 
 ### Decision Routing
@@ -195,19 +263,22 @@ These components are wired into the running system via `composition.py` and `Tri
 
 | Component | Location | Status |
 |-----------|----------|--------|
-| Contracts (9 Pydantic v2 schemas) | `contracts/` | Connected |
+| Contracts (Pydantic v2 schemas) | `contracts/` | Connected |
 | Ports (6 ABC interfaces) | `ports/` | Connected |
-| DomainRegistry (3 domains) | `domain/registry.py` | Connected |
-| TriageEngine (179 lines) | `application/engine.py` | Connected |
+| DomainRegistry (4 domains) | `domain/registry.py` | Connected |
+| TriageEngine | `application/engine.py` | Connected |
 | ReliabilityPipeline | `reliability/pipeline.py` | Connected |
 | AutomationEvaluator | `reliability/automation.py` | Connected |
+| ReAct pre-checks | `react/__init__.py` | Connected |
 | PromptBuilder | `prompts/builder.py` | Connected |
 | MockProvider (default) | `providers/mock.py` | Connected |
+| GroqProvider | `providers/groq.py` | Connected |
 | OllamaProvider | `providers/ollama.py` | Connected |
 | CloudProvider | `providers/cloud.py` | Connected |
+| CostModel | `evaluation/cost.py` | Connected |
 | SQLite persistence | `case_infra/persistence/` | Connected |
 | FastAPI API (11 endpoints) | `case_api/api/v1/app.py` | Connected |
-| Streamlit UI (display only) | `streamlit_app/` | Connected |
+| Streamlit UI | `streamlit_app/` | Connected |
 | Evaluation framework | `evaluation/` | Connected |
 
 ### Implemented but Isolated
@@ -249,13 +320,13 @@ pip install -e ".[dev]"
 
 ```bash
 pytest tests/ -q --ignore=tests/unit/test_streamlit_client.py
-# Expected: 526 passed, 7 skipped, 0 failed
+# Expected: ~680 passed, 7 skipped
 
-ruff check src tests
+ruff check src
 # Expected: All checks passed
 
 mypy src --ignore-missing-imports
-# Expected: Success: no issues found in 82 source files
+# Expected: Success: no issues found in 93 source files
 ```
 
 ### Run the API
@@ -346,13 +417,14 @@ Evaluation uses synthetic data with MockProvider. Results demonstrate architectu
 
 ## Providers
 
-| Provider | Type | Use Case | Evidence |
-|----------|------|----------|----------|
-| MockProvider | Deterministic | Testing, demo, evaluation | 30 tests |
-| OllamaProvider | Local LLM | Development, offline evaluation | 13 tests + 5 integration |
-| CloudProvider | API-based | Production use (requires API key) | 28 tests |
+| Provider | Type | Use Case | Selection |
+|----------|------|----------|-----------|
+| MockProvider | Deterministic | Testing, demo, evaluation | `CASE_PROVIDER=mock` (default) |
+| GroqProvider | Cloud API | Real inference (qwen/qwen3.8-27b) | `CASE_PROVIDER=groq` |
+| OllamaProvider | Local LLM | Development, offline | `CASE_PROVIDER=ollama` |
+| CloudProvider | OpenAI-compatible | Production (GPT-4o-mini) | `CASE_PROVIDER=cloud` |
 
-All providers implement the `LLMProvider` port. Swapping providers requires zero changes to core logic.
+All providers implement the `LLMProvider` port. Provider is selected at startup via `CASE_PROVIDER` env var. Swapping providers requires zero changes to core logic.
 
 ### Switching Providers
 
@@ -373,11 +445,12 @@ from case_core.providers.cloud import CloudProvider
 
 ## Domains
 
-| Domain | Policy | Routing | Automation | Bias Pairs |
-|--------|--------|---------|------------|------------|
-| **Logistics** | Full | 6 incident types | LogisticsAutomationPolicy (5 departments) | 10 pairs |
-| **Urban Operations** | Partial | Keyword urgency | DefaultAutomationPolicy (conservative) | 0 |
-| **Infrastructure** | Partial | Keyword urgency | DefaultAutomationPolicy (conservative) | 0 |
+| Domain | Policy | Routing | Automation |
+|--------|--------|---------|------------|
+| **Logistics** | Full | 6 incident types | LogisticsAutomationPolicy |
+| **Urban Operations** | Partial | Keyword urgency | DefaultAutomationPolicy |
+| **Infrastructure** | Partial | Keyword urgency | DefaultAutomationPolicy |
+| **Seismic Risk** | Partial | USGS API | SeismicAutomationPolicy |
 
 ### Logistics Domain Pack
 
@@ -399,9 +472,9 @@ from case_core.providers.cloud import CloudProvider
 
 | Check | Result |
 |-------|--------|
-| pytest | 526 passed, 7 skipped, 0 failed |
-| ruff | 0 errors |
-| mypy | 0 errors (82 source files) |
+| pytest | ~680 passed, 7 skipped, 12 failed (known) |
+| ruff | 0 errors (src) |
+| mypy | 0 errors (93 source files) |
 
 ### Test Classification
 
@@ -530,10 +603,12 @@ CASE/
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `CASE_PROVIDER` | `mock` | LLM provider: `mock`, `groq`, `ollama`, `cloud` |
+| `CASE_DB_PATH` | `case_audit.db` | SQLite database path |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
 | `OLLAMA_MODEL` | `llama3.2` | Ollama model name |
-| `CASE_CLOUD_API_KEY` | — | Cloud provider API key |
-| `CASE_DB_PATH` | `case.db` | SQLite database path |
+| `CASE_GROQ_API_KEY` | — | Groq API key (required for `groq`) |
+| `CASE_CLOUD_API_KEY` | — | Cloud provider API key (required for `cloud`) |
 
 ---
 
