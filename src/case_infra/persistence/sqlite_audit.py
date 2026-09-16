@@ -30,7 +30,18 @@ class SQLiteAuditAdapter(AuditPort):
         conn.commit()
         conn.close()
 
+    def _ensure_tables(self) -> None:
+        conn = sqlite3.connect(self._db_path)
+        try:
+            conn.execute("SELECT 1 FROM audit_events LIMIT 1")
+        except sqlite3.OperationalError:
+            conn.close()
+            self._init_db()
+        else:
+            conn.close()
+
     async def log_event(self, event: AuditEvent) -> None:
+        self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         conn.execute(
             """INSERT OR REPLACE INTO audit_events
@@ -50,6 +61,7 @@ class SQLiteAuditAdapter(AuditPort):
         conn.close()
 
     async def get_events_by_case(self, case_id: str) -> list[AuditEvent]:
+        self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         cursor = conn.execute(
             "SELECT event_id, case_id, decision_id, event_type, timestamp, details, actor FROM audit_events WHERE case_id = ? ORDER BY created_at",

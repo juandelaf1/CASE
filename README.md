@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <strong>680 passed · 7 skipped · 12 failed</strong><br>
+  <strong>699 passed · 7 skipped · 0 failed</strong><br>
   <sub>ruff 0 errors · mypy 0 errors · 93 source files</sub>
 </p>
 
@@ -417,14 +417,28 @@ Evaluation uses synthetic data with MockProvider. Results demonstrate architectu
 
 ## Providers
 
-| Provider | Type | Use Case | Selection |
-|----------|------|----------|-----------|
-| MockProvider | Deterministic | Testing, demo, evaluation | `CASE_PROVIDER=mock` (default) |
-| GroqProvider | Cloud API | Real inference (qwen/qwen3.8-27b) | `CASE_PROVIDER=groq` |
-| OllamaProvider | Local LLM | Development, offline | `CASE_PROVIDER=ollama` |
-| CloudProvider | OpenAI-compatible | Production (GPT-4o-mini) | `CASE_PROVIDER=cloud` |
+| Provider | Type | Use Case | E2E Verified | Selection |
+|----------|------|----------|-------------|-----------|
+| MockProvider | Deterministic | Testing, demo, evaluation | Yes (unit tests) | `CASE_PROVIDER=mock` (default) |
+| GroqProvider | Cloud API | Real inference (qwen/qwen3.8-27b) | Yes (3 cases) | `CASE_PROVIDER=groq` |
+| OllamaProvider | Local LLM | Development, offline comparison | Implementation correct | `CASE_PROVIDER=ollama` |
+| CloudProvider | OpenAI-compatible | Production (GPT-4o-mini) | Implementation correct | `CASE_PROVIDER=cloud` |
 
 All providers implement the `LLMProvider` port. Provider is selected at startup via `CASE_PROVIDER` env var. Swapping providers requires zero changes to core logic.
+
+### Provider Comparison (Academic Requirement)
+
+The Comparison view (`streamlit_app/views/comparison.py`) supports comparing decisions across providers. For live comparison:
+
+1. **Groq**: Run triage with `CASE_PROVIDER=groq` — real API inference
+2. **Ollama**: Run triage with `CASE_PROVIDER=ollama` — requires local Ollama server
+
+The Comparison view automatically groups decisions by provider and displays:
+- Classification result (approve/reject/escalate)
+- Urgency level
+- Confidence score
+- Token usage and cost
+- Latency
 
 ### Switching Providers
 
@@ -472,7 +486,7 @@ from case_core.providers.cloud import CloudProvider
 
 | Check | Result |
 |-------|--------|
-| pytest | ~680 passed, 7 skipped, 12 failed (known) |
+| pytest | 699 passed, 7 skipped, 0 failed |
 | ruff | 0 errors (src) |
 | mypy | 0 errors (93 source files) |
 

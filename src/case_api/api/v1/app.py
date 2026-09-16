@@ -214,8 +214,26 @@ class HITLEscalateRequest(BaseModel):
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok", "version": VERSION}
+async def health() -> dict[str, object]:
+    import sqlite3 as _sqlite3
+
+    db_ok = False
+    db_path = decision_repo._db_path
+    try:
+        conn = _sqlite3.connect(db_path)
+        conn.execute("SELECT 1 FROM decisions LIMIT 1")
+        conn.execute("SELECT 1 FROM audit_events LIMIT 1")
+        db_ok = True
+        conn.close()
+    except Exception:
+        db_ok = False
+
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "version": VERSION,
+        "database": "ok" if db_ok else "missing_tables",
+        "db_path": db_path,
+    }
 
 
 @app.get("/domains")

@@ -44,7 +44,18 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         conn.commit()
         conn.close()
 
+    def _ensure_tables(self) -> None:
+        conn = sqlite3.connect(self._db_path)
+        try:
+            conn.execute("SELECT 1 FROM decisions LIMIT 1")
+        except sqlite3.OperationalError:
+            conn.close()
+            self._init_db()
+        else:
+            conn.close()
+
     async def save_decision(self, decision: TriageDecision) -> None:
+        self._ensure_tables()
         original_ai = json.dumps(decision.original_ai_proposal.model_dump()) if decision.original_ai_proposal else '{}'
         human_override = json.dumps(decision.human_override.model_dump()) if decision.human_override else None
         conn = sqlite3.connect(self._db_path)
@@ -73,6 +84,7 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         conn.close()
 
     async def get_decision(self, decision_id: str) -> TriageDecision | None:
+        self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         cursor = conn.execute(
             "SELECT * FROM decisions WHERE decision_id = ?",
@@ -85,6 +97,7 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         return self._row_to_decision(row)
 
     async def get_decision_by_case(self, case_id: str) -> TriageDecision | None:
+        self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         cursor = conn.execute(
             "SELECT * FROM decisions WHERE case_id = ? ORDER BY created_at DESC LIMIT 1",
@@ -97,6 +110,7 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         return self._row_to_decision(row)
 
     async def list_pending_review(self, limit: int = 100) -> list[TriageDecision]:
+        self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         cursor = conn.execute(
             "SELECT * FROM decisions WHERE lifecycle = ? ORDER BY created_at DESC LIMIT ?",
@@ -107,6 +121,7 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         return [self._row_to_decision(row) for row in rows]
 
     async def list_decisions(self, limit: int = 50, offset: int = 0) -> list[TriageDecision]:
+        self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         cursor = conn.execute(
             "SELECT * FROM decisions ORDER BY created_at DESC LIMIT ? OFFSET ?",
@@ -117,6 +132,7 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         return [self._row_to_decision(row) for row in rows]
 
     async def count_decisions(self) -> int:
+        self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         cursor = conn.execute("SELECT COUNT(*) FROM decisions")
         row = cursor.fetchone()
@@ -124,6 +140,7 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         return int(row[0]) if row else 0
 
     async def update_lifecycle(self, decision_id: str, lifecycle: str, actor: str = "human", justification: str = "", original_action: str = "", original_urgency: str = "", original_confidence: float = 0.0, original_evidence_summary: str = "") -> None:
+        self._ensure_tables()
         decision = await self.get_decision(decision_id)
         if decision and decision.original_ai_proposal is None:
             decision.original_ai_proposal = AIProposal(
