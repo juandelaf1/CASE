@@ -130,6 +130,18 @@ class GroqProvider(LLMProvider):
                     json=payload,
                     headers=headers,
                 )
+                if response.status_code == 400 and request.response_schema:
+                    error_body = response.json()
+                    error_msg = error_body.get("error", {}).get("message", "")
+                    if "validate" in error_msg.lower() or "strict" in error_msg.lower():
+                        fallback_payload = dict(payload)
+                        fallback_format = {"type": "json_object"}
+                        fallback_payload["response_format"] = fallback_format
+                        response = await client.post(
+                            f"{self._base_url}/chat/completions",
+                            json=fallback_payload,
+                            headers=headers,
+                        )
                 response.raise_for_status()
         except httpx.TimeoutException:
             latency_ms = (time.time() - start) * 1000

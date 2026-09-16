@@ -175,21 +175,19 @@ class TestSQLiteConfigurablePath:
 
 
 class TestCompositionDbPath:
-    def test_get_db_path_reads_env(self, monkeypatch):
-        monkeypatch.setenv("CASE_DB_PATH", "/tmp/test_case_path.db")
+    def test_get_db_path_reads_env(self, monkeypatch, tmp_path):
+        test_path = str(tmp_path / "test_case_path.db")
+        monkeypatch.setenv("CASE_DB_PATH", test_path)
         from case_core.composition import _get_db_path
         result = _get_db_path()
-        assert result == "/tmp/test_case_path.db"
-        if os.path.exists("/tmp/test_case_path.db"):
-            os.remove("/tmp/test_case_path.db")
+        assert result == test_path
 
-    def test_get_db_path_default(self, monkeypatch):
+    def test_get_db_path_default(self, monkeypatch, tmp_path):
         monkeypatch.delenv("CASE_DB_PATH", raising=False)
+        monkeypatch.chdir(tmp_path)
         from case_core.composition import _get_db_path
         result = _get_db_path()
         assert result == "case_audit.db"
-        if os.path.exists("case_audit.db"):
-            os.remove("case_audit.db")
 
     def test_get_db_path_creates_parent_dir(self, monkeypatch):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -115,6 +115,29 @@ class TriageEngine:
 
         llm_response = await self._provider.complete(llm_request)
 
+        if llm_response.finish_reason in ("error", "timeout", "authentication_error", "provider_unavailable"):
+            terminal_errors = {
+                "error": (ErrorCategory.SYSTEM, "Provider returned error"),
+                "timeout": (ErrorCategory.TRANSIENT, "Provider timeout"),
+                "authentication_error": (ErrorCategory.AUTHENTICATION, "Authentication failed"),
+                "provider_unavailable": (ErrorCategory.TRANSIENT, "Provider unavailable"),
+            }
+            cat, msg = terminal_errors.get(llm_response.finish_reason, (ErrorCategory.SYSTEM, "Provider error"))
+            detail = llm_response.metadata.get("detail", "") if llm_response.metadata else ""
+            rate_limit = llm_response.finish_reason == "error" and llm_response.metadata and llm_response.metadata.get("status_code") == 429
+            provider_err = CASEError(
+                category=cat,
+                message=f"{msg}: {detail}" if detail else msg,
+                recoverable=rate_limit or llm_response.finish_reason in ("timeout", "provider_unavailable"),
+                retryable=rate_limit or llm_response.finish_reason in ("timeout", "provider_unavailable"),
+                details={"requires_manual_review": not rate_limit, "finish_reason": llm_response.finish_reason},
+            )
+            case.status = ProcessingLifecycle.TERMINAL_FAILURE
+            result.error = provider_err
+            result.processing_lifecycle = ProcessingLifecycle.TERMINAL_FAILURE
+            await self._emit_audit(case, "PROVIDER_ERROR", {"finish_reason": llm_response.finish_reason, "detail": detail})
+            return result
+
         case.status = ProcessingLifecycle.PARSING_RESPONSE
         result.processing_lifecycle = ProcessingLifecycle.PARSING_RESPONSE
 
