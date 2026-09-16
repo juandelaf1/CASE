@@ -6,6 +6,13 @@ All notable changes to CASE will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- GroqProvider: retry with `json_object` format when `strict: True` schema validation fails (HTTP 400)
+- Engine: detect provider errors (error/timeout/auth) before pipeline validation
+- test_sqlite: DB path tests use `tmp_path`, never delete `case_audit.db`
+- Bootstrap: `_ensure_tables()` re-validates table existence on every DB operation
+- Health endpoint: validates DB tables, returns `database` status
+
 ### Added
 - Chain-of-Thought (CoT) prompt with 6-step analysis process
   - Decision rationale and decision factors in response schema

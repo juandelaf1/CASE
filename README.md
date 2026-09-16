@@ -18,8 +18,9 @@
 </p>
 
 <p align="center">
-  <strong>699 passed · 7 skipped · 0 failed</strong><br>
-  <sub>ruff 0 errors · mypy 0 errors · 93 source files</sub>
+  <strong>692 passed (deterministic) · 7 skipped · 0 failed</strong><br>
+  <sub>ruff 0 errors · mypy 0 errors · 93 source files</sub><br>
+  <sub>Live tests (Groq/Ollama): require API key and running server</sub>
 </p>
 
 ---
@@ -486,7 +487,7 @@ from case_core.providers.cloud import CloudProvider
 
 | Check | Result |
 |-------|--------|
-| pytest | 699 passed, 7 skipped, 0 failed |
+| pytest (deterministic) | 692 passed, 7 skipped, 0 failed |
 | ruff | 0 errors (src) |
 | mypy | 0 errors (93 source files) |
 
