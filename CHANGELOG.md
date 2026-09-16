@@ -7,7 +7,59 @@ All notable changes to CASE will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Local `.env` configuration support via python-dotenv
+- Chain-of-Thought (CoT) prompt with 6-step analysis process
+  - Decision rationale and decision factors in response schema
+  - Semantic validation (rationale >= 20 chars, factors >= 1 item)
+  - Structured analysis without exposing internal reasoning
+- ReAct module (`src/case_core/react/__init__.py`)
+  - Controlled deterministic flow: CHECK_EVIDENCE → CHECK_URGENCY → CHECK_DOMAIN
+  - 3 steps, no LLM loop, trace stored in metadata
+  - UI visualization in Decision Center
+- 10-word summary validator
+  - Pydantic validator `_validate_ten_words` with auto-repair
+  - Pipeline semantic validation with `_repair_summary_to_ten_words`
+  - Prompt instruction for exactly 10 words
+- Cost tracking (`src/case_core/evaluation/cost.py`)
+  - `CostModel`, `PricingConfig`, `CostEstimate` classes
+  - Groq pricing (qwen3.8: $0.20/M prompt, $0.60/M completion)
+  - API response field `cost` with total_cost, currency, is_free
+- Token tracking exposed in `provider_info` (prompt_tokens, completion_tokens, total_tokens)
+- Error classification in Streamlit client
+  - `backend_offline`: ConnectError/timeout → offline component
+  - `backend_error`: 5xx → specific error message
+  - `validation`: 4xx → validation detail
+  - `provider`: LLM failure
+- Professional light theme (off-white bg, white surfaces, graphite text)
+  - Silver/teal brand accent, semantic colors (green/amber/red)
+  - Typography scale: page 1.8rem, hero 2.8rem, decision 2.4rem
+  - Desktop-optimized layout (max 920px content)
+- i18n system (`streamlit_app/i18n.py`) — ~250 keys per language, EN/ES
+- CASE banner branding (`docs/images/CASE_banner.jpg`) in sidebar
+- Decision Center view with hero, AI Proposal vs Final Decision
+- Evidence in demo cases (82721, 4, 108) for LogisticsPolicy validation
+- Backend offline component with retry and diagnostics
+
+### Changed
+- API response extended: `decision_rationale`, `decision_factors`, `summary`, `react_trace`, `cost`
+- ReliabilityPipeline: `DECISION_FIELDS` split into REQUIRED/OPTIONAL
+- `semantic_validate` updated for rationale, factors, summary validation
+- MockProvider responses updated with new fields (rationale, factors, summary)
+- Demo cases now send evidence satisfying LogisticsPolicy
+
+### Fixed
+- HTTP 500 on triage: SQLite DB corruption (0-byte file) → clean restart
+- Domain validation error: demo cases missing evidence → added evidence items
+- NameError `client` in decision_center.py
+- httpx.ConnectError unhandled in 7+ views
+- Wrong import in counterfactual.py
+- HTML malformation in components.py
+- Missing future annotations in client.py
+
+### Tests
+- 679 passed, 13 failed (5 pre-existing, 8 flaky/Groq-dependent), 7 skipped
+- mypy: 0 errors (93 source files)
+- ruff src: 0 errors
+- 3/3 demo cases E2E with Groq real inference (qwen/qwen3.8-27b)
   - `.env.example` with all supported variables (no secrets)
   - Precedence: environment variables > `.env` > defaults
   - `.env` already in `.gitignore` (never committed)
@@ -84,3 +136,4 @@ All notable changes to CASE will be documented in this file.
 | Phase 2 | 594 passed | 0 errors | 0 errors |
 | Phase 3 | 608 passed | 0 errors | 0 errors |
 | Phase 4 | 671 passed | 0 errors | 0 errors |
+| v1.1.0 | 679 passed | 0 errors | 0 errors |
