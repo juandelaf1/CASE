@@ -15,8 +15,10 @@ client = TestClient(app)
 def _fresh_client() -> TestClient:
     fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
-    old = os.environ.get("CASE_DB_PATH")
+    old_db = os.environ.get("CASE_DB_PATH")
+    old_provider = os.environ.get("CASE_PROVIDER")
     os.environ["CASE_DB_PATH"] = db_path
+    os.environ["CASE_PROVIDER"] = "mock"
     try:
         import importlib
 
@@ -27,10 +29,14 @@ def _fresh_client() -> TestClient:
         return TestClient(app_mod.app), db_path
     except Exception:
         os.unlink(db_path)
-        if old is not None:
-            os.environ["CASE_DB_PATH"] = old
+        if old_db is not None:
+            os.environ["CASE_DB_PATH"] = old_db
         else:
             os.environ.pop("CASE_DB_PATH", None)
+        if old_provider is not None:
+            os.environ["CASE_PROVIDER"] = old_provider
+        else:
+            os.environ.pop("CASE_PROVIDER", None)
         raise
 
 

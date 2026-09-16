@@ -1,4 +1,7 @@
+import os
 import sys
+
+os.environ.setdefault("CASE_PROVIDER", "mock")
 
 from fastapi.testclient import TestClient
 
