@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import json
 
+import httpx
 import streamlit as st
 
 from streamlit_app.client import CASEClient
+from streamlit_app.i18n import t
 from streamlit_app.ui.components import (
+    render_backend_offline,
     render_case_decision,
+    render_confidence,
     render_down_arrow,
+    render_empty_state,
     render_field_row,
     render_metric_cards,
     render_model_proposal,
@@ -22,16 +27,25 @@ def _get_client() -> CASEClient:
 
 
 def render() -> None:
-    st.markdown('<div class="case-page-title">Triage</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="case-page-title">{t("triage_title")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="case-page-subtitle">{t("triage_subtitle")}</div>', unsafe_allow_html=True)
+
     st.markdown(
-        '<div class="case-page-subtitle">Submit a case and inspect the full decision pipeline</div>',
+        f'<div class="case-section-educational">'
+        f'<p>{t("triage_desc")}</p>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
     client = _get_client()
-    domains = client.list_domains_sync()
 
-    tab_submit, tab_lookup = st.tabs(["New Case", "Lookup Case"])
+    try:
+        domains = client.list_domains_sync()
+    except Exception:
+        render_backend_offline()
+        return
+
+    tab_submit, tab_lookup = st.tabs([t("triage_new"), t("triage_lookup")])
 
     with tab_submit:
         _render_submit(client, domains)
@@ -45,20 +59,20 @@ def _render_submit(client: CASEClient, domains: list[str]) -> None:
         col1, col2 = st.columns([3, 1])
         with col1:
             report_text = st.text_area(
-                "Report Text",
+                t("triage_report"),
                 height=120,
-                placeholder="Describe the case to triage...",
+                placeholder=t("triage_report_ph"),
             )
         with col2:
-            domain = st.selectbox("Domain", options=domains if domains else ["default"])
-            urgency = st.selectbox("Urgency", options=["LOW", "MEDIUM", "HIGH", "CRITICAL"], index=1)
+            domain = st.selectbox(t("triage_domain"), options=domains if domains else ["default"])
+            urgency = st.selectbox(t("triage_urgency"), options=["LOW", "MEDIUM", "HIGH", "CRITICAL"], index=1)
 
-        metadata_raw = st.text_area("Metadata (JSON, optional)", height=68, placeholder='{"key": "value"}')
-        submitted = st.form_submit_button("Submit Case", type="primary", use_container_width=True)
+        metadata_raw = st.text_area(t("triage_metadata"), height=68, placeholder='{"key": "value"}')
+        submitted = st.form_submit_button(t("triage_submit"), type="primary", use_container_width=True)
 
     if submitted:
         if not report_text.strip():
-            st.error("Report text is required")
+            st.error(t("triage_report_required"))
             return
 
         metadata = None
@@ -66,21 +80,40 @@ def _render_submit(client: CASEClient, domains: list[str]) -> None:
             try:
                 metadata = json.loads(metadata_raw)
             except json.JSONDecodeError:
-                st.error("Invalid JSON in metadata")
+                st.error(t("triage_invalid_json"))
                 return
 
-        with st.spinner("Processing through CASE pipeline..."):
-            result = client.triage_sync(
-                report_text=report_text,
-                domain=domain,
-                urgency=urgency,
-                metadata=metadata,
-            )
+        try:
+            with st.spinner(t("triage_processing")):
+                result = client.triage_sync(
+                    report_text=report_text,
+                    domain=domain,
+                    urgency=urgency,
+                    metadata=metadata,
+                )
+        except httpx.ConnectError:
+            render_backend_offline()
+            return
+        except Exception as exc:
+            st.error(t("exec_error", error=str(exc)))
+            return
 
         if result.get("error"):
+            error_type = result.get("error_type", "")
             detail = result.get("detail", {})
-            st.error(f"Error: {detail.get('error', 'Unknown error')}")
-            st.caption(f"Category: {detail.get('category', 'N/A')}")
+            if error_type == "backend_offline":
+                render_backend_offline()
+            elif error_type == "backend_error":
+                st.error(t("err_backend_error", status=result.get("status", "?")))
+                st.caption(t("err_backend_error_desc"))
+            elif error_type == "validation":
+                error_msg = detail.get("error", t("common_error")) if isinstance(detail, dict) else str(detail)
+                st.error(t("err_validation", error=error_msg))
+                category = detail.get("category", t("common_n_a")) if isinstance(detail, dict) else t("common_n_a")
+                st.caption(t("triage_category", category=category))
+            else:
+                error_msg = detail.get("error", t("common_error")) if isinstance(detail, dict) else str(detail)
+                st.error(t("triage_error", error=error_msg))
             return
 
         data = result["data"]
@@ -89,27 +122,33 @@ def _render_submit(client: CASEClient, domains: list[str]) -> None:
 
 
 def _render_lookup(client: CASEClient) -> None:
-    case_id = st.text_input("Case ID", placeholder="CASE-XXXXXXXX")
-    if st.button("Lookup", type="primary") and case_id:
-        with st.spinner("Fetching case..."):
-            pending = client.list_pending_review_sync(limit=200)
-            for d in pending.get("decisions", []):
-                if d.get("case_id") == case_id:
-                    st.session_state["last_triage"] = d
-                    _render_triage_result(d)
-                    return
-        st.warning(f"No decision found for {case_id}")
+    case_id = st.text_input(t("triage_case_id"), placeholder=t("triage_case_ph"))
+    if st.button(t("triage_lookup_btn"), type="primary") and case_id:
+        try:
+            with st.spinner(t("triage_fetching")):
+                result = client.get_case_sync(case_id)
+        except Exception:
+            render_backend_offline()
+            return
+
+        if result.get("error"):
+            st.warning(t("triage_not_found", id=case_id))
+            return
+
+        decision = result.get("decision", {})
+        st.session_state["last_triage"] = decision
+        _render_triage_result(decision)
 
 
 def _render_triage_result(data: dict) -> None:
-    case_id = data.get("case_id", "N/A")
-    domain = data.get("domain", "N/A")
+    case_id = data.get("case_id", t("common_n_a"))
+    domain = data.get("domain", t("common_n_a"))
     ms = data.get("processing_time_ms", 0)
 
     render_metric_cards([
-        {"label": "Case ID", "value": case_id, "icon": "\U0001f4cb", "color": "#4f8cf7"},
-        {"label": "Domain", "value": domain, "icon": "\U0001f3af", "color": "#a78bfa"},
-        {"label": "Processing", "value": f"{ms:.1f} ms", "icon": "\u23f1\ufe0f", "color": "#22d3ee"},
+        {"label": t("triage_case_id"), "value": case_id, "icon": "\u2611", "color": "#1a7a7a"},
+        {"label": t("triage_domain"), "value": domain, "icon": "\u25ce", "color": "#6a4fa0"},
+        {"label": t("field_processing_time"), "value": f"{ms:.1f} ms", "icon": "\u23f1", "color": "#1a7a7a"},
     ])
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -119,19 +158,19 @@ def _render_triage_result(data: dict) -> None:
         render_model_proposal(original_ai)
         render_down_arrow()
     else:
-        render_section_header("MODEL PROPOSAL", "LLM", "case-section-proposal")
-        st.caption("No separate AI proposal recorded — decision was produced directly.")
+        render_section_header(t("sec_model_proposal"), "", "case-section-proposal")
+        st.caption(t("dc_no_proposal"))
         render_section_close()
         render_down_arrow()
 
-    render_section_header("VALIDATION", "\u2713", "case-section-validation")
+    render_section_header(t("sec_validation"), "", "case-section-validation")
     confidence = data.get("confidence", 0)
     lifecycle = data.get("lifecycle", "ai_proposed")
-    urgency = data.get("urgency", "N/A")
+    urgency = data.get("urgency", t("common_n_a"))
 
-    render_field_row("Confidence", f"{confidence:.0%}")
-    render_field_row("Urgency", urgency)
-    render_field_row("Lifecycle", lifecycle.replace("_", " ").upper())
+    render_field_row(t("field_confidence"), f"{confidence:.0%}")
+    render_field_row(t("field_urgency"), urgency)
+    render_field_row(t("field_lifecycle"), lifecycle.replace("_", " ").upper())
     render_section_close()
     render_down_arrow()
 
@@ -140,24 +179,21 @@ def _render_triage_result(data: dict) -> None:
     provider_info = data.get("provider_info")
     if provider_info:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("#### Provider Telemetry")
-        with st.container(border=True):
-            render_field_row("Provider", provider_info.get("provider", "N/A"))
-            render_field_row("Model", provider_info.get("model", "N/A"))
-            render_field_row("Tokens", f"{provider_info.get('total_tokens', 0)} (prompt: {provider_info.get('prompt_tokens', 0)}, completion: {provider_info.get('completion_tokens', 0)})")
-            render_field_row("Latency", f"{provider_info.get('latency_ms', 0):.1f} ms")
-            render_field_row("Finish Reason", provider_info.get("finish_reason", "N/A"))
+        with st.expander(t("triage_provider_telemetry"), expanded=False):
+            render_field_row(t("field_provider"), provider_info.get("provider", t("common_n_a")))
+            render_field_row(t("field_model"), provider_info.get("model", t("common_n_a")))
+            render_field_row(t("field_tokens"), f"{provider_info.get('total_tokens', 0)} (prompt: {provider_info.get('prompt_tokens', 0)}, completion: {provider_info.get('completion_tokens', 0)})")
+            render_field_row(t("field_latency"), f"{provider_info.get('latency_ms', 0):.1f} ms")
+            render_field_row(t("field_finish_reason"), provider_info.get("finish_reason", t("common_n_a")))
 
     human_override = data.get("human_override")
     if human_override:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("#### Human Override")
-        with st.container(border=True):
-            render_field_row("Actor", human_override.get("actor", "N/A"))
-            render_field_row("Justification", human_override.get("justification", "N/A"))
-            render_field_row("Original Action", human_override.get("original_action", "N/A"))
-            render_field_row("Original Urgency", human_override.get("original_urgency", "N/A"))
+        with st.expander(t("dc_human_override"), expanded=True):
+            render_field_row(t("field_actor"), human_override.get("actor", t("common_n_a")))
+            render_field_row(t("field_justification"), human_override.get("justification", t("common_n_a")))
+            render_field_row(t("field_original_action"), human_override.get("original_action", t("common_n_a")))
+            render_field_row(t("field_original_urgency"), human_override.get("original_urgency", t("common_n_a")))
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("Raw Response"):
+    with st.expander(t("triage_raw"), expanded=False):
         st.json(data)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from typing import Any
 
@@ -123,13 +125,23 @@ class CASEClient:
             payload["metadata"] = metadata
 
         with httpx.Client(timeout=self._timeout) as client:
-            response = client.post(
-                f"{self._base_url}/api/v1/triage",
-                json=payload,
-            )
+            try:
+                response = client.post(
+                    f"{self._base_url}/api/v1/triage",
+                    json=payload,
+                )
+            except httpx.ConnectError:
+                return {"error": True, "error_type": "backend_offline", "detail": "Connection refused"}
+            except httpx.TimeoutException:
+                return {"error": True, "error_type": "backend_offline", "detail": "Connection timeout"}
+            except httpx.HTTPError as exc:
+                return {"error": True, "error_type": "backend_offline", "detail": str(exc)}
+
             if response.status_code in (400, 422):
                 detail = response.json().get("detail", {})
-                return {"error": True, "detail": detail}
+                return {"error": True, "error_type": "validation", "status": response.status_code, "detail": detail}
+            if response.status_code >= 500:
+                return {"error": True, "error_type": "backend_error", "status": response.status_code, "detail": f"HTTP {response.status_code}"}
             response.raise_for_status()
             return {"error": False, "data": response.json()}
 

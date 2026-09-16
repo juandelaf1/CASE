@@ -134,11 +134,16 @@ class TriageDecisionResponse(BaseModel):
     reported_urgency: str | None = None
     confidence: float
     evidence_summary: str
+    decision_rationale: str = ""
+    decision_factors: list[str] = []
+    summary: str = ""
     lifecycle: str
     processing_time_ms: float
     original_ai_proposal: dict[str, Any] | None = None
     human_override: dict[str, Any] | None = None
     provider_info: dict[str, Any] | None = None
+    react_trace: dict[str, Any] | None = None
+    cost: dict[str, Any] | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -329,11 +334,16 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
         reported_urgency=reported_urgency,
         confidence=decision.confidence,
         evidence_summary=decision.evidence_summary,
+        decision_rationale=decision.decision_rationale,
+        decision_factors=decision.decision_factors,
+        summary=decision.summary,
         lifecycle=decision.lifecycle.value,
         processing_time_ms=decision.processing_time_ms,
         original_ai_proposal=decision.original_ai_proposal.model_dump() if decision.original_ai_proposal else None,
         human_override=decision.human_override.model_dump() if decision.human_override else None,
         provider_info=decision.metadata.get("provider_info"),
+        react_trace=decision.metadata.get("react_trace"),
+        cost=decision.metadata.get("cost"),
     )
 
 

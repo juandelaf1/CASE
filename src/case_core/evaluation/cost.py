@@ -42,6 +42,12 @@ DEFAULT_PRICING: list[PricingConfig] = [
         is_free=True,
     ),
     PricingConfig(
+        provider="groq",
+        model="qwen/qwen3.8-27b",
+        prompt_price_per_token=0.0000002,
+        completion_price_per_token=0.0000006,
+    ),
+    PricingConfig(
         provider="cloud",
         model="gpt-4o-mini",
         prompt_price_per_token=0.00000015,

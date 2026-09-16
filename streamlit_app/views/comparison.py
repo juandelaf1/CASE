@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from typing import Any
+
 import streamlit as st
 
 from streamlit_app.client import CASEClient
+from streamlit_app.i18n import t
 from streamlit_app.ui.components import (
-    render_api_health_check,
-    render_case_decision,
+    render_action_badge,
+    render_backend_offline,
+    render_empty_state,
     render_field_row,
-    render_model_proposal,
-    render_validation_section,
 )
 
 
@@ -18,119 +20,216 @@ def _get_client() -> CASEClient:
 
 
 def render() -> None:
-    st.markdown('<div class="case-page-title">Provider Comparison</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="case-page-subtitle">Run the same case through the current provider and compare results</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.info(
-        "**Scope:** Runs one case through the currently configured provider. "
-        "For multi-provider comparison, restart the API with different `CASE_PROVIDER` values. "
-        "**Not compared:** Different inputs, different pipelines, or different evaluation criteria."
-    )
+    st.markdown(f'<div class="case-page-title">{t("comp_title")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="case-page-subtitle">{t("comp_subtitle")}</div>', unsafe_allow_html=True)
 
     client = _get_client()
 
-    if not render_api_health_check(client):
+    st.info(t("comp_how"))
+    st.markdown("---")
+
+    try:
+        cases_result = client.list_cases_sync(limit=50, offset=0)
+        decisions = cases_result.get("decisions", [])
+    except Exception:
+        render_backend_offline()
         return
+
+    if not decisions:
+        render_empty_state(t("comp_no_cases"))
+        return
+
+    groq_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "groq"]
+    ollama_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "ollama"]
+
+    if not groq_runs and not ollama_runs:
+        render_empty_state(t("comp_no_runs"))
+        return
+
+    _render_provider_status(groq_runs, ollama_runs)
 
     st.markdown("---")
 
-    with st.form("comparison_form"):
-        st.markdown("#### Case Input")
-        report_text = st.text_area(
-            "Report Text",
-            value="Minor pothole on Main St. Photo evidence attached.",
-            height=100,
+    _render_comparison(groq_runs, ollama_runs, decisions)
+
+
+def _render_provider_status(groq_runs: list[dict], ollama_runs: list[dict]) -> None:
+    st.markdown(f"#### {t('comp_available')}")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric(t("comp_groq_runs"), len(groq_runs))
+    with c2:
+        st.metric(t("comp_ollama_runs"), len(ollama_runs))
+    with c3:
+        st.metric(t("comp_total"), len(groq_runs) + len(ollama_runs))
+
+
+def _render_comparison(
+    groq_runs: list[dict],
+    ollama_runs: list[dict],
+    all_runs: list[dict],
+) -> None:
+    st.markdown(f"#### {t('comp_side_by_side')}")
+
+    case_ids = sorted(set(
+        d.get("case_id", t("common_n_a"))
+        for d in all_runs
+        if d.get("case_id")
+    ))
+
+    if not case_ids:
+        render_empty_state(t("comp_no_cases"))
+        return
+
+    selected_case = st.selectbox(
+        t("comp_select_case"),
+        options=case_ids,
+        format_func=lambda x: f"Case {x}",
+    )
+
+    if not selected_case:
+        return
+
+    groq_for_case = next(
+        (d for d in groq_runs if d.get("case_id") == selected_case), None
+    )
+    ollama_for_case = next(
+        (d for d in ollama_runs if d.get("case_id") == selected_case), None
+    )
+
+    if not groq_for_case and not ollama_for_case:
+        st.warning(t("comp_no_runs_case", id=selected_case))
+        return
+
+    col_groq, col_ollama = st.columns(2)
+
+    with col_groq:
+        _render_provider_column("Groq", groq_for_case)
+
+    with col_ollama:
+        _render_provider_column("Ollama", ollama_for_case)
+
+    if groq_for_case and ollama_for_case:
+        st.markdown("<br>", unsafe_allow_html=True)
+        _render_differences(groq_for_case, ollama_for_case)
+
+
+def _render_provider_column(name: str, data: dict[str, Any] | None) -> None:
+    if not data:
+        st.markdown(
+            f'<div class="case-comparison-col">'
+            f'<div class="case-comparison-header">{name}</div>'
+            f'<div style="text-align:center; padding:2rem; color:var(--text-muted);">'
+            f'{t("comp_no_data", name=name)}'
+            f'</div></div>',
+            unsafe_allow_html=True,
         )
-        c1, c2 = st.columns(2)
-        with c1:
-            domain = st.selectbox("Domain", ["urban_operations", "logistics", "infrastructure"])
-        with c2:
-            urgency = st.selectbox("Urgency", ["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+        return
 
-        evidence_json = st.text_area(
-            "Evidence (JSON array, optional)",
-            value='[{"id": "ev-001", "type": "text", "content": "Photo confirms issue", "source": "test", "confidence": 0.9, "extracted_at": "2026-09-15T00:00:00Z"}]',
-            height=80,
+    pi = data.get("provider_info", {})
+    automation = data.get("automation_assessment", {})
+    action = data.get("action", t("common_n_a"))
+    lifecycle = data.get("lifecycle", t("common_n_a"))
+    confidence = data.get("confidence", 0)
+    urgency = data.get("urgency", t("common_n_a"))
+    risk_level = automation.get("risk_level", t("common_n_a"))
+    latency = pi.get("latency_ms", 0)
+    total_tokens = pi.get("total_tokens", 0)
+    prompt_tokens = pi.get("prompt_tokens", 0)
+    completion_tokens = pi.get("completion_tokens", 0)
+    model = pi.get("model", t("common_n_a"))
+    processing_time = data.get("processing_time_ms", 0)
+
+    html = (
+        f'<div class="case-comparison-col">'
+        f'<div class="case-comparison-header">{name} \u2014 {model}</div>'
+    )
+
+    rows = [
+        (t("field_action"), action.upper()),
+        (t("field_lifecycle"), lifecycle.replace("_", " ").upper()),
+        (t("field_confidence"), f"{confidence:.0%}"),
+        (t("field_urgency"), urgency),
+        (t("field_risk_level"), risk_level),
+        (t("field_automation"), automation.get("automation_decision", t("common_n_a"))),
+        (t("field_latency"), f"{latency:.0f} ms"),
+        (t("field_processing_time"), f"{processing_time:.0f} ms"),
+        (t("field_tokens"), f"{total_tokens} (P:{prompt_tokens} / C:{completion_tokens})"),
+    ]
+
+    for label, value in rows:
+        html += (
+            f'<div class="case-comparison-row">'
+            f'<span class="case-comparison-label">{label}</span>'
+            f'<span class="case-comparison-value">{value}</span>'
+            f'</div>'
         )
 
-        submitted = st.form_submit_button("Run Case", type="primary", use_container_width=True)
+    html += "</div>"
+    st.markdown(html, unsafe_allow_html=True)
 
-    if submitted:
-        import json
+    with st.expander(t("comp_reason", name=name), expanded=False):
+        st.markdown(data.get("reason", t("common_n_a")))
 
-        try:
-            evidence = json.loads(evidence_json) if evidence_json.strip() else []
-        except json.JSONDecodeError:
-            st.error("Invalid JSON in evidence field.")
-            return
 
-        with st.spinner("Running through CASE pipeline..."):
-            result = client.triage_sync(
-                report_text=report_text,
-                domain=domain,
-                urgency=urgency,
-                evidence=evidence,
-            )
+def _render_differences(groq: dict, ollama: dict) -> None:
+    st.markdown(f"#### {t('comp_diff_title')}")
 
-        if result.get("error"):
-            st.error(f"Error: {result.get('detail', 'Unknown error')}")
-            return
+    groq_action = groq.get("action", t("common_n_a"))
+    ollama_action = ollama.get("action", t("common_n_a"))
+    groq_confidence = groq.get("confidence", 0)
+    ollama_confidence = ollama.get("confidence", 0)
+    groq_pi = groq.get("provider_info", {})
+    ollama_pi = ollama.get("provider_info", {})
+    groq_latency = groq_pi.get("latency_ms", 0)
+    ollama_latency = ollama_pi.get("latency_ms", 0)
 
-        data = result.get("data", {})
+    diffs = []
 
-        st.markdown("---")
-        st.markdown("#### Result")
+    if groq_action != ollama_action:
+        diffs.append({
+            "metric": t("field_action"),
+            "groq": groq_action.upper(),
+            "ollama": ollama_action.upper(),
+            "note": t("comp_diff_decision"),
+        })
 
-        render_model_proposal(data)
+    if abs(groq_confidence - ollama_confidence) > 0.1:
+        diffs.append({
+            "metric": t("field_confidence"),
+            "groq": f"{groq_confidence:.0%}",
+            "ollama": f"{ollama_confidence:.0%}",
+            "note": t("comp_diff_confidence"),
+        })
 
-        render_validation_section()
+    if groq_latency > 0 and ollama_latency > 0:
+        ratio = ollama_latency / groq_latency
+        diffs.append({
+            "metric": t("field_latency"),
+            "groq": f"{groq_latency:.0f} ms",
+            "ollama": f"{ollama_latency:.0f} ms",
+            "note": t("comp_diff_latency", ratio=f"{ratio:.0f}"),
+        })
 
-        render_case_decision(data)
+    if not diffs:
+        st.success(t("comp_same"))
+        return
 
-        st.markdown("---")
-        st.markdown("#### Provider Telemetry")
+    for d in diffs:
+        with st.container(border=True):
+            c1, c2, c3 = st.columns([1, 2, 2])
+            with c1:
+                st.markdown(f"**{d['metric']}**")
+            with c2:
+                st.markdown(f"**Groq:** {d['groq']}")
+            with c3:
+                st.markdown(f"**Ollama:** {d['ollama']}")
+            st.caption(d["note"])
 
-        provider_info = data.get("provider_info")
-        if provider_info:
-            with st.container(border=True):
-                render_field_row("Provider", provider_info.get("provider", "N/A"))
-                render_field_row("Model", provider_info.get("model", "N/A"))
-
-                latency = provider_info.get("latency_ms", 0)
-                render_field_row("Latency", f"{latency:.1f} ms" if latency else "N/A")
-
-                prompt_tokens = provider_info.get("prompt_tokens", 0)
-                completion_tokens = provider_info.get("completion_tokens", 0)
-                total_tokens = provider_info.get("total_tokens", 0)
-                if total_tokens:
-                    render_field_row("Tokens", f"{prompt_tokens} prompt / {completion_tokens} completion / {total_tokens} total")
-                else:
-                    render_field_row("Tokens", "NOT AVAILABLE")
-
-                render_field_row("Finish Reason", provider_info.get("finish_reason", "N/A"))
-
-                error = provider_info.get("error")
-                if error:
-                    st.error(f"Provider error: {error}")
-        else:
-            st.info("No provider telemetry available.")
-
-    with st.expander("Multi-Provider Comparison"):
-        st.markdown("""
-To compare across providers, restart the API with different configurations:
-
-```bash
-# Provider A: MockProvider (deterministic)
-CASE_PROVIDER=mock python -m case_api.main
-
-# Provider B: GroqProvider (real inference)
-CASE_PROVIDER=groq CASE_GROQ_API_KEY=gsk_... python -m case_api.main
-```
-
-Then submit the same case to each and compare results in the Case Explorer.
-
-**Important:** Each run uses the same CASE pipeline — only the provider changes.
-""")
+    st.markdown(
+        f'<div class="case-section-educational">'
+        f'<p>{t("comp_educational")}</p>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )

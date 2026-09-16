@@ -11,12 +11,14 @@ from case_core.contracts.error import CASEError, ErrorCategory
 from case_core.contracts.lifecycle import ProcessingLifecycle
 from case_core.contracts.operational_case import OperationalCase
 from case_core.domain.registry import DomainRegistry
+from case_core.evaluation.cost import CostModel
 from case_core.ports.audit import AuditPort
 from case_core.ports.automation import AutomationPolicy
 from case_core.ports.decision_repository import DecisionRepositoryPort
 from case_core.ports.domain import DomainPolicy
 from case_core.ports.llm import LLMProvider
 from case_core.prompts.builder import PromptBuilder
+from case_core.react import execute_react
 from case_core.reliability.pipeline import ReliabilityPipeline
 
 
@@ -53,6 +55,7 @@ class TriageEngine:
         audit_port: AuditPort | None = None,
         decision_repository: DecisionRepositoryPort | None = None,
         automation_policy_fn: Callable[[str], AutomationPolicy | None] | None = None,
+        cost_model: CostModel | None = None,
         time_fn: Any = None,
     ) -> None:
         self._domain_registry = domain_registry
@@ -60,6 +63,7 @@ class TriageEngine:
         self._audit_port = audit_port
         self._decision_repository = decision_repository
         self._automation_policy_fn = automation_policy_fn
+        self._cost_model = cost_model
         self._time_fn = time_fn or time.time
 
     async def execute(self, case: OperationalCase) -> TriageResult:
@@ -100,6 +104,8 @@ class TriageEngine:
 
         case.status = ProcessingLifecycle.PROMPT_BUILDING
         result.processing_lifecycle = ProcessingLifecycle.PROMPT_BUILDING
+
+        react_trace = execute_react(case, domain_policy.get_domain_context())
 
         builder = PromptBuilder(domain_policy=domain_policy)
         llm_request = builder.build(case)
@@ -153,6 +159,9 @@ class TriageEngine:
             urgency=decision.urgency,
             confidence=decision.confidence,
             evidence_summary=decision.evidence_summary,
+            decision_rationale=decision.decision_rationale,
+            decision_factors=decision.decision_factors,
+            summary=decision.summary,
         )
 
         decision.processing_time_ms = (self._time_fn() - engine_start) * 1000
@@ -166,6 +175,16 @@ class TriageEngine:
             "latency_ms": llm_response.latency_ms,
             "finish_reason": llm_response.finish_reason,
         }
+
+        decision.metadata["react_trace"] = react_trace.to_dict()
+
+        if self._cost_model:
+            cost_estimate = self._cost_model.estimate(
+                llm_response.provider,
+                llm_response.model,
+                llm_response.usage,
+            )
+            decision.metadata["cost"] = cost_estimate.model_dump()
 
         if self._decision_repository is not None:
             await self._decision_repository.save_decision(decision)

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+from streamlit_app.i18n import t
+
 CONNECTED_COMPONENTS = [
     {"name": "Contracts", "layer": "Foundation", "status": "CONNECTED", "description": "Pydantic v2 models at all public boundaries"},
     {"name": "LLMProvider", "layer": "Ports", "status": "CONNECTED", "description": "Provider-agnostic LLM abstraction"},
@@ -13,7 +15,7 @@ CONNECTED_COMPONENTS = [
     {"name": "LogisticsAutomationPolicy", "layer": "Risk", "status": "CONNECTED", "description": "Logistics-specific risk automation"},
     {"name": "TriageEngine", "layer": "Application", "status": "CONNECTED", "description": "Application-layer orchestrator"},
     {"name": "PromptBuilder", "layer": "Application", "status": "CONNECTED", "description": "Structured prompt construction"},
-    {"name": "ReliabilityPipeline", "layer": "Reliability", "status": "CONNECTED", "description": "Parse → Schema → Semantic → Domain validation + retry"},
+    {"name": "ReliabilityPipeline", "layer": "Reliability", "status": "CONNECTED", "description": "Parse \u2192 Schema \u2192 Semantic \u2192 Domain validation + retry"},
     {"name": "AutomationEvaluator", "layer": "Risk", "status": "CONNECTED", "description": "Risk assessment and automation routing"},
     {"name": "MockProvider", "layer": "Providers", "status": "CONNECTED", "description": "Deterministic test/demo provider"},
     {"name": "OllamaProvider", "layer": "Providers", "status": "TESTED_ISOLATED", "description": "Local LLM provider (requires Ollama)"},
@@ -39,21 +41,18 @@ ISOLATED_EXTENSIONS = [
 ]
 
 STATUS_COLORS = {
-    "CONNECTED": "#34d399",
-    "TESTED_ISOLATED": "#fbbf24",
-    "PARTIALLY_CONNECTED": "#fb923c",
-    "NOT_AVAILABLE": "#f87171",
+    "CONNECTED": "#1a7a4a",
+    "TESTED_ISOLATED": "#a06800",
+    "PARTIALLY_CONNECTED": "#c06020",
+    "NOT_AVAILABLE": "#b82e2e",
 }
 
 
 def render() -> None:
-    st.markdown('<div class="case-page-title">Architecture</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="case-page-subtitle">CASE architecture layers, connected core, and isolated extensions</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="case-page-title">{t("arch_title")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="case-page-subtitle">{t("arch_subtitle")}</div>', unsafe_allow_html=True)
 
-    tab_connected, tab_isolated, tab_layers = st.tabs(["Connected Core", "Isolated Extensions", "Layer Map"])
+    tab_connected, tab_isolated, tab_layers = st.tabs([t("arch_connected"), t("arch_isolated"), t("arch_layers")])
 
     with tab_connected:
         _render_connected()
@@ -66,10 +65,10 @@ def render() -> None:
 
 
 def _render_connected() -> None:
-    st.markdown("#### Connected Core")
-    st.caption("Components wired into the running pipeline via composition.py")
+    st.markdown(f"#### {t('arch_connected')}")
+    st.caption(t("arch_connected_desc"))
 
-    layers = {}
+    layers: dict[str, list[dict]] = {}
     for c in CONNECTED_COMPONENTS:
         layer = c["layer"]
         if layer not in layers:
@@ -79,12 +78,12 @@ def _render_connected() -> None:
     for layer, components in layers.items():
         with st.expander(f"{layer} ({len(components)})", expanded=True):
             for c in components:
-                color = STATUS_COLORS.get(c["status"], "#5c5f77")
+                color = STATUS_COLORS.get(c["status"], "#555a68")
                 st.markdown(
                     f'<div style="display:flex; align-items:center; gap:8px; padding:4px 0;">'
                     f'<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:{color};"></span>'
                     f'<strong>{c["name"]}</strong>'
-                    f'<span class="case-badge" style="background:{color}22; color:{color};">{c["status"]}</span>'
+                    f'<span class="case-badge" style="background:{color}12; color:{color};">{c["status"]}</span>'
                     f'</div>'
                     f'<div style="font-size:0.78rem; color:var(--text-secondary); margin-left:16px;">{c["description"]}</div>',
                     unsafe_allow_html=True,
@@ -92,25 +91,25 @@ def _render_connected() -> None:
 
 
 def _render_isolated() -> None:
-    st.markdown("#### Isolated Extensions")
-    st.caption("Implemented and tested but NOT wired into the running pipeline")
+    st.markdown(f"#### {t('arch_isolated')}")
+    st.caption(t("arch_isolated_desc"))
 
     for ext in ISOLATED_EXTENSIONS:
         with st.container(border=True):
             c1, c2 = st.columns([4, 1])
             with c1:
                 st.markdown(f"**{ext['name']}**")
-                st.caption(f"{ext['description']} — Layer: {ext['layer']}")
+                st.caption(f"{ext['description']} \u2014 Layer: {ext['layer']}")
             with c2:
-                color = STATUS_COLORS.get(ext["status"], "#5c5f77")
+                color = STATUS_COLORS.get(ext["status"], "#555a68")
                 st.markdown(
-                    f'<span class="case-badge" style="background:{color}22; color:{color};">{ext["status"]}</span>',
+                    f'<span class="case-badge" style="background:{color}12; color:{color};">{ext["status"]}</span>',
                     unsafe_allow_html=True,
                 )
                 st.caption(f"{ext['modules']} modules, {ext['tests']} tests")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("Integration Policy"):
+    with st.expander(t("arch_integration")):
         st.markdown("""
 Isolated modules are NOT connected to the running pipeline unless:
 
@@ -127,8 +126,8 @@ See `docs/FUTURE_EVOLUTION.md` for the full decision framework.
 
 
 def _render_layers() -> None:
-    st.markdown("#### Layer Architecture")
-    st.caption("CASE follows a strict layered architecture with controlled dependencies")
+    st.markdown(f"#### {t('arch_layer_map')}")
+    st.caption(t("arch_layer_desc"))
 
     layers = [
         ("UI", "Streamlit / Presentation", "CONNECTED"),
@@ -149,20 +148,20 @@ def _render_layers() -> None:
     ]
 
     for _i, (name, desc, status) in enumerate(layers):
-        color = STATUS_COLORS.get(status, "#5c5f77")
+        color = STATUS_COLORS.get(status, "#555a68")
         st.markdown(
             f'<div style="display:flex; align-items:center; gap:12px; padding:6px 0; '
             f'border-left:3px solid {color}; padding-left:12px; margin-bottom:4px;">'
             f'<strong style="min-width:140px;">{name}</strong>'
             f'<span style="font-size:0.85rem; color:var(--text-secondary);">{desc}</span>'
-            f'<span class="case-badge" style="background:{color}22; color:{color}; margin-left:auto;">{status}</span>'
+            f'<span class="case-badge" style="background:{color}12; color:{color}; margin-left:auto;">{status}</span>'
             f'</div>',
             unsafe_allow_html=True,
         )
 
-    with st.expander("Dependency Rules"):
+    with st.expander(t("arch_dep_rules")):
         st.markdown("""
-- Dependencies flow DOWNWARD only (UI → API → Application → Domain → Ports)
+- Dependencies flow DOWNWARD only (UI \u2192 API \u2192 Application \u2192 Domain \u2192 Ports)
 - Infrastructure implements Ports, never the reverse
 - Domain never imports Infrastructure
 - Providers never make final business decisions

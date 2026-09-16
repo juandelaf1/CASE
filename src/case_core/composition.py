@@ -17,6 +17,7 @@ from case_core.domain.registry import DomainRegistry  # noqa: E402
 from case_core.domain.seismic_automation import SeismicAutomationPolicy  # noqa: E402
 from case_core.domain.seismic_policy import SeismicRiskPolicy  # noqa: E402
 from case_core.domain.urban_policy import UrbanPolicy  # noqa: E402
+from case_core.evaluation.cost import CostModel  # noqa: E402
 from case_core.ports.automation import AutomationPolicy  # noqa: E402
 from case_core.ports.llm import LLMProvider  # noqa: E402
 from case_core.providers.cloud import CloudProvider  # noqa: E402
@@ -54,6 +55,7 @@ class AppDependencies:
     audit_adapter: SQLiteAuditAdapter
     decision_repo: SQLiteDecisionRepository
     provider: LLMProvider
+    cost_model: CostModel
 
 
 def _resolve_provider() -> LLMProvider:
@@ -79,6 +81,7 @@ def create_app_dependencies() -> AppDependencies:
     registry.register(SeismicRiskPolicy())
 
     provider: LLMProvider = _resolve_provider()
+    cost_model = CostModel()
     db_path = _get_db_path()
     audit_adapter = SQLiteAuditAdapter(db_path=db_path)
     decision_repo = SQLiteDecisionRepository(db_path=db_path)
@@ -89,6 +92,7 @@ def create_app_dependencies() -> AppDependencies:
         audit_port=audit_adapter,
         decision_repository=decision_repo,
         automation_policy_fn=_resolve_automation_policy,
+        cost_model=cost_model,
     )
 
     return AppDependencies(
@@ -97,4 +101,5 @@ def create_app_dependencies() -> AppDependencies:
         audit_adapter=audit_adapter,
         decision_repo=decision_repo,
         provider=provider,
+        cost_model=cost_model,
     )

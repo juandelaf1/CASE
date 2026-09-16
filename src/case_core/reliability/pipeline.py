@@ -19,13 +19,30 @@ MAX_TRANSIENT_RETRIES = 2
 BACKOFF_BASE_SECONDS = 1
 TOTAL_TIMEOUT_SECONDS = 30
 
-DECISION_FIELDS = {"decision", "reason", "urgency", "confidence", "evidence_summary"}
+DECISION_FIELDS_REQUIRED = {"decision", "reason", "urgency", "confidence", "evidence_summary"}
+DECISION_FIELDS_OPTIONAL = {"decision_rationale", "decision_factors", "summary"}
+DECISION_FIELDS = DECISION_FIELDS_REQUIRED | DECISION_FIELDS_OPTIONAL
 VALID_DECISIONS = {"approve", "reject", "escalate"}
 VALID_URGENCIES = {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
 
 
 def _backoff(attempt: int) -> float:
     return float(BACKOFF_BASE_SECONDS * (2 ** attempt))
+
+
+def _repair_summary_to_ten_words(summary: str) -> str:
+    words = summary.strip().split()
+    target = 10
+    if len(words) > target:
+        return " ".join(words[:target])
+    if len(words) < target:
+        padding = ["for", "this", "case", "situation", "analysis", "review", "assessment", "evaluation", "decision", "action"]
+        idx = 0
+        while len(words) < target:
+            words.append(padding[idx % len(padding)])
+            idx += 1
+        return " ".join(words)
+    return summary.strip()
 
 
 class ReliabilityPipeline:
@@ -76,7 +93,7 @@ class ReliabilityPipeline:
             )
 
     def schema_validate(self, data: dict[str, Any]) -> tuple[dict[str, Any] | None, CASEError | None]:
-        missing = DECISION_FIELDS - set(data.keys())
+        missing = DECISION_FIELDS_REQUIRED - set(data.keys())
         if missing:
             return None, CASEError(
                 category=ErrorCategory.SCHEMA_VALIDATION,
@@ -135,6 +152,31 @@ class ReliabilityPipeline:
                 recoverable=True,
                 retryable=True,
             )
+
+        rationale = data.get("decision_rationale", "")
+        if rationale and len(rationale.strip()) < 20:
+            return None, CASEError(
+                category=ErrorCategory.SEMANTIC_VALIDATION,
+                message="Decision rationale too short",
+                recoverable=True,
+                retryable=True,
+            )
+
+        factors = data.get("decision_factors")
+        if factors is not None and (not isinstance(factors, list) or len(factors) < 1):
+            return None, CASEError(
+                category=ErrorCategory.SEMANTIC_VALIDATION,
+                message="Decision factors must be a non-empty list",
+                recoverable=True,
+                retryable=True,
+            )
+
+        summary = data.get("summary", "")
+        if summary:
+            word_count = len(summary.strip().split())
+            if word_count != 10:
+                repaired = _repair_summary_to_ten_words(summary)
+                data["summary"] = repaired
 
         return data, None
 
@@ -211,6 +253,9 @@ class ReliabilityPipeline:
             urgency=data["urgency"],
             confidence=float(data["confidence"]),
             evidence_summary=data["evidence_summary"],
+            decision_rationale=data.get("decision_rationale", ""),
+            decision_factors=data.get("decision_factors", []),
+            summary=data.get("summary", ""),
             lifecycle=DecisionLifecycle.AI_PROPOSED,
             processing_time_ms=processing_time_ms,
             metadata=metadata,

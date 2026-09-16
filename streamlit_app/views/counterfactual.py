@@ -5,7 +5,7 @@ from typing import Any
 import streamlit as st
 
 from streamlit_app.client import CASEClient
-from streamlit_app.evaluation.scenarios.bias import BIAS_PAIRS
+from streamlit_app.i18n import t
 from streamlit_app.ui.components import render_api_health_check
 
 
@@ -15,18 +15,10 @@ def _get_client() -> CASEClient:
 
 
 def render() -> None:
-    st.markdown('<div class="case-page-title">Counterfactual Lab</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="case-page-subtitle">Evaluate decision invariance across counterfactual pairs</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="case-page-title">{t("cf_title")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="case-page-subtitle">{t("cf_subtitle")}</div>', unsafe_allow_html=True)
 
-    st.info(
-        "**Data Source:** SYNTHETIC — 10 counterfactual pairs in logistics domain. "
-        "**Methodology:** Pair A vs Pair B with single-attribute changes. "
-        "**Scope:** Logistics domain only. "
-        "**Limitation:** MockProvider produces deterministic responses."
-    )
+    st.info(t("cf_data_source"))
 
     client = _get_client()
 
@@ -35,17 +27,22 @@ def render() -> None:
 
     st.markdown("---")
 
-    if st.button("Run Counterfactual Evaluation", type="primary", use_container_width=True):
-        _run_evaluation(client)
+    if st.button(t("cf_run"), type="primary", use_container_width=True):
+        try:
+            from case_core.evaluation.scenarios.bias import BIAS_PAIRS
+        except ImportError:
+            st.error("BIAS_PAIRS module not available. Ensure case_core is installed.")
+            return
+        _run_evaluation(client, BIAS_PAIRS)
 
 
-def _run_evaluation(client: CASEClient) -> None:
+def _run_evaluation(client: CASEClient, bias_pairs: list[dict[str, Any]]) -> None:
     results: list[dict[str, Any]] = []
 
-    progress = st.progress(0, text="Running counterfactual pairs...")
+    progress = st.progress(0, text=t("cf_running"))
 
-    for i, pair in enumerate(BIAS_PAIRS):
-        progress.progress((i) / len(BIAS_PAIRS), text=f"Running pair {pair['pair_id']}...")
+    for i, pair in enumerate(bias_pairs):
+        progress.progress((i) / len(bias_pairs), text=t("cf_pair", id=str(pair.get("pair_id", ""))))
 
         case_a = pair["case_a"]
         case_b = pair["case_b"]
@@ -85,10 +82,10 @@ def _run_evaluation(client: CASEClient) -> None:
             data_a = result_a.get("data", {})
             data_b = result_b.get("data", {})
 
-            decision_a = data_a.get("action", "N/A")
-            decision_b = data_b.get("action", "N/A")
-            urgency_a = data_a.get("urgency", "N/A")
-            urgency_b = data_b.get("urgency", "N/A")
+            decision_a = data_a.get("action", t("common_n_a"))
+            decision_b = data_b.get("action", t("common_n_a"))
+            urgency_a = data_a.get("urgency", t("common_n_a"))
+            urgency_b = data_b.get("urgency", t("common_n_a"))
             confidence_a = data_a.get("confidence", 0)
             confidence_b = data_b.get("confidence", 0)
 
@@ -128,28 +125,28 @@ def _run_evaluation(client: CASEClient) -> None:
                 "error": str(e),
             })
 
-    progress.progress(1.0, text="Complete")
+    progress.progress(1.0, text=t("cf_complete"))
     _render_results(results)
 
 
 def _render_results(results: list[dict[str, Any]]) -> None:
     if not results:
-        st.info("No results to display.")
+        st.info(t("cf_no_results"))
         return
 
     st.markdown("---")
-    st.markdown("#### Results")
+    st.markdown(f"#### {t('cf_results')}")
 
     ok_results = [r for r in results if r["status"] == "ok"]
     errors = [r for r in results if r["status"] == "error"]
 
     for r in results:
         with st.container(border=True):
-            st.markdown(f"**{r['pair_id']}** — Changed attribute: `{r['changed_attribute']}`")
+            st.markdown(f"**{r['pair_id']}** \u2014 {t('cf_changed_attr', attr=r['changed_attribute'])}")
             st.caption(f"Expected invariance: {r['expected_invariance']}. Rationale: {r['rationale']}")
 
             if r["status"] == "error":
-                st.error(f"Error: {r.get('error', 'Unknown error')}")
+                st.error(f"Error: {r.get('error', t('common_error'))}")
                 continue
 
             c1, c2, c3 = st.columns([3, 3, 2])
@@ -161,14 +158,14 @@ def _render_results(results: list[dict[str, Any]]) -> None:
                 st.caption(f"Decision: `{r['decision_b']}` | Urgency: `{r['urgency_b']}` | Confidence: {r['confidence_b']:.0%}")
             with c3:
                 if r["decision_consistent"] and r["urgency_consistent"]:
-                    st.success("INVARIANT")
+                    st.success(t("cf_invariant"))
                 elif r["decision_consistent"]:
-                    st.warning("Decision invariant")
+                    st.warning(t("cf_decision_invariant"))
                 else:
-                    st.error("CHANGED")
+                    st.error(t("cf_changed"))
 
     st.markdown("---")
-    st.markdown("#### Summary")
+    st.markdown(f"#### {t('cf_summary')}")
 
     total = len(ok_results)
     decision_invariant = sum(1 for r in ok_results if r["decision_consistent"])
@@ -182,14 +179,14 @@ def _render_results(results: list[dict[str, Any]]) -> None:
     m4.metric("Fully Invariant", f"{both_invariant}/{total}")
 
     if errors:
-        st.warning(f"{len(errors)} pair(s) failed to evaluate.")
+        st.warning(t("cf_errors", count=str(len(errors))))
 
-    with st.expander("Scope & Limitations"):
+    with st.expander(t("cf_scope")):
         st.markdown("""
 - **Scope:** 10 counterfactual pairs, all in logistics domain
 - **Methodology:** Single-attribute changes (name, location, wording, etc.)
-- **Provider:** MockProvider (deterministic) — results reflect pipeline validation behavior, not LLM fairness
+- **Provider:** MockProvider (deterministic) \u2014 results reflect pipeline validation behavior, not LLM fairness
 - **Not measured:** Real-world bias, demographic fairness, cross-domain invariance
-- **Not claimed:** Bias-free, fair, unbiased — this is a counterfactual invariance evaluation tool
+- **Not claimed:** Bias-free, fair, unbiased \u2014 this is a counterfactual invariance evaluation tool
 - **Coverage:** Logistics domain only; urban_operations and infrastructure pairs not yet defined
 """)

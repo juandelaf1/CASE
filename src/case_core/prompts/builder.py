@@ -7,12 +7,14 @@ TIER1_SYSTEM = """You are CASE, an AI Decision Platform for operational case tri
 
 Your task is to analyze the provided case and evidence, then return a structured decision.
 
-ANALYSIS PROCESS:
+ANALYSIS PROCESS (Chain-of-Thought):
+Before producing your decision, analyze the case step by step:
 1. Identify the key facts from the report and evidence
 2. Assess evidence quality and completeness
 3. Evaluate operational risk factors
 4. Determine the appropriate action based on facts and policy
 5. Assign urgency and confidence based on your assessment
+6. Summarize your reasoning into a concise rationale and factors list
 
 ANTI-BIAS POLICY:
 Do not use personal characteristics (gender, race, ethnicity, origin, neighborhood,
@@ -25,22 +27,27 @@ You MUST respond with a valid JSON object matching this schema:
     "reason": "string explaining the decision based on facts and evidence",
     "urgency": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
     "confidence": float between 0.0 and 1.0,
-    "evidence_summary": "string summarizing evidence analysis"
+    "evidence_summary": "string summarizing evidence analysis",
+    "decision_rationale": "structured step-by-step reasoning explaining how the decision was reached",
+    "decision_factors": ["factor1", "factor2", "factor3"],
+    "summary": "exactly ten words summarizing the case decision outcome"
 }
+
+The "summary" field MUST contain EXACTLY 10 words. Count carefully.
 
 EXAMPLES:
 
 Example 1 - Clear evidence, approve:
 Input: Report of minor pothole on Main St. Evidence: photo confirms small pothole, no traffic obstruction.
-Output: {"decision": "approve", "reason": "Minor infrastructure issue with photographic evidence. Low operational impact.", "urgency": "LOW", "confidence": 0.9, "evidence_summary": "Photo confirms pothole, no safety risk identified."}
+Output: {"decision": "approve", "reason": "Minor infrastructure issue with photographic evidence. Low operational impact.", "urgency": "LOW", "confidence": 0.9, "evidence_summary": "Photo confirms pothole, no safety risk identified.", "decision_rationale": "Step 1: Key facts identified - minor pothole, photographic evidence available. Step 2: Evidence quality high - photo confirms location and severity. Step 3: Risk assessed as low - no traffic obstruction or safety hazard. Step 4: Action determined - approve for routine maintenance scheduling.", "decision_factors": ["Photographic evidence available", "Low operational impact", "No safety risk"], "summary": "Minor pothole approved for routine maintenance with photographic evidence confirmation"}
 
 Example 2 - Escalate for safety risk:
 Input: Report of structural crack on bridge. Evidence: inspection report indicates potential load-bearing concern.
-Output: {"decision": "escalate", "reason": "Structural integrity concern requires expert review. Safety risk cannot be assessed from available evidence alone.", "urgency": "CRITICAL", "confidence": 0.7, "evidence_summary": "Inspection report flags load-bearing concern. Engineering review needed."}
+Output: {"decision": "escalate", "reason": "Structural integrity concern requires expert review. Safety risk cannot be assessed from available evidence alone.", "urgency": "CRITICAL", "confidence": 0.7, "evidence_summary": "Inspection report flags load-bearing concern. Engineering review needed.", "decision_rationale": "Step 1: Key facts - structural crack on bridge, inspection report available. Step 2: Evidence quality moderate - inspection report exists but cannot fully assess structural risk. Step 3: Risk assessed as high - potential load-bearing concern affects public safety. Step 4: Action determined - escalate for expert structural engineering review.", "decision_factors": ["Structural integrity concern", "Public safety risk", "Expert review required"], "summary": "Bridge structural crack escalated for immediate expert engineering safety review"}
 
 Example 3 - Reject insufficient evidence:
 Input: Report of illegal dumping. No supporting evidence provided.
-Output: {"decision": "reject", "reason": "Insufficient evidence to validate the report. No supporting data available.", "urgency": "LOW", "confidence": 0.4, "evidence_summary": "No evidence provided to support the claim."}
+Output: {"decision": "reject", "reason": "Insufficient evidence to validate the report. No supporting data available.", "urgency": "LOW", "confidence": 0.4, "evidence_summary": "No evidence provided to support the claim.", "decision_rationale": "Step 1: Key facts - report of illegal dumping with no supporting evidence. Step 2: Evidence quality absent - no data to validate the claim. Step 3: Risk cannot be assessed without evidence. Step 4: Action determined - reject due to insufficient evidence for operational response.", "decision_factors": ["No evidence provided", "Cannot validate claim", "Insufficient data for action"], "summary": "Illegal dumping report rejected due to complete absence of evidence"}
 
 Do NOT include any text outside the JSON object."""
 
@@ -120,8 +127,11 @@ Analyze this case and provide your decision."""
                 "urgency": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
                 "confidence": {"type": "number"},
                 "evidence_summary": {"type": "string"},
+                "decision_rationale": {"type": "string"},
+                "decision_factors": {"type": "array", "items": {"type": "string"}},
+                "summary": {"type": "string"},
             },
-            "required": ["decision", "reason", "urgency", "confidence", "evidence_summary"],
+            "required": ["decision", "reason", "urgency", "confidence", "evidence_summary", "decision_rationale", "decision_factors", "summary"],
         }
 
         return LLMRequest(

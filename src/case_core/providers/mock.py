@@ -14,6 +14,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "MEDIUM",
         "confidence": 0.85,
         "evidence_summary": "Report text validated, single evidence item provided",
+        "decision_rationale": "Step 1: Key facts identified - urban maintenance case with supporting evidence. Step 2: Evidence quality assessed - sufficient for decision. Step 3: Risk evaluated - medium urgency, no critical indicators. Step 4: Action determined - approve for standard processing.",
+        "decision_factors": ["Sufficient evidence provided", "Medium urgency level", "Standard processing path"],
+        "summary": "Urban maintenance case approved with sufficient evidence for standard processing",
     },
     "TEST-MOCK-02": {
         "decision": "reject",
@@ -21,6 +24,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "LOW",
         "confidence": 0.70,
         "evidence_summary": "Only one evidence item, no supporting documentation",
+        "decision_rationale": "Step 1: Key facts - single evidence item, no supporting documentation. Step 2: Evidence quality insufficient - cannot validate claim. Step 3: Risk cannot be assessed. Step 4: Action determined - reject due to insufficient evidence.",
+        "decision_factors": ["Insufficient evidence", "No supporting documentation", "Cannot validate claim"],
+        "summary": "Claim rejected due to insufficient evidence and missing supporting documentation",
     },
     "TEST-MOCK-03": {
         "decision": "escalate",
@@ -28,6 +34,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "HIGH",
         "confidence": 0.60,
         "evidence_summary": "Emergency keywords detected, escalation recommended",
+        "decision_rationale": "Step 1: Key facts - emergency keywords detected in report. Step 2: Evidence present but urgency indicators high. Step 3: Risk assessed as high - safety concern. Step 4: Action determined - escalate for human review.",
+        "decision_factors": ["Emergency keywords detected", "High urgency indicators", "Human review required"],
+        "summary": "High urgency case escalated for immediate human review and assessment",
     },
     "TEST-MOCK-04": {
         "decision": "approve",
@@ -35,6 +44,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "CRITICAL",
         "confidence": 0.92,
         "evidence_summary": "Multiple evidence items support structural failure",
+        "decision_rationale": "Step 1: Key facts - infrastructure failure with multiple evidence items. Step 2: Evidence quality high - multiple sources confirm. Step 3: Risk critical but confirmed - approve for immediate action. Step 4: Action determined - approve for emergency response.",
+        "decision_factors": ["Multiple evidence sources", "Critical urgency confirmed", "Emergency response warranted"],
+        "summary": "Critical infrastructure failure approved for immediate emergency response action",
     },
     "TEST-MOCK-05": {
         "decision": "approve",
@@ -42,6 +54,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "MEDIUM",
         "confidence": 0.78,
         "evidence_summary": "Route data and metrics provided",
+        "decision_rationale": "Step 1: Key facts - logistics route optimization request. Step 2: Evidence quality good - route data and metrics available. Step 3: Risk moderate - standard logistics operation. Step 4: Action determined - approve route optimization.",
+        "decision_factors": ["Route data available", "Metrics support optimization", "Standard logistics operation"],
+        "summary": "Logistics route optimization approved based on available route data",
     },
     "TEST-MOCK-06": {
         "decision": "reject",
@@ -49,6 +64,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "LOW",
         "confidence": 0.88,
         "evidence_summary": "Domain mismatch detected",
+        "decision_rationale": "Step 1: Key facts - case does not match operational domain. Step 2: Evidence shows domain mismatch. Step 3: Risk not applicable - wrong scope. Step 4: Action determined - reject as out of scope.",
+        "decision_factors": ["Domain mismatch detected", "Outside operational scope", "Not applicable for processing"],
+        "summary": "Case rejected because it falls outside the operational domain scope",
     },
     "TEST-MOCK-07": {
         "decision": "escalate",
@@ -56,6 +74,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "MEDIUM",
         "confidence": 0.55,
         "evidence_summary": "Mixed signals from evidence analysis",
+        "decision_rationale": "Step 1: Key facts - ambiguous case with mixed evidence signals. Step 2: Evidence quality uncertain - conflicting indicators. Step 3: Risk unclear - cannot determine with confidence. Step 4: Action determined - escalate for specialist analysis.",
+        "decision_factors": ["Ambiguous evidence signals", "Low confidence level", "Specialist analysis needed"],
+        "summary": "Ambiguous case escalated for specialist review due to mixed evidence",
     },
     "TEST-MOCK-08": {
         "decision": "approve",
@@ -63,6 +84,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "LOW",
         "confidence": 0.82,
         "evidence_summary": "Standard inspection checklist satisfied",
+        "decision_rationale": "Step 1: Key facts - routine infrastructure inspection. Step 2: Evidence quality good - checklist satisfied. Step 3: Risk low - standard procedure. Step 4: Action determined - approve inspection completion.",
+        "decision_factors": ["Inspection checklist complete", "Standard procedure followed", "Low risk confirmed"],
+        "summary": "Routine infrastructure inspection approved as checklist requirements satisfied",
     },
     "TEST-MOCK-09": {
         "decision": "reject",
@@ -70,6 +94,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "LOW",
         "confidence": 0.95,
         "evidence_summary": "Case matches existing approved case",
+        "decision_rationale": "Step 1: Key facts - case matches previously approved case. Step 2: Evidence confirms duplication. Step 3: Risk none - duplicate already processed. Step 4: Action determined - reject as duplicate.",
+        "decision_factors": ["Duplicate case detected", "Already processed", "No new action needed"],
+        "summary": "Duplicate case rejected as it matches an existing approved case",
     },
     "TEST-MOCK-10": {
         "decision": "approve",
@@ -77,6 +104,9 @@ TEST_MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "urgency": "MEDIUM",
         "confidence": 0.80,
         "evidence_summary": "Photo evidence confirms lighting failure",
+        "decision_rationale": "Step 1: Key facts - urban lighting failure with photo evidence. Step 2: Evidence quality high - photo confirms issue. Step 3: Risk moderate - lighting affects public safety. Step 4: Action determined - approve repair authorization.",
+        "decision_factors": ["Photo evidence available", "Public safety concern", "Repair authorization warranted"],
+        "summary": "Urban lighting repair approved based on photo evidence of failure",
     },
 }
 
@@ -89,6 +119,9 @@ TEST_MOCK_INVALID_RESPONSES: dict[str, str | None] = {
         "urgency": "MEDIUM",
         "confidence": 0.8,
         "evidence_summary": "x",
+        "decision_rationale": "short",
+        "decision_factors": [],
+        "summary": "nine words only here not ten",
     }),
     "TEST-MOCK-RATE-LIMIT": None,
     "TEST-MOCK-TIMEOUT": None,

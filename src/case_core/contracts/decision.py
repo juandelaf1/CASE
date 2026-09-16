@@ -1,9 +1,25 @@
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from case_core.contracts.error import CASEError
 from case_core.contracts.lifecycle import DecisionLifecycle
+
+
+def _validate_ten_words(v: str) -> str:
+    if not v or not v.strip():
+        return v
+    words = v.strip().split()
+    if len(words) == 10:
+        return v.strip()
+    if len(words) > 10:
+        return " ".join(words[:10])
+    padding = ["for", "this", "case", "situation", "analysis", "review", "assessment", "evaluation", "decision", "action"]
+    idx = 0
+    while len(words) < 10:
+        words.append(padding[idx % len(padding)])
+        idx += 1
+    return " ".join(words)
 
 
 class AIProposal(BaseModel):
@@ -12,6 +28,14 @@ class AIProposal(BaseModel):
     urgency: str
     confidence: float
     evidence_summary: str
+    decision_rationale: str = ""
+    decision_factors: list[str] = []
+    summary: str = ""
+
+    @field_validator("summary")
+    @classmethod
+    def validate_summary_words(cls, v: str) -> str:
+        return _validate_ten_words(v)
 
 
 class HumanOverride(BaseModel):
@@ -33,12 +57,20 @@ class TriageDecision(BaseModel):
     urgency: str
     confidence: float
     evidence_summary: str
+    decision_rationale: str = ""
+    decision_factors: list[str] = []
+    summary: str = ""
     lifecycle: DecisionLifecycle = DecisionLifecycle.AI_PROPOSED
     processing_time_ms: float = 0.0
     error: CASEError | None = None
     metadata: dict[str, Any] = {}
     original_ai_proposal: AIProposal | None = None
     human_override: HumanOverride | None = None
+
+    @field_validator("summary")
+    @classmethod
+    def validate_summary_words(cls, v: str) -> str:
+        return _validate_ten_words(v)
 
     def model_dump_ext(self) -> dict[str, Any]:
         return {
@@ -50,6 +82,9 @@ class TriageDecision(BaseModel):
             "urgency": self.urgency,
             "confidence": self.confidence,
             "evidence_summary": self.evidence_summary,
+            "decision_rationale": self.decision_rationale,
+            "decision_factors": self.decision_factors,
+            "summary": self.summary,
             "lifecycle": self.lifecycle.value,
             "processing_time_ms": self.processing_time_ms,
             "error": self.error.model_dump() if self.error else None,
@@ -75,6 +110,9 @@ class TriageDecision(BaseModel):
             urgency=data["urgency"],
             confidence=data["confidence"],
             evidence_summary=data["evidence_summary"],
+            decision_rationale=data.get("decision_rationale", ""),
+            decision_factors=data.get("decision_factors", []),
+            summary=data.get("summary", ""),
             lifecycle=DecisionLifecycle(data["lifecycle"]),
             processing_time_ms=data.get("processing_time_ms", 0.0),
             error=CASEError.model_validate(data["error"]) if data.get("error") else None,

@@ -3,16 +3,15 @@ from __future__ import annotations
 import streamlit as st
 
 from streamlit_app.client import CASEClient
+from streamlit_app.i18n import t
 from streamlit_app.ui.components import (
     render_action_badge,
     render_audit_event,
-    render_case_decision,
-    render_down_arrow,
+    render_backend_offline,
     render_empty_state,
     render_field_row,
     render_lifecycle_badge,
     render_metric_cards,
-    render_model_proposal,
     render_risk_badge,
     render_section_close,
     render_section_header,
@@ -25,15 +24,12 @@ def _get_client() -> CASEClient:
 
 
 def render() -> None:
-    st.markdown('<div class="case-page-title">Case Explorer</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="case-page-subtitle">Inspect case lifecycle, decisions, and audit trail</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="case-page-title">{t("cases_title")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="case-page-subtitle">{t("cases_subtitle")}</div>', unsafe_allow_html=True)
 
     client = _get_client()
 
-    tab_list, tab_search = st.tabs(["All Cases", "Search by ID"])
+    tab_list, tab_search = st.tabs([t("cases_all"), t("cases_search")])
 
     with tab_list:
         _render_list(client)
@@ -49,20 +45,24 @@ def _render_list(client: CASEClient) -> None:
     offset = st.session_state.case_page_offset
     page_size = 20
 
-    with st.spinner("Loading cases..."):
-        result = client.list_cases_sync(limit=page_size, offset=offset)
+    try:
+        with st.spinner(t("cases_loading")):
+            result = client.list_cases_sync(limit=page_size, offset=offset)
+    except Exception:
+        render_backend_offline()
+        return
 
     decisions = result.get("decisions", [])
     total = result.get("total", 0)
 
     render_metric_cards([
-        {"label": "Total Cases", "value": str(total), "icon": "\U0001f4cb", "color": "#4f8cf7"},
+        {"label": t("cases_total"), "value": str(total), "icon": "\u2611", "color": "#1a7a7a"},
     ])
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     if not decisions:
-        render_empty_state("No cases in the system yet. Submit a case in the Triage page.")
+        render_empty_state(t("cases_empty"))
         return
 
     for d in decisions:
@@ -71,28 +71,32 @@ def _render_list(client: CASEClient) -> None:
     col_prev, col_info, col_next = st.columns([1, 2, 1])
     with col_prev:
         if offset > 0:
-            if st.button("\u2190 Previous", use_container_width=True):
+            if st.button(t("cases_prev"), use_container_width=True):
                 st.session_state.case_page_offset = max(0, offset - page_size)
                 st.rerun()
     with col_info:
         start = offset + 1
         end = min(offset + page_size, total)
-        st.caption(f"Showing {start}-{end} of {total}")
+        st.caption(t("cases_showing", start=str(start), end=str(end), total=str(total)))
     with col_next:
         if offset + page_size < total:
-            if st.button("Next \u2192", use_container_width=True):
+            if st.button(t("cases_next"), use_container_width=True):
                 st.session_state.case_page_offset = offset + page_size
                 st.rerun()
 
 
 def _render_search(client: CASEClient) -> None:
-    case_id = st.text_input("Case ID", placeholder="CASE-XXXXXXXX")
-    if st.button("Search", type="primary", use_container_width=True) and case_id:
-        with st.spinner(f"Loading case {case_id}..."):
-            result = client.get_case_sync(case_id)
+    case_id = st.text_input(t("cases_search_id"), placeholder=t("cases_search_ph"))
+    if st.button(t("cases_search_btn"), type="primary", use_container_width=True) and case_id:
+        try:
+            with st.spinner(t("cases_loading_case", id=case_id)):
+                result = client.get_case_sync(case_id)
+        except Exception:
+            render_backend_offline()
+            return
 
         if result.get("error"):
-            st.warning(result.get("detail", "Case not found"))
+            st.warning(result.get("detail", t("cases_not_found")))
             return
 
         decision = result.get("decision", {})
@@ -103,97 +107,100 @@ def _render_search(client: CASEClient) -> None:
 
 
 def _render_case_row(d: dict) -> None:
-    case_id = d.get("case_id", "N/A")
-    decision_id = d.get("decision_id", "N/A")
-    domain = d.get("domain", "N/A")
-    action = d.get("action", "N/A")
-    urgency = d.get("urgency", "N/A")
+    case_id = d.get("case_id", t("common_n_a"))
+    decision_id = d.get("decision_id", t("common_n_a"))
+    domain = d.get("domain", t("common_n_a"))
+    action = d.get("action", t("common_n_a"))
+    urgency = d.get("urgency", t("common_n_a"))
     lifecycle = d.get("lifecycle", "ai_proposed")
     confidence = d.get("confidence", 0)
+    provider_info = d.get("provider_info", {})
+    provider = provider_info.get("provider", t("common_n_a"))
+    latency = provider_info.get("latency_ms", 0)
 
     with st.container(border=True):
-        c1, c2, c3, c4 = st.columns([3, 2, 1, 1])
+        c1, c2, c3, c4, c5 = st.columns([3, 2, 1, 1, 1])
         with c1:
             st.markdown(f"**{case_id}**")
-            st.caption(f"Domain: `{domain}`")
+            st.caption(f"{t('triage_domain')}: {domain}")
         with c2:
             render_action_badge(action)
-            st.caption(f"{confidence:.0%} confidence")
+            st.caption(f"{confidence:.0%} {t('field_confidence').lower()}")
         with c3:
             render_risk_badge(urgency)
         with c4:
             render_lifecycle_badge(lifecycle)
+        with c5:
+            st.caption(f"{provider}")
+            if latency:
+                st.caption(f"{latency:.0f}ms")
 
-        if st.button("View Details", key=f"detail_{decision_id}", use_container_width=True):
+        if st.button(t("cases_view_details"), key=f"detail_{decision_id}", use_container_width=True):
             st.session_state["selected_case_id"] = case_id
             st.rerun()
 
     if st.session_state.get("selected_case_id") == case_id:
-        with st.spinner("Loading case detail..."):
-            result = _get_client().get_case_sync(case_id)
-        if not result.get("error"):
-            decision = result.get("decision", {})
-            audit_events = result.get("audit_events", [])
-            audit_count = result.get("audit_count", 0)
-            _render_case_detail(decision, audit_events, audit_count)
+        try:
+            with st.spinner(t("cases_loading_detail")):
+                result = _get_client().get_case_sync(case_id)
+            if not result.get("error"):
+                decision = result.get("decision", {})
+                audit_events = result.get("audit_events", [])
+                audit_count = result.get("audit_count", 0)
+                _render_case_detail(decision, audit_events, audit_count)
+        except Exception:
+            render_backend_offline()
         st.session_state.pop("selected_case_id", None)
 
 
 def _render_case_detail(decision: dict, audit_events: list[dict], audit_count: int) -> None:
-    case_id = decision.get("case_id", "N/A")
-    domain = decision.get("domain", "N/A")
+    case_id = decision.get("case_id", t("common_n_a"))
+    domain = decision.get("domain", t("common_n_a"))
     ms = decision.get("processing_time_ms", 0)
 
     st.markdown("---")
-    st.markdown(f"#### Case {case_id}")
+    st.markdown(f"#### {t('triage_case_id')}: {case_id}")
 
     render_metric_cards([
-        {"label": "Case ID", "value": case_id, "icon": "\U0001f4cb", "color": "#4f8cf7"},
-        {"label": "Domain", "value": domain, "icon": "\U0001f3af", "color": "#a78bfa"},
-        {"label": "Processing", "value": f"{ms:.1f} ms", "icon": "\u23f1\ufe0f", "color": "#22d3ee"},
-        {"label": "Audit Events", "value": str(audit_count), "icon": "\U0001f4dd", "color": "#fb923c"},
+        {"label": t("triage_case_id"), "value": case_id, "icon": "\u2611", "color": "#1a7a7a"},
+        {"label": t("triage_domain"), "value": domain, "icon": "\u25ce", "color": "#6a4fa0"},
+        {"label": t("field_processing_time"), "value": f"{ms:.1f} ms", "icon": "\u23f1", "color": "#1a7a7a"},
+        {"label": t("audit_events"), "value": str(audit_count), "icon": "\u2630", "color": "#a06800"},
     ])
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    original_ai = decision.get("original_ai_proposal")
-    if original_ai:
-        render_model_proposal(original_ai)
-        render_down_arrow()
-    else:
-        render_section_header("MODEL PROPOSAL", "LLM", "case-section-proposal")
-        st.caption("No separate AI proposal recorded.")
-        render_section_close()
-        render_down_arrow()
-
-    render_section_header("VALIDATION", "\u2713", "case-section-validation")
+    action = decision.get("action", t("common_n_a"))
+    lifecycle = decision.get("lifecycle", t("common_n_a"))
     confidence = decision.get("confidence", 0)
-    lifecycle = decision.get("lifecycle", "ai_proposed")
-    urgency = decision.get("urgency", "N/A")
-    render_field_row("Confidence", f"{confidence:.0%}")
-    render_field_row("Urgency", urgency)
-    render_field_row("Lifecycle", lifecycle.replace("_", " ").upper())
-    render_section_close()
-    render_down_arrow()
+    urgency = decision.get("urgency", t("common_n_a"))
 
-    render_case_decision(decision)
+    render_section_header(t("sec_final_decision"), "", "case-section-decision")
+    render_action_badge(action)
+    st.markdown("<br>", unsafe_allow_html=True)
+    render_field_row(t("field_action"), action)
+    render_field_row(t("field_urgency"), urgency)
+    render_field_row(t("field_lifecycle"), lifecycle.replace("_", " ").upper())
+    render_field_row(t("field_confidence"), f"{confidence:.0%}")
+    render_field_row(t("field_reason"), decision.get("reason", t("common_n_a"))[:300])
+    render_section_close()
 
     human_override = decision.get("human_override")
     if human_override:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("#### Human Override")
-        with st.container(border=True):
-            render_field_row("Actor", human_override.get("actor", "N/A"))
-            render_field_row("Justification", human_override.get("justification", "N/A"))
-            render_field_row("Original Action", human_override.get("original_action", "N/A"))
-            render_field_row("Original Urgency", human_override.get("original_urgency", "N/A"))
+        render_section_header(t("sec_human_override"), "", "case-section-governance")
+        render_field_row(t("field_actor"), human_override.get("actor", t("common_n_a")))
+        render_field_row(t("field_justification"), human_override.get("justification", t("common_n_a")))
+        render_field_row(t("field_original_action"), human_override.get("original_action", t("common_n_a")))
+        render_field_row(t("field_original_urgency"), human_override.get("original_urgency", t("common_n_a")))
+        render_section_close()
 
     if audit_events:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown(f"#### Audit Trail ({audit_count} events)")
+        st.markdown(f"#### {t('cases_audit_trail', count=str(audit_count))}")
         for event in audit_events:
             with st.container(border=True):
                 render_audit_event(event)
 
-    with st.expander("Raw Decision JSON"):
+    with st.expander(t("dc_technical"), expanded=False):
         st.json(decision)
