@@ -1,29 +1,79 @@
 from __future__ import annotations
 
+import os
+
+import httpx
 import streamlit as st
 
-from streamlit_app.client import CASEClient
+from streamlit_app.components.state import get_client
 from streamlit_app.i18n import t
 from streamlit_app.ui.components import (
-    render_api_health_check,
     render_backend_offline,
     render_empty_state,
     render_field_row,
+    render_metric_cards,
 )
 
+PROVIDER_DEFINITIONS: list[dict[str, str]] = [
+    {
+        "name": "mock",
+        "model_key": "CASE_MOCK_MODEL",
+        "default_model": "mock-model",
+        "health_type": "always_available",
+    },
+    {
+        "name": "groq",
+        "model_key": "CASE_GROQ_MODEL",
+        "default_model": "llama-3.3-70b-versatile",
+        "health_type": "api_key_check",
+        "api_key_env": "CASE_GROQ_API_KEY",
+    },
+    {
+        "name": "ollama",
+        "model_key": "CASE_OLLAMA_MODEL",
+        "default_model": "llama3",
+        "health_type": "http_endpoint",
+        "health_url": "http://localhost:11434/api/tags",
+    },
+]
 
-def _get_client() -> CASEClient:
-    api_url = st.session_state.get("case_api_url", "http://localhost:8000")
-    return CASEClient(base_url=api_url)
+
+def _check_provider_health(provider: dict[str, str]) -> tuple[bool, str, str]:
+    """Check provider health. Returns (available, status_label, endpoint_display)."""
+    health_type = provider["health_type"]
+
+    if health_type == "always_available":
+        return True, t("pl_available"), t("pl_mock_endpoint")
+
+    if health_type == "api_key_check":
+        api_key_env = provider.get("api_key_env", "")
+        key_set = bool(os.environ.get(api_key_env))
+        endpoint = f"env:{api_key_env}" if key_set else t("pl_groq_key_missing")
+        return key_set, t("pl_available") if key_set else t("pl_unavailable"), endpoint
+
+    if health_type == "http_endpoint":
+        url = provider.get("health_url", "")
+        try:
+            resp = httpx.get(url, timeout=5.0)
+            available = resp.status_code == 200
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPError):
+            available = False
+        status = t("pl_available") if available else t("pl_unavailable")
+        return available, status, url
+
+    return False, t("pl_unknown"), ""
 
 
 def render() -> None:
     st.markdown(f'<div class="case-page-title">{t("pl_title")}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="case-page-subtitle">{t("pl_subtitle")}</div>', unsafe_allow_html=True)
 
-    client = _get_client()
+    client = get_client()
 
-    if not render_api_health_check(client):
+    try:
+        client.health_sync()
+    except Exception:
+        render_backend_offline()
         return
 
     try:
@@ -35,6 +85,54 @@ def render() -> None:
 
     providers = providers_data.get("providers", [])
     active = providers_data.get("active_provider", "unknown")
+
+    if st.button(t("pl_check_health"), use_container_width=False):
+        st.rerun()
+
+    st.markdown(f"#### {t('pl_health_status')}")
+
+    health_results: list[dict[str, str]] = []
+    for pdef in PROVIDER_DEFINITIONS:
+        available, status_label, endpoint = _check_provider_health(pdef)
+        health_results.append({
+            "name": pdef["name"],
+            "model": os.environ.get(pdef["model_key"], pdef["default_model"]),
+            "available": "yes" if available else "no",
+            "status": status_label,
+            "endpoint": endpoint,
+        })
+
+    render_metric_cards([
+        {
+            "label": r["name"],
+            "value": r["status"],
+            "icon": "\u2705" if r["available"] == "yes" else "\u274c",
+            "color": "#1a7a4a" if r["available"] == "yes" else "#dc2626",
+        }
+        for r in health_results
+    ])
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    for r in health_results:
+        with st.container(border=True):
+            c1, c2, c3 = st.columns([2, 2, 2])
+            with c1:
+                st.markdown(f"**{r['name']}**")
+                st.caption(f"{t('field_model')}: `{r['model']}`")
+            with c2:
+                color = "#1a7a4a" if r["available"] == "yes" else "#dc2626"
+                st.markdown(
+                    f'<span style="color:{color}; font-weight:600;">{r["status"]}</span>',
+                    unsafe_allow_html=True,
+                )
+            with c3:
+                st.caption(f"{t('pl_endpoint')}: `{r['endpoint']}`")
+
+            if r["name"] == active:
+                st.markdown(f"**{t('pl_active')}**")
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown(f"#### {t('pl_configured')}")
     for p in providers:
@@ -59,8 +157,9 @@ def render() -> None:
                     st.markdown(f"**{t('pl_active')}**")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown(f"#### {t('pl_neutrality')}")
-    st.caption(t("pl_neutrality_desc"))
+
+    st.markdown(f"#### {t('pl_neutrality_title')}")
+    st.caption(t("pl_neutrality_explain"))
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(f"#### {t('pl_telemetry')}")

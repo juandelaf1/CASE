@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from typing import Any
 
@@ -12,12 +13,12 @@ from case_core.ports.llm import LLMProvider
 class OllamaProvider(LLMProvider):
     def __init__(
         self,
-        base_url: str = "http://localhost:11434",
-        model: str = "llama3.2",
+        base_url: str | None = None,
+        model: str | None = None,
         timeout_seconds: float = 30.0,
     ) -> None:
-        self._base_url = base_url.rstrip("/")
-        self._model = model
+        self._base_url = (base_url or os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")).rstrip("/")
+        self._model = model or os.environ.get("OLLAMA_MODEL", "llama3.2")
         self._timeout_seconds = timeout_seconds
 
     @property

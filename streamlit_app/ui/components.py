@@ -201,3 +201,25 @@ def render_error_state(message: str, detail: str = "") -> None:
     st.error(message)
     if detail:
         st.caption(detail)
+
+
+def render_pipeline_visual(steps: list[tuple[str, str, str]]) -> None:
+    """Render a horizontal pipeline visual.
+
+    Args:
+        steps: List of (label, step_number, color) tuples.
+    """
+    if not steps:
+        return
+    parts = ['<div class="case-pipeline">']
+    for i, (label, step_num, color) in enumerate(steps):
+        if i > 0:
+            parts.append('<div class="case-pipeline-arrow">\u2192</div>')
+        parts.append(
+            f'<div class="case-pipeline-step">'
+            f'<div class="case-pipeline-icon" style="background:{color}18; color:{color};">{_html_escape(step_num)}</div>'
+            f'<div class="case-pipeline-label">{_html_escape(label)}</div>'
+            f'</div>'
+        )
+    parts.append('</div>')
+    st.markdown("".join(parts), unsafe_allow_html=True)

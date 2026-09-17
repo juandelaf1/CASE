@@ -12,7 +12,7 @@ import streamlit as st
 from streamlit_app.ui.theme import inject_global_css
 
 st.set_page_config(
-    page_title="CASE \u2014 AI Decision Center",
+    page_title="CASE \u2014 Centro de Decisiones IA",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
@@ -21,22 +21,24 @@ st.set_page_config(
 inject_global_css()
 
 PAGES = {
-    "main": {
+    "operacion": {
         "decision_center": ("nav_decision_center", "\u2b21"),
+        "triage": ("nav_triage", "\u2697"),
         "cases": ("nav_cases", "\u2611"),
         "human_review": ("nav_review", "\u2696"),
-        "audit_trail": ("nav_audit", "\u2630"),
-        "comparison": ("nav_comparison", "\u21c4"),
     },
-    "operations": {
+    "observabilidad": {
         "control_room": ("nav_control_room", "\u2699"),
-        "triage": ("nav_triage", "\u2697"),
+        "audit_trail": ("nav_audit", "\u2630"),
         "status": ("nav_status", "\u26a1"),
     },
-    "labs": {
-        "provider_lab": ("nav_provider_lab", "\u2697"),
+    "evaluacion": {
+        "comparison": ("nav_comparison", "\u21c4"),
         "evaluation": ("nav_evaluation", "\u25b2"),
         "counterfactual": ("nav_counterfactual", "\u2601"),
+    },
+    "laboratorio": {
+        "provider_lab": ("nav_provider_lab", "\u2697"),
         "architecture": ("nav_architecture", "\u2302"),
     },
 }
@@ -53,7 +55,6 @@ def _render_sidebar() -> None:
     from streamlit_app.i18n import t
 
     with st.sidebar:
-        # Logo
         if _BANNER_PATH.exists():
             st.image(str(_BANNER_PATH), use_container_width=True)
 
@@ -66,7 +67,6 @@ def _render_sidebar() -> None:
         )
         st.divider()
 
-        # Language selector
         lang = st.session_state.get("language", "es")
         lang_options = {"Espa\u00f1ol": "es", "English": "en"}
         selected_lang = st.selectbox(
@@ -88,49 +88,30 @@ def _render_sidebar() -> None:
 
         current = st.session_state["current_page"]
 
-        st.markdown(f'<div class="sidebar-nav-section">{t("nav_decision_flow")}</div>', unsafe_allow_html=True)
-        for key in PAGES["main"]:
-            label_key, icon = ALL_PAGES[key]
-            is_active = current == key
-            if st.sidebar.button(
-                f"{icon}  {t(label_key)}",
-                key=f"nav_{key}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary",
-            ):
-                st.session_state["current_page"] = key
-                st.rerun()
+        section_labels = {
+            "operacion": "nav_decision_flow",
+            "observabilidad": "nav_operations",
+            "evaluacion": "nav_evaluation_section",
+            "laboratorio": "nav_labs",
+        }
 
-        st.divider()
-
-        st.markdown(f'<div class="sidebar-nav-section">{t("nav_operations")}</div>', unsafe_allow_html=True)
-        for key in PAGES["operations"]:
-            label_key, icon = ALL_PAGES[key]
-            is_active = current == key
-            if st.sidebar.button(
-                f"{icon}  {t(label_key)}",
-                key=f"nav_{key}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary",
-            ):
-                st.session_state["current_page"] = key
-                st.rerun()
-
-        st.divider()
-        st.markdown(f'<div class="sidebar-nav-section">{t("nav_labs")}</div>', unsafe_allow_html=True)
-        for key in PAGES["labs"]:
-            label_key, icon = ALL_PAGES[key]
-            is_active = current == key
-            if st.sidebar.button(
-                f"{icon}  {t(label_key)}",
-                key=f"nav_{key}",
-                use_container_width=True,
-                type="primary" if is_active else "secondary",
-            ):
-                st.session_state["current_page"] = key
-                st.rerun()
-
-        st.divider()
+        for section_key, pages in PAGES.items():
+            st.markdown(
+                f'<div class="sidebar-nav-section">{t(section_labels[section_key])}</div>',
+                unsafe_allow_html=True,
+            )
+            for key in pages:
+                label_key, icon = ALL_PAGES[key]
+                is_active = current == key
+                if st.sidebar.button(
+                    f"{icon}  {t(label_key)}",
+                    key=f"nav_{key}",
+                    use_container_width=True,
+                    type="primary" if is_active else "secondary",
+                ):
+                    st.session_state["current_page"] = key
+                    st.rerun()
+            st.divider()
 
         api_url = st.text_input(
             "API URL",
