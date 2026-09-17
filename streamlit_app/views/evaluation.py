@@ -62,24 +62,10 @@ def render() -> None:
         return
 
     st.markdown("---")
-    st.markdown(f"#### {t('eval_pipeline')}")
-    st.caption(t("eval_pipeline_desc"))
 
-    if st.button(t("eval_run"), key="run_quick_eval", type="primary"):
+    if st.button(t("eval_run"), key="run_quick_eval", type="primary", use_container_width=True):
         results = _run_evaluation(client)
         _render_results(results)
-
-    with st.expander("Metric Definitions"):
-        st.markdown("""
-| Metric | Formula | Exclusions |
-|--------|---------|------------|
-| Decision Match | actual_decision == expected_decision | Expected failures |
-| Urgency Match | actual_urgency == expected_urgency | Expected failures |
-| Pipeline Success | cases_without_error / total_cases | None |
-| Error Rate | cases_with_error / total_cases | None |
-
-**Expected failures** are cases where terminal failure is the correct behavior (e.g., missing required evidence). These are excluded from accuracy calculations.
-""")
 
 
 def _run_evaluation(client: CASEClient) -> list[dict[str, Any]]:
@@ -185,6 +171,7 @@ def _render_results(results: list[dict[str, Any]]) -> None:
         "unexpected_error": ("error", "Unexpected error"),
     }
 
+    st.markdown("---")
     st.markdown(f"#### {t('eval_results')}")
 
     valid_results = [r for r in results if not r["expected_failure"] and r["status"] != "unexpected_error"]

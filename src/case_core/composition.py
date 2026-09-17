@@ -20,9 +20,9 @@ from case_core.domain.urban_policy import UrbanPolicy  # noqa: E402
 from case_core.evaluation.cost import CostModel  # noqa: E402
 from case_core.ports.automation import AutomationPolicy  # noqa: E402
 from case_core.ports.llm import LLMProvider  # noqa: E402
-from case_core.providers.cloud import CloudProvider  # noqa: E402
 from case_core.providers.groq import GroqProvider  # noqa: E402
 from case_core.providers.mock import MockProvider  # noqa: E402
+from case_core.providers.ollama import OllamaProvider  # noqa: E402
 from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter  # noqa: E402
 from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository  # noqa: E402
 
@@ -55,22 +55,22 @@ class AppDependencies:
     audit_adapter: SQLiteAuditAdapter
     decision_repo: SQLiteDecisionRepository
     provider: LLMProvider
+    providers: dict[str, LLMProvider]
     cost_model: CostModel
 
 
 def _resolve_provider() -> LLMProvider:
     provider_name = os.environ.get("CASE_PROVIDER", "mock").lower()
+    providers = _resolve_all_providers()
+    return providers.get(provider_name) or providers["mock"]
 
-    if provider_name == "groq":
-        return GroqProvider()
-    elif provider_name == "cloud":
-        return CloudProvider()
-    elif provider_name == "ollama":
-        from case_core.providers.ollama import OllamaProvider
 
-        return OllamaProvider()
-    else:
-        return MockProvider()
+def _resolve_all_providers() -> dict[str, LLMProvider]:
+    return {
+        "groq": GroqProvider(),
+        "ollama": OllamaProvider(),
+        "mock": MockProvider(),
+    }
 
 
 def create_app_dependencies() -> AppDependencies:
@@ -80,6 +80,7 @@ def create_app_dependencies() -> AppDependencies:
     registry.register(InfrastructurePolicy())
     registry.register(SeismicRiskPolicy())
 
+    providers = _resolve_all_providers()
     provider: LLMProvider = _resolve_provider()
     cost_model = CostModel()
     db_path = _get_db_path()
@@ -89,6 +90,7 @@ def create_app_dependencies() -> AppDependencies:
     engine = TriageEngine(
         domain_registry=registry,
         provider=provider,
+        providers=providers,
         audit_port=audit_adapter,
         decision_repository=decision_repo,
         automation_policy_fn=_resolve_automation_policy,
@@ -101,5 +103,6 @@ def create_app_dependencies() -> AppDependencies:
         audit_adapter=audit_adapter,
         decision_repo=decision_repo,
         provider=provider,
+        providers=providers,
         cost_model=cost_model,
     )

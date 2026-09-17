@@ -4,13 +4,14 @@ import streamlit as st
 
 from streamlit_app.client import CASEClient
 from streamlit_app.i18n import t
-from streamlit_app.ui.components import (
+from streamlit_app.ui.components import (  # type: ignore[attr-defined]
     render_action_badge,
     render_backend_offline,
     render_empty_state,
     render_field_row,
     render_lifecycle_badge,
     render_metric_cards,
+    render_pipeline_visual,
     render_risk_badge,
 )
 
@@ -24,12 +25,14 @@ def render() -> None:
     st.markdown(f'<div class="case-page-title">{t("review_title")}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="case-page-subtitle">{t("review_subtitle")}</div>', unsafe_allow_html=True)
 
-    st.markdown(
-        f'<div class="case-section-educational">'
-        f'<p>{t("review_desc")}</p>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    render_pipeline_visual([
+        (t("sec_ai_proposal"), "1", "#3b82f6"),
+        (t("sec_validation"), "2", "#1a7a7a"),
+        (t("sec_human_override"), "3", "#a06800"),
+        (t("sec_final_decision"), "4", "#1a7a4a"),
+    ])
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     client = _get_client()
 
@@ -57,35 +60,39 @@ def render() -> None:
         _render_decision_card(client, d)
 
 
-def _render_decision_card(client: CASEClient, decision: dict) -> None:
-    decision_id = decision.get("decision_id", t("common_n_a"))
-    case_id = decision.get("case_id", t("common_n_a"))
-    action = decision.get("action", t("common_n_a"))
-    urgency = decision.get("urgency", t("common_n_a"))
-    lifecycle = decision.get("lifecycle", "ai_proposed")
-    confidence = decision.get("confidence", 0)
-    reason = decision.get("reason", "")
+def _render_decision_card(client: CASEClient, decision: dict[str, object]) -> None:
+    decision_id = str(decision.get("decision_id", t("common_n_a")))
+    case_id = str(decision.get("case_id", t("common_n_a")))
+    action = str(decision.get("action", t("common_n_a")))
+    urgency = str(decision.get("urgency", t("common_n_a")))
+    lifecycle = str(decision.get("lifecycle", "ai_proposed"))
+    confidence_raw = decision.get("confidence", 0) or 0
+    confidence = float(str(confidence_raw))
+    reason = str(decision.get("reason", "") or "")
+    evidence_summary = str(decision.get("evidence_summary", "") or "")
 
     with st.container(border=True):
         st.markdown(f"**{t('triage_case_id')}: {case_id}**")
 
-        c1, c2, c3 = st.columns([3, 2, 2])
+        c1, c2 = st.columns([3, 2])
         with c1:
             render_action_badge(action)
+            render_risk_badge(urgency)
             st.caption(f"{t('field_confidence')}: {confidence:.0%}")
         with c2:
-            render_risk_badge(urgency)
             render_lifecycle_badge(lifecycle)
-        with c3:
-            if reason:
-                st.caption(reason[:150] + ("..." if len(reason) > 150 else ""))
+
+        if reason:
+            render_field_row(t("field_reason"), reason[:200] + ("..." if len(reason) > 200 else ""))
+        if evidence_summary:
+            render_field_row(t("field_evidence"), evidence_summary[:200] + ("..." if len(evidence_summary) > 200 else ""))
 
         st.divider()
 
         st.markdown(f"**{t('review_actions')}:**")
         col_a, col_b, col_c, col_d = st.columns(4)
         with col_a:
-            if st.button(t("review_approve"), key=f"approve_{decision_id}", use_container_width=True):
+            if st.button(t("review_approve"), key=f"approve_{decision_id}", use_container_width=True, type="primary"):
                 _act(client, decision_id, "approve")
         with col_b:
             if st.button(t("review_reject"), key=f"reject_{decision_id}", use_container_width=True):
@@ -128,16 +135,21 @@ def _act(client: CASEClient, decision_id: str, action: str) -> None:
     st.session_state[f"result_{decision_id}"] = result
 
 
-def _render_modify_form(client: CASEClient, decision_id: str, decision: dict) -> None:
+def _render_modify_form(client: CASEClient, decision_id: str, decision: dict[str, object]) -> None:
     st.markdown("---")
     st.markdown(f"**{t('review_modify_title')}**")
+
+    default_confidence_raw = decision.get("confidence", 0.5) or 0.5
+    default_confidence = float(str(default_confidence_raw))
+    default_reason = str(decision.get("reason", "") or "")
+    default_evidence = str(decision.get("evidence_summary", "") or "")
 
     with st.form(f"modify_{decision_id}"):
         action = st.selectbox(t("review_new_action"), ["approve", "reject", "escalate"], index=0)
         urgency = st.selectbox(t("review_new_urgency"), ["LOW", "MEDIUM", "HIGH", "CRITICAL"], index=1)
-        confidence = st.slider(t("review_new_confidence"), 0.0, 1.0, decision.get("confidence", 0.5), 0.05)
-        reason = st.text_area(t("review_new_reason"), value=decision.get("reason", ""))
-        evidence_summary = st.text_area(t("review_new_evidence"), value=decision.get("evidence_summary", ""))
+        confidence = st.slider(t("review_new_confidence"), 0.0, 1.0, default_confidence, 0.05)
+        reason = st.text_area(t("review_new_reason"), value=default_reason)
+        evidence_summary = st.text_area(t("review_new_evidence"), value=default_evidence)
         justification = st.text_area(t("review_justification"))
         notes = st.text_area(t("review_notes"))
 
@@ -160,12 +172,12 @@ def _render_modify_form(client: CASEClient, decision_id: str, decision: dict) ->
                     result = client.modify_decision_sync(
                         decision_id=decision_id,
                         action=action,
-                        reason=reason,
+                        reason=reason or "",
                         urgency=urgency,
                         confidence=confidence,
-                        evidence_summary=evidence_summary,
+                        evidence_summary=evidence_summary or "",
                         actor="ui-user",
-                        notes=notes,
+                        notes=notes or "",
                         justification=justification,
                     )
             except Exception as exc:

@@ -28,6 +28,11 @@ PAGES = {
         "audit_trail": ("nav_audit", "\u2630"),
         "comparison": ("nav_comparison", "\u21c4"),
     },
+    "operations": {
+        "control_room": ("nav_control_room", "\u2699"),
+        "triage": ("nav_triage", "\u2697"),
+        "status": ("nav_status", "\u26a1"),
+    },
     "labs": {
         "provider_lab": ("nav_provider_lab", "\u2697"),
         "evaluation": ("nav_evaluation", "\u25b2"),
@@ -97,6 +102,21 @@ def _render_sidebar() -> None:
                 st.rerun()
 
         st.divider()
+
+        st.markdown(f'<div class="sidebar-nav-section">{t("nav_operations")}</div>', unsafe_allow_html=True)
+        for key in PAGES["operations"]:
+            label_key, icon = ALL_PAGES[key]
+            is_active = current == key
+            if st.sidebar.button(
+                f"{icon}  {t(label_key)}",
+                key=f"nav_{key}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary",
+            ):
+                st.session_state["current_page"] = key
+                st.rerun()
+
+        st.divider()
         st.markdown(f'<div class="sidebar-nav-section">{t("nav_labs")}</div>', unsafe_allow_html=True)
         for key in PAGES["labs"]:
             label_key, icon = ALL_PAGES[key]
@@ -151,4 +171,13 @@ elif page == "counterfactual":
     render()
 elif page == "architecture":
     from streamlit_app.views.architecture import render
+    render()
+elif page == "control_room":
+    from streamlit_app.views.control_room import render
+    render()
+elif page == "triage":
+    from streamlit_app.views.triage import render
+    render()
+elif page == "status":
+    from streamlit_app.views.status import render
     render()

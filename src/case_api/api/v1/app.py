@@ -25,6 +25,7 @@ registry = _deps.registry
 audit_adapter = _deps.audit_adapter
 decision_repo = _deps.decision_repo
 provider = _deps.provider
+providers = _deps.providers
 
 VALID_EVIDENCE_TYPES = {t.value for t in EvidenceType}
 VALID_URGENCY_LEVELS = {u.value for u in UrgencyLevel}
@@ -91,6 +92,7 @@ class TriageRequest(BaseModel):
     evidence: list[EvidenceRequest] = Field(default_factory=list)
     external_reference: str | None = None
     metadata: dict[str, str] = Field(default_factory=dict)
+    provider: str | None = None
 
     @field_validator("report_text")
     @classmethod
@@ -243,14 +245,15 @@ async def list_domains() -> dict[str, list[str]]:
 
 @app.get("/api/v1/providers")
 async def list_providers() -> dict[str, object]:
+    provider_list = []
+    for _name, p in providers.items():
+        provider_list.append({
+            "name": p.name,
+            "model": p.model,
+            "is_mock": p.name == "mock",
+        })
     return {
-        "providers": [
-            {
-                "name": provider.name,
-                "model": provider.model,
-                "is_mock": provider.name == "mock",
-            }
-        ],
+        "providers": provider_list,
         "active_provider": provider.name,
     }
 
@@ -317,7 +320,7 @@ async def triage(request: TriageRequest) -> TriageDecisionResponse:
         metadata=meta,
     )
 
-    result = await engine.execute(case)
+    result = await engine.execute(case, provider_name=request.provider)
 
     if result.error is not None:
         err = result.error
@@ -532,3 +535,65 @@ async def modify_decision(decision_id: str, request: HITLModifyRequest) -> dict[
     ))
 
     return {"status": "modified", "decision_id": decision_id, "decision": decision.model_dump_ext()}
+
+
+class ComparisonRequest(BaseModel):
+    case_id: str | None = None
+    report_text: str
+    domain: str
+    urgency: str = "MEDIUM"
+    evidence: list[EvidenceRequest] = Field(default_factory=list)
+    external_reference: str | None = None
+    metadata: dict[str, str] = Field(default_factory=dict)
+    providers: list[str] = Field(default_factory=list)
+
+    @field_validator("report_text")
+    @classmethod
+    def validate_report_text(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Report text cannot be empty")
+        return v.strip()
+
+
+@app.post("/api/v1/comparison")
+async def compare(request: ComparisonRequest) -> dict[str, object]:
+    if not registry.validate_domain(request.domain):
+        raise HTTPException(status_code=400, detail=f"Unknown domain: {request.domain}")
+
+    for pname in request.providers:
+        if pname not in providers:
+            raise HTTPException(status_code=422, detail=f"Unknown provider: {pname}")
+
+    base_case_id = request.case_id or _generate_case_id()
+
+    evidence = [
+        EvidenceItem(
+            id=e.id, type=EvidenceType(e.type), content=e.content,
+            source=e.source, confidence=e.confidence, extracted_at=e.extracted_at,
+        )
+        for e in request.evidence
+    ]
+
+    meta = dict(request.metadata)
+    if request.external_reference:
+        meta["external_reference"] = request.external_reference
+
+    results = []
+    for pname in request.providers:
+        case_id = _generate_case_id()
+        case = OperationalCase(
+            case_id=case_id, report_text=request.report_text, domain=request.domain,
+            urgency=UrgencyLevel(request.urgency), evidence=list(evidence), metadata=dict(meta),
+        )
+        res = await engine.execute(case, provider_name=pname)
+        results.append({
+            "provider": pname,
+            "case_id": case_id,
+            "decision": res.decision.model_dump_ext() if res.decision else None,
+            "error": res.error.model_dump() if res.error else None,
+        })
+
+    return {
+        "case_id": base_case_id,
+        "results": results,
+    }

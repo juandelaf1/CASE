@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import streamlit as st
 
 from streamlit_app.client import CASEClient
@@ -16,6 +18,8 @@ from streamlit_app.ui.components import (
     render_section_close,
     render_section_header,
 )
+
+_PAGE_SIZE = 20
 
 
 def _get_client() -> CASEClient:
@@ -43,11 +47,10 @@ def _render_list(client: CASEClient) -> None:
         st.session_state.case_page_offset = 0
 
     offset = st.session_state.case_page_offset
-    page_size = 20
 
     try:
         with st.spinner(t("cases_loading")):
-            result = client.list_cases_sync(limit=page_size, offset=offset)
+            result = client.list_cases_sync(limit=_PAGE_SIZE, offset=offset)
     except Exception:
         render_backend_offline()
         return
@@ -66,27 +69,64 @@ def _render_list(client: CASEClient) -> None:
         return
 
     for d in decisions:
-        _render_case_row(d)
+        _render_case_card(d)
 
     col_prev, col_info, col_next = st.columns([1, 2, 1])
     with col_prev:
         if offset > 0:
-            if st.button(t("cases_prev"), use_container_width=True):
-                st.session_state.case_page_offset = max(0, offset - page_size)
+            if st.button(t("cases_prev"), use_container_width=True, key="cases_prev_btn"):
+                st.session_state.case_page_offset = max(0, offset - _PAGE_SIZE)
                 st.rerun()
     with col_info:
         start = offset + 1
-        end = min(offset + page_size, total)
+        end = min(offset + _PAGE_SIZE, total)
         st.caption(t("cases_showing", start=str(start), end=str(end), total=str(total)))
     with col_next:
-        if offset + page_size < total:
-            if st.button(t("cases_next"), use_container_width=True):
-                st.session_state.case_page_offset = offset + page_size
+        if offset + _PAGE_SIZE < total:
+            if st.button(t("cases_next"), use_container_width=True, key="cases_next_btn"):
+                st.session_state.case_page_offset = offset + _PAGE_SIZE
                 st.rerun()
+
+
+def _render_case_card(d: dict[str, Any]) -> None:
+    case_id = d.get("case_id", t("common_n_a"))
+    domain = d.get("domain", t("common_n_a"))
+    action = d.get("action", t("common_n_a"))
+    urgency = d.get("urgency", t("common_n_a"))
+    lifecycle = d.get("lifecycle", "ai_proposed")
+    confidence = d.get("confidence", 0)
+    provider_info = d.get("provider_info", {})
+    provider = provider_info.get("provider", t("common_n_a"))
+    latency = provider_info.get("latency_ms", 0)
+
+    with st.container(border=True):
+        c1, c2, c3, c4, c5 = st.columns([3, 2, 1, 1, 1])
+
+        with c1:
+            st.markdown(f"**{case_id}**")
+            st.caption(f"{t('triage_domain')}: {domain}")
+
+        with c2:
+            render_action_badge(action)
+            st.caption(f"{confidence:.0%} {t('field_confidence').lower()}")
+
+        with c3:
+            render_risk_badge(urgency)
+
+        with c4:
+            render_lifecycle_badge(lifecycle)
+
+        with c5:
+            st.caption(provider)
+            if latency:
+                st.caption(f"{latency:.0f}ms")
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
 
 def _render_search(client: CASEClient) -> None:
     case_id = st.text_input(t("cases_search_id"), placeholder=t("cases_search_ph"))
+
     if st.button(t("cases_search_btn"), type="primary", use_container_width=True) and case_id:
         try:
             with st.spinner(t("cases_loading_case", id=case_id)):
@@ -106,54 +146,7 @@ def _render_search(client: CASEClient) -> None:
         _render_case_detail(decision, audit_events, audit_count)
 
 
-def _render_case_row(d: dict) -> None:
-    case_id = d.get("case_id", t("common_n_a"))
-    decision_id = d.get("decision_id", t("common_n_a"))
-    domain = d.get("domain", t("common_n_a"))
-    action = d.get("action", t("common_n_a"))
-    urgency = d.get("urgency", t("common_n_a"))
-    lifecycle = d.get("lifecycle", "ai_proposed")
-    confidence = d.get("confidence", 0)
-    provider_info = d.get("provider_info", {})
-    provider = provider_info.get("provider", t("common_n_a"))
-    latency = provider_info.get("latency_ms", 0)
-
-    with st.container(border=True):
-        c1, c2, c3, c4, c5 = st.columns([3, 2, 1, 1, 1])
-        with c1:
-            st.markdown(f"**{case_id}**")
-            st.caption(f"{t('triage_domain')}: {domain}")
-        with c2:
-            render_action_badge(action)
-            st.caption(f"{confidence:.0%} {t('field_confidence').lower()}")
-        with c3:
-            render_risk_badge(urgency)
-        with c4:
-            render_lifecycle_badge(lifecycle)
-        with c5:
-            st.caption(f"{provider}")
-            if latency:
-                st.caption(f"{latency:.0f}ms")
-
-        if st.button(t("cases_view_details"), key=f"detail_{decision_id}", use_container_width=True):
-            st.session_state["selected_case_id"] = case_id
-            st.rerun()
-
-    if st.session_state.get("selected_case_id") == case_id:
-        try:
-            with st.spinner(t("cases_loading_detail")):
-                result = _get_client().get_case_sync(case_id)
-            if not result.get("error"):
-                decision = result.get("decision", {})
-                audit_events = result.get("audit_events", [])
-                audit_count = result.get("audit_count", 0)
-                _render_case_detail(decision, audit_events, audit_count)
-        except Exception:
-            render_backend_offline()
-        st.session_state.pop("selected_case_id", None)
-
-
-def _render_case_detail(decision: dict, audit_events: list[dict], audit_count: int) -> None:
+def _render_case_detail(decision: dict[str, Any], audit_events: list[dict[str, Any]], audit_count: int) -> None:
     case_id = decision.get("case_id", t("common_n_a"))
     domain = decision.get("domain", t("common_n_a"))
     ms = decision.get("processing_time_ms", 0)

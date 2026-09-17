@@ -52,6 +52,7 @@ class TriageEngine:
         self,
         domain_registry: DomainRegistry,
         provider: LLMProvider,
+        providers: dict[str, LLMProvider] | None = None,
         audit_port: AuditPort | None = None,
         decision_repository: DecisionRepositoryPort | None = None,
         automation_policy_fn: Callable[[str], AutomationPolicy | None] | None = None,
@@ -60,13 +61,14 @@ class TriageEngine:
     ) -> None:
         self._domain_registry = domain_registry
         self._provider = provider
+        self._providers = providers or {provider.name: provider}
         self._audit_port = audit_port
         self._decision_repository = decision_repository
         self._automation_policy_fn = automation_policy_fn
         self._cost_model = cost_model
         self._time_fn = time_fn or time.time
 
-    async def execute(self, case: OperationalCase) -> TriageResult:
+    async def execute(self, case: OperationalCase, provider_name: str | None = None) -> TriageResult:
         result = TriageResult(processing_lifecycle=ProcessingLifecycle.RECEIVED)
 
         await self._emit_audit(case, "CASE_RECEIVED", {"domain": case.domain})
@@ -82,8 +84,10 @@ class TriageEngine:
             result.processing_lifecycle = ProcessingLifecycle.TERMINAL_FAILURE
             return result
 
+        provider = self._resolve_provider(provider_name)
+
         try:
-            return await self._execute_triage(case, domain_policy, result)
+            return await self._execute_triage(case, domain_policy, result, provider=provider)
         except Exception as e:
             result.error = CASEError(
                 category=ErrorCategory.SYSTEM,
@@ -94,12 +98,19 @@ class TriageEngine:
             result.processing_lifecycle = ProcessingLifecycle.TERMINAL_FAILURE
             return result
 
+    def _resolve_provider(self, provider_name: str | None) -> LLMProvider:
+        if provider_name and provider_name in self._providers:
+            return self._providers[provider_name]
+        return self._provider
+
     async def _execute_triage(
         self,
         case: OperationalCase,
         domain_policy: DomainPolicy,
         result: TriageResult,
+        provider: LLMProvider | None = None,
     ) -> TriageResult:
+        active_provider = provider or self._provider
         engine_start = self._time_fn()
 
         case.status = ProcessingLifecycle.PROMPT_BUILDING
@@ -113,7 +124,7 @@ class TriageEngine:
         case.status = ProcessingLifecycle.PROVIDING
         result.processing_lifecycle = ProcessingLifecycle.PROVIDING
 
-        llm_response = await self._provider.complete(llm_request)
+        llm_response = await active_provider.complete(llm_request)
 
         if llm_response.finish_reason in ("error", "timeout", "authentication_error", "provider_unavailable"):
             terminal_errors = {
@@ -151,7 +162,7 @@ class TriageEngine:
         decision, err = await pipeline.run(
             llm_response.raw_output,
             case,
-            provider=self._provider,
+            provider=active_provider,
             llm_request=llm_request,
         )
 

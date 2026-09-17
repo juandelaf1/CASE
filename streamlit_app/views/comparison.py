@@ -7,10 +7,8 @@ import streamlit as st
 from streamlit_app.client import CASEClient
 from streamlit_app.i18n import t
 from streamlit_app.ui.components import (
-    render_action_badge,
     render_backend_offline,
     render_empty_state,
-    render_field_row,
 )
 
 
@@ -20,63 +18,114 @@ def _get_client() -> CASEClient:
 
 
 def render() -> None:
-    st.markdown(f'<div class="case-page-title">{t("comp_title")}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="case-page-subtitle">{t("comp_subtitle")}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="case-page-title">{t("comp_title")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="case-page-subtitle">{t("comp_subtitle")}</div>',
+        unsafe_allow_html=True,
+    )
 
     client = _get_client()
 
-    st.info(t("comp_how"))
-    st.markdown("---")
-
     try:
-        cases_result = client.list_cases_sync(limit=50, offset=0)
+        cases_result = client.list_cases_sync(limit=100, offset=0)
         decisions = cases_result.get("decisions", [])
     except Exception:
         render_backend_offline()
         return
 
     if not decisions:
-        render_empty_state(t("comp_no_cases"))
+        _render_empty()
         return
 
     groq_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "groq"]
     ollama_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "ollama"]
 
     if not groq_runs and not ollama_runs:
-        render_empty_state(t("comp_no_runs"))
+        _render_empty()
         return
 
     _render_provider_status(groq_runs, ollama_runs)
 
     st.markdown("---")
 
-    _render_comparison(groq_runs, ollama_runs, decisions)
+    if not groq_runs or not ollama_runs:
+        _render_single_provider(groq_runs, ollama_runs)
+        return
+
+    _render_side_by_side(groq_runs, ollama_runs, decisions)
 
 
-def _render_provider_status(groq_runs: list[dict], ollama_runs: list[dict]) -> None:
-    st.markdown(f"#### {t('comp_available')}")
+def _render_empty() -> None:
+    st.markdown('<div class="case-section-educational">', unsafe_allow_html=True)
+    st.markdown(f"### {t('comp_empty_title')}")
+    st.markdown(t("comp_empty_desc"))
+    st.markdown(
+        f'<p style="color:var(--text-muted); font-size:0.88rem;">{t("comp_empty_how")}</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
+
+def _render_provider_status(
+    groq_runs: list[dict[str, Any]],
+    ollama_runs: list[dict[str, Any]],
+) -> None:
+    total = len(groq_runs) + len(ollama_runs)
     c1, c2, c3 = st.columns(3)
     with c1:
         st.metric(t("comp_groq_runs"), len(groq_runs))
     with c2:
         st.metric(t("comp_ollama_runs"), len(ollama_runs))
     with c3:
-        st.metric(t("comp_total"), len(groq_runs) + len(ollama_runs))
+        st.metric(t("comp_total"), total)
 
 
-def _render_comparison(
-    groq_runs: list[dict],
-    ollama_runs: list[dict],
-    all_runs: list[dict],
+def _render_single_provider(
+    groq_runs: list[dict[str, Any]],
+    ollama_runs: list[dict[str, Any]],
 ) -> None:
-    st.markdown(f"#### {t('comp_side_by_side')}")
+    if groq_runs:
+        provider_name = "Groq"
+        runs = groq_runs
+    else:
+        provider_name = "Ollama"
+        runs = ollama_runs
 
-    case_ids = sorted(set(
-        d.get("case_id", t("common_n_a"))
-        for d in all_runs
-        if d.get("case_id")
-    ))
+    st.info(t("comp_single_provider", name=provider_name))
+
+    case_ids = sorted({d.get("case_id", "") for d in runs if d.get("case_id")})
+    if not case_ids:
+        render_empty_state(t("comp_no_cases"))
+        return
+
+    selected_case = st.selectbox(
+        t("comp_select_case"),
+        options=case_ids,
+        format_func=lambda x: f"Case {x}",
+        key="single_provider_select",
+    )
+    if not selected_case:
+        return
+
+    run_data = next(
+        (d for d in runs if d.get("case_id") == selected_case), None
+    )
+    if not run_data:
+        render_empty_state(t("comp_no_runs_case", id=selected_case))
+        return
+
+    _render_provider_card(provider_name, run_data)
+
+
+def _render_side_by_side(
+    groq_runs: list[dict[str, Any]],
+    ollama_runs: list[dict[str, Any]],
+    all_runs: list[dict[str, Any]],
+) -> None:
+    case_ids = sorted({d.get("case_id", "") for d in all_runs if d.get("case_id")})
 
     if not case_ids:
         render_empty_state(t("comp_no_cases"))
@@ -87,7 +136,6 @@ def _render_comparison(
         options=case_ids,
         format_func=lambda x: f"Case {x}",
     )
-
     if not selected_case:
         return
 
@@ -102,29 +150,31 @@ def _render_comparison(
         st.warning(t("comp_no_runs_case", id=selected_case))
         return
 
+    st.markdown(f"#### {t('comp_side_by_side')}")
+
     col_groq, col_ollama = st.columns(2)
 
     with col_groq:
-        _render_provider_column("Groq", groq_for_case)
+        _render_provider_card("Groq", groq_for_case)
 
     with col_ollama:
-        _render_provider_column("Ollama", ollama_for_case)
+        _render_provider_card("Ollama", ollama_for_case)
 
     if groq_for_case and ollama_for_case:
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("")
         _render_differences(groq_for_case, ollama_for_case)
 
 
-def _render_provider_column(name: str, data: dict[str, Any] | None) -> None:
+def _render_provider_card(name: str, data: dict[str, Any] | None) -> None:
     if not data:
-        st.markdown(
+        html = (
             f'<div class="case-comparison-col">'
-            f'<div class="case-comparison-header">{name}</div>'
+            f'<div class="case-comparison-header">{_esc(name)}</div>'
             f'<div style="text-align:center; padding:2rem; color:var(--text-muted);">'
-            f'{t("comp_no_data", name=name)}'
-            f'</div></div>',
-            unsafe_allow_html=True,
+            f'{_esc(t("comp_no_data", name=name))}'
+            f'</div></div>'
         )
+        st.markdown(html, unsafe_allow_html=True)
         return
 
     pi = data.get("provider_info", {})
@@ -133,39 +183,35 @@ def _render_provider_column(name: str, data: dict[str, Any] | None) -> None:
     lifecycle = data.get("lifecycle", t("common_n_a"))
     confidence = data.get("confidence", 0)
     urgency = data.get("urgency", t("common_n_a"))
-    risk_level = automation.get("risk_level", t("common_n_a"))
+    model = pi.get("model", t("common_n_a"))
     latency = pi.get("latency_ms", 0)
     total_tokens = pi.get("total_tokens", 0)
     prompt_tokens = pi.get("prompt_tokens", 0)
     completion_tokens = pi.get("completion_tokens", 0)
-    model = pi.get("model", t("common_n_a"))
     processing_time = data.get("processing_time_ms", 0)
+
+    row_data = [
+        (t("field_action"), action.upper()),
+        (t("field_urgency"), urgency),
+        (t("field_confidence"), f"{confidence:.0%}"),
+        (t("field_latency"), f"{latency:,.0f} ms"),
+        (t("field_tokens"), f"{total_tokens:,} (P:{prompt_tokens} / C:{completion_tokens})"),
+        (t("field_lifecycle"), lifecycle.replace("_", " ").upper()),
+        (t("field_processing_time"), f"{processing_time:,.0f} ms"),
+        (t("field_risk_level"), automation.get("risk_level", t("common_n_a"))),
+    ]
 
     html = (
         f'<div class="case-comparison-col">'
-        f'<div class="case-comparison-header">{name} \u2014 {model}</div>'
+        f'<div class="case-comparison-header">{_esc(name)} \u2014 {_esc(model)}</div>'
     )
-
-    rows = [
-        (t("field_action"), action.upper()),
-        (t("field_lifecycle"), lifecycle.replace("_", " ").upper()),
-        (t("field_confidence"), f"{confidence:.0%}"),
-        (t("field_urgency"), urgency),
-        (t("field_risk_level"), risk_level),
-        (t("field_automation"), automation.get("automation_decision", t("common_n_a"))),
-        (t("field_latency"), f"{latency:.0f} ms"),
-        (t("field_processing_time"), f"{processing_time:.0f} ms"),
-        (t("field_tokens"), f"{total_tokens} (P:{prompt_tokens} / C:{completion_tokens})"),
-    ]
-
-    for label, value in rows:
+    for label, value in row_data:
         html += (
             f'<div class="case-comparison-row">'
-            f'<span class="case-comparison-label">{label}</span>'
-            f'<span class="case-comparison-value">{value}</span>'
+            f'<span class="case-comparison-label">{_esc(label)}</span>'
+            f'<span class="case-comparison-value">{_esc(value)}</span>'
             f'</div>'
         )
-
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
 
@@ -173,19 +219,17 @@ def _render_provider_column(name: str, data: dict[str, Any] | None) -> None:
         st.markdown(data.get("reason", t("common_n_a")))
 
 
-def _render_differences(groq: dict, ollama: dict) -> None:
+def _render_differences(groq: dict[str, Any], ollama: dict[str, Any]) -> None:
     st.markdown(f"#### {t('comp_diff_title')}")
 
     groq_action = groq.get("action", t("common_n_a"))
     ollama_action = ollama.get("action", t("common_n_a"))
     groq_confidence = groq.get("confidence", 0)
     ollama_confidence = ollama.get("confidence", 0)
-    groq_pi = groq.get("provider_info", {})
-    ollama_pi = ollama.get("provider_info", {})
-    groq_latency = groq_pi.get("latency_ms", 0)
-    ollama_latency = ollama_pi.get("latency_ms", 0)
+    groq_latency = groq.get("provider_info", {}).get("latency_ms", 0)
+    ollama_latency = ollama.get("provider_info", {}).get("latency_ms", 0)
 
-    diffs = []
+    diffs: list[dict[str, str]] = []
 
     if groq_action != ollama_action:
         diffs.append({
@@ -207,8 +251,8 @@ def _render_differences(groq: dict, ollama: dict) -> None:
         ratio = ollama_latency / groq_latency
         diffs.append({
             "metric": t("field_latency"),
-            "groq": f"{groq_latency:.0f} ms",
-            "ollama": f"{ollama_latency:.0f} ms",
+            "groq": f"{groq_latency:,.0f} ms",
+            "ollama": f"{ollama_latency:,.0f} ms",
             "note": t("comp_diff_latency", ratio=f"{ratio:.0f}"),
         })
 
@@ -233,3 +277,7 @@ def _render_differences(groq: dict, ollama: dict) -> None:
         f'</div>',
         unsafe_allow_html=True,
     )
+
+
+def _esc(text: str) -> str:
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")

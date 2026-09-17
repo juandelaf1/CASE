@@ -142,8 +142,7 @@ def _render_results(results: list[dict[str, Any]]) -> None:
 
     for r in results:
         with st.container(border=True):
-            st.markdown(f"**{r['pair_id']}** \u2014 {t('cf_changed_attr', attr=r['changed_attribute'])}")
-            st.caption(f"Expected invariance: {r['expected_invariance']}. Rationale: {r['rationale']}")
+            st.markdown(f"**{r['pair_id']}** — {t('cf_changed_attr', attr=r['changed_attribute'])}")
 
             if r["status"] == "error":
                 st.error(f"Error: {r.get('error', t('common_error'))}")
@@ -185,8 +184,8 @@ def _render_results(results: list[dict[str, Any]]) -> None:
         st.markdown("""
 - **Scope:** 10 counterfactual pairs, all in logistics domain
 - **Methodology:** Single-attribute changes (name, location, wording, etc.)
-- **Provider:** MockProvider (deterministic) \u2014 results reflect pipeline validation behavior, not LLM fairness
+- **Provider:** MockProvider (deterministic) — results reflect pipeline validation behavior, not LLM fairness
 - **Not measured:** Real-world bias, demographic fairness, cross-domain invariance
-- **Not claimed:** Bias-free, fair, unbiased \u2014 this is a counterfactual invariance evaluation tool
+- **Not claimed:** Bias-free, fair, unbiased — this is a counterfactual invariance evaluation tool
 - **Coverage:** Logistics domain only; urban_operations and infrastructure pairs not yet defined
 """)

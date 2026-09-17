@@ -12,12 +12,16 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
 
         # Sidebar
         "nav_decision_flow": "Decision Flow",
+        "nav_operations": "Operations",
         "nav_labs": "Labs & Engineering",
         "nav_decision_center": "Decision Center",
         "nav_cases": "Cases",
         "nav_review": "Review",
         "nav_audit": "Audit",
         "nav_comparison": "Comparison",
+        "nav_control_room": "Control Room",
+        "nav_status": "System Status",
+        "nav_triage": "Triage",
         "nav_provider_lab": "Provider Lab",
         "nav_evaluation": "Evaluation Lab",
         "nav_counterfactual": "Counterfactual Lab",
@@ -332,12 +336,16 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
 
         # Sidebar
         "nav_decision_flow": "Flujo de Decisi\u00f3n",
+        "nav_operations": "Operaciones",
         "nav_labs": "Laboratorios e Ingenier\u00eda",
         "nav_decision_center": "Centro de Decisiones",
         "nav_cases": "Casos",
         "nav_review": "Revisi\u00f3n",
         "nav_audit": "Auditor\u00eda",
         "nav_comparison": "Comparaci\u00f3n",
+        "nav_control_room": "Sala de Control",
+        "nav_status": "Estado del Sistema",
+        "nav_triage": "Triage",
         "nav_provider_lab": "Laboratorio de Proveedores",
         "nav_evaluation": "Laboratorio de Evaluaci\u00f3n",
         "nav_counterfactual": "Laboratorio Contrafactual",
