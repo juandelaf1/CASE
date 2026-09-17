@@ -686,6 +686,12 @@ The academic project presentation is available at:
 
 [`docs/presentation/CASE_Decision_Architecture.pptx`](docs/presentation/CASE_Decision_Architecture.pptx)
 
+## Presentación
+
+La presentación académica del proyecto está disponible en:
+
+[`docs/presentation/CASE_Decision_Architecture.pptx`](docs/presentation/CASE_Decision_Architecture.pptx)
+
 ---
 
 ## Configuration
