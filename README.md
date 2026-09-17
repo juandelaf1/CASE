@@ -717,9 +717,6 @@ MIT — Ver [LICENSE](LICENSE) para detalles.
 
 ---
 
-<details>
-<summary><b>🇬🇧 English</b></summary>
-
 # English
 
 ## What is CASE?
@@ -1403,5 +1400,3 @@ The academic project presentation is available at:
 ## License
 
 MIT — See [LICENSE](LICENSE) for details.
-
-</details>
