@@ -680,6 +680,14 @@ CASE/
 
 ---
 
+## Presentation
+
+The academic project presentation is available at:
+
+[`docs/presentation/CASE_AI_Governance.pptx`](docs/presentation/CASE_AI_Governance.pptx)
+
+---
+
 ## Configuration
 
 ### Environment Variables
