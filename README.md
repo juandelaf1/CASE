@@ -31,7 +31,9 @@
 
 ---
 
-# Español
+<a id="español"></a>
+
+# 🇪🇸 Español
 
 ## ¿Qué es CASE?
 
@@ -717,7 +719,9 @@ MIT — Ver [LICENSE](LICENSE) para detalles.
 
 ---
 
-# English
+<a id="english"></a>
+
+# 🇬🇧 English
 
 ## What is CASE?
 
