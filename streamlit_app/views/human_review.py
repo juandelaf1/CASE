@@ -3,10 +3,12 @@ from __future__ import annotations
 import streamlit as st
 
 from streamlit_app.client import CASEClient
+from streamlit_app.components.state import get_client
 from streamlit_app.i18n import t
-from streamlit_app.ui.components import (  # type: ignore[attr-defined]
+from streamlit_app.ui.components import (
     render_action_badge,
     render_backend_offline,
+    render_confidence,
     render_empty_state,
     render_field_row,
     render_lifecycle_badge,
@@ -14,11 +16,6 @@ from streamlit_app.ui.components import (  # type: ignore[attr-defined]
     render_pipeline_visual,
     render_risk_badge,
 )
-
-
-def _get_client() -> CASEClient:
-    api_url = st.session_state.get("case_api_url", "http://localhost:8000")
-    return CASEClient(base_url=api_url)
 
 
 def render() -> None:
@@ -34,7 +31,7 @@ def render() -> None:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    client = _get_client()
+    client = get_client()
 
     try:
         with st.spinner(t("review_loading")):
@@ -66,6 +63,7 @@ def _render_decision_card(client: CASEClient, decision: dict[str, object]) -> No
     action = str(decision.get("action", t("common_n_a")))
     urgency = str(decision.get("urgency", t("common_n_a")))
     lifecycle = str(decision.get("lifecycle", "ai_proposed"))
+    risk_level = str(decision.get("risk_level", t("common_n_a")))
     confidence_raw = decision.get("confidence", 0) or 0
     confidence = float(str(confidence_raw))
     reason = str(decision.get("reason", "") or "")
@@ -74,18 +72,26 @@ def _render_decision_card(client: CASEClient, decision: dict[str, object]) -> No
     with st.container(border=True):
         st.markdown(f"**{t('triage_case_id')}: {case_id}**")
 
-        c1, c2 = st.columns([3, 2])
-        with c1:
-            render_action_badge(action)
-            render_risk_badge(urgency)
-            st.caption(f"{t('field_confidence')}: {confidence:.0%}")
-        with c2:
-            render_lifecycle_badge(lifecycle)
+        st.info(t("review_approve_explain"))
 
+        st.markdown(f"#### {t('sec_ai_proposal')}")
+        render_action_badge(action)
+        st.markdown("<br>", unsafe_allow_html=True)
+        render_field_row(t("field_action"), action)
+        render_field_row(t("field_urgency"), urgency)
+        render_field_row(t("field_confidence"), "")
+        render_confidence(confidence)
         if reason:
-            render_field_row(t("field_reason"), reason[:200] + ("..." if len(reason) > 200 else ""))
+            render_field_row(t("field_reason"), reason[:300] + ("..." if len(reason) > 300 else ""))
         if evidence_summary:
-            render_field_row(t("field_evidence"), evidence_summary[:200] + ("..." if len(evidence_summary) > 200 else ""))
+            render_field_row(t("field_evidence"), evidence_summary[:300] + ("..." if len(evidence_summary) > 300 else ""))
+
+        st.markdown(f"#### {t('sec_case_governance')}")
+        render_lifecycle_badge(lifecycle)
+        st.markdown("<br>", unsafe_allow_html=True)
+        render_field_row(t("field_lifecycle"), lifecycle.replace("_", " ").upper())
+        render_risk_badge(risk_level)
+        render_field_row(t("field_risk_level"), risk_level)
 
         st.divider()
 
@@ -115,7 +121,11 @@ def _render_decision_card(client: CASEClient, decision: dict[str, object]) -> No
                 error_msg = result.get("detail", t("common_error"))
                 st.error(t("review_failed", error=str(error_msg)))
             else:
-                st.success(t("review_completed", status=result.get("status", "done")))
+                audit_id = result.get("audit_event_id", "")
+                status_msg = result.get("status", "done")
+                st.success(t("review_completed", status=status_msg))
+                if audit_id:
+                    st.caption(f"Audit event: {audit_id}")
                 st.rerun()
 
 
@@ -185,3 +195,4 @@ def _render_modify_form(client: CASEClient, decision_id: str, decision: dict[str
             st.session_state[f"result_{decision_id}"] = result
             st.session_state[f"modifying_{decision_id}"] = False
             st.rerun()
+

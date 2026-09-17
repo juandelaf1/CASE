@@ -6,39 +6,41 @@ from streamlit_app.i18n import t
 from streamlit_app.ui.components import render_metric_cards
 
 CONNECTED_COMPONENTS = [
-    {"name": "Contracts", "layer": "Foundation", "status": "CONNECTED", "description": "Pydantic v2 models at all public boundaries"},
-    {"name": "LLMProvider", "layer": "Ports", "status": "CONNECTED", "description": "Provider-agnostic LLM abstraction"},
-    {"name": "DomainRegistry", "layer": "Domain", "status": "CONNECTED", "description": "Domain policy registration and resolution"},
-    {"name": "UrbanPolicy", "layer": "Domain", "status": "CONNECTED", "description": "Urban operations domain policy"},
-    {"name": "LogisticsPolicy", "layer": "Domain", "status": "CONNECTED", "description": "Logistics domain policy"},
-    {"name": "InfrastructurePolicy", "layer": "Domain", "status": "CONNECTED", "description": "Infrastructure domain policy"},
-    {"name": "DefaultAutomationPolicy", "layer": "Risk", "status": "CONNECTED", "description": "Default risk-based automation routing"},
-    {"name": "LogisticsAutomationPolicy", "layer": "Risk", "status": "CONNECTED", "description": "Logistics-specific risk automation"},
-    {"name": "TriageEngine", "layer": "Application", "status": "CONNECTED", "description": "Application-layer orchestrator"},
-    {"name": "PromptBuilder", "layer": "Application", "status": "CONNECTED", "description": "Structured prompt construction"},
-    {"name": "ReliabilityPipeline", "layer": "Reliability", "status": "CONNECTED", "description": "Parse \u2192 Schema \u2192 Semantic \u2192 Domain validation + retry"},
-    {"name": "AutomationEvaluator", "layer": "Risk", "status": "CONNECTED", "description": "Risk assessment and automation routing"},
-    {"name": "MockProvider", "layer": "Providers", "status": "CONNECTED", "description": "Deterministic test/demo provider"},
-    {"name": "OllamaProvider", "layer": "Providers", "status": "TESTED_ISOLATED", "description": "Local LLM provider (requires Ollama)"},
-    {"name": "CloudProvider", "layer": "Providers", "status": "TESTED_ISOLATED", "description": "OpenAI-compatible cloud provider"},
-    {"name": "SQLite DecisionRepository", "layer": "Persistence", "status": "CONNECTED", "description": "Decision persistence with lifecycle tracking"},
-    {"name": "SQLite AuditAdapter", "layer": "Persistence", "status": "CONNECTED", "description": "Audit event persistence"},
-    {"name": "FastAPI", "layer": "API", "status": "CONNECTED", "description": "HTTP transport layer"},
-    {"name": "Streamlit", "layer": "UI", "status": "CONNECTED", "description": "Decision control console"},
-    {"name": "HITL", "layer": "Human Oversight", "status": "CONNECTED", "description": "Approve/Reject/Escalate/Modify lifecycle"},
+    {"name": "Contracts", "layer": "Foundation", "status": "CONNECTED", "description": "Modelos Pydantic v2 en todos los limites publicos"},
+    {"name": "LLMProvider", "layer": "Ports", "status": "CONNECTED", "description": "Abstraccion de LLM agnostica al proveedor"},
+    {"name": "DomainRegistry", "layer": "Domain", "status": "CONNECTED", "description": "Registro y resolucion de politicas de dominio"},
+    {"name": "UrbanPolicy", "layer": "Domain", "status": "CONNECTED", "description": "Politica de dominio de operaciones urbanas"},
+    {"name": "LogisticsPolicy", "layer": "Domain", "status": "CONNECTED", "description": "Politica de dominio logistico"},
+    {"name": "InfrastructurePolicy", "layer": "Domain", "status": "CONNECTED", "description": "Politica de dominio de infraestructura"},
+    {"name": "SeismicRiskPolicy", "layer": "Domain", "status": "CONNECTED", "description": "Politica de dominio de riesgo sismico"},
+    {"name": "DefaultAutomationPolicy", "layer": "Risk", "status": "CONNECTED", "description": "Enrutamiento de automatizacion basado en riesgo por defecto"},
+    {"name": "LogisticsAutomationPolicy", "layer": "Risk", "status": "CONNECTED", "description": "Automatizacion de riesgo especifica para logistica"},
+    {"name": "SeismicAutomationPolicy", "layer": "Risk", "status": "CONNECTED", "description": "Automatizacion de riesgo especifica para sismos"},
+    {"name": "TriageEngine", "layer": "Application", "status": "CONNECTED", "description": "Orquestador de la capa de aplicacion"},
+    {"name": "PromptBuilder", "layer": "Application", "status": "CONNECTED", "description": "Construccion estructurada de prompts"},
+    {"name": "ReliabilityPipeline", "layer": "Reliability", "status": "CONNECTED", "description": "Parse \u2192 Schema \u2192 Semantico \u2192 Dominio + reintentos"},
+    {"name": "AutomationEvaluator", "layer": "Risk", "status": "CONNECTED", "description": "Evaluacion de riesgo y enrutamiento de automatizacion"},
+    {"name": "CostModel", "layer": "Evaluation", "status": "CONNECTED", "description": "Estimacion de costos basada en tokens"},
+    {"name": "MockProvider", "layer": "Providers", "status": "CONNECTED", "description": "Proveedor de prueba/demo determinista"},
+    {"name": "SQLite DecisionRepository", "layer": "Persistence", "status": "CONNECTED", "description": "Persistencia de decisiones con seguimiento de ciclo de vida"},
+    {"name": "SQLite AuditAdapter", "layer": "Persistence", "status": "CONNECTED", "description": "Persistencia de eventos de auditoria"},
+    {"name": "FastAPI", "layer": "API", "status": "CONNECTED", "description": "Capa de transporte HTTP"},
+    {"name": "Streamlit", "layer": "UI", "status": "CONNECTED", "description": "Consola de control de decisiones"},
+    {"name": "HITL", "layer": "Human Oversight", "status": "CONNECTED", "description": "Ciclo Aprobar/Rechazar/Escalar/Modificar"},
 ]
 
 ISOLATED_EXTENSIONS = [
-    {"name": "Logistics Intelligence", "layer": "Domain", "status": "TESTED_ISOLATED", "description": "Shipment understanding, carrier matching, route recommendation", "modules": 7, "tests": 0},
-    {"name": "RealEstatePolicy", "layer": "Domain", "status": "TESTED_ISOLATED", "description": "Real estate domain policy (not registered)", "modules": 1, "tests": 28},
-    {"name": "Specialist Models", "layer": "ML", "status": "TESTED_ISOLATED", "description": "Keyword-based classification/risk", "modules": 2, "tests": 21},
-    {"name": "Hybrid Decision Engine", "layer": "Decision", "status": "TESTED_ISOLATED", "description": "Multi-source decision combination", "modules": 1, "tests": 18},
-    {"name": "ML Adaptation", "layer": "ML", "status": "TESTED_ISOLATED", "description": "Training abstractions, dataset pipeline", "modules": 7, "tests": 26},
-    {"name": "Governance", "layer": "Governance", "status": "TESTED_ISOLATED", "description": "Security, compliance, RBAC", "modules": 1, "tests": 28},
+    {"name": "OllamaProvider", "layer": "Providers", "status": "TESTED_ISOLATED", "description": "Proveedor LLM local (requiere Ollama)", "modules": 1, "tests": 10},
+    {"name": "CloudProvider", "layer": "Providers", "status": "TESTED_ISOLATED", "description": "Proveedor cloud compatible con OpenAI", "modules": 1, "tests": 12},
+    {"name": "Logistics Intelligence", "layer": "Domain", "status": "TESTED_ISOLATED", "description": "Comprension de envios, matching de transportistas, rutas", "modules": 7, "tests": 0},
+    {"name": "RealEstatePolicy", "layer": "Domain", "status": "TESTED_ISOLATED", "description": "Politica de dominio inmobiliario (no registrada)", "modules": 1, "tests": 28},
+    {"name": "Specialist Models", "layer": "ML", "status": "TESTED_ISOLATED", "description": "Clasificacion y riesgo basados en keywords", "modules": 2, "tests": 21},
+    {"name": "Hybrid Decision Engine", "layer": "Decision", "status": "TESTED_ISOLATED", "description": "Combinacion de decisiones multi-fuente", "modules": 1, "tests": 18},
+    {"name": "ML Adaptation", "layer": "ML", "status": "TESTED_ISOLATED", "description": "Abstracciones de entrenamiento, pipeline de datasets", "modules": 7, "tests": 26},
+    {"name": "Governance", "layer": "Governance", "status": "TESTED_ISOLATED", "description": "Seguridad, compliance, RBAC", "modules": 1, "tests": 28},
     {"name": "Production", "layer": "Infrastructure", "status": "TESTED_ISOLATED", "description": "Circuit breaker, rate limiter, health checks", "modules": 1, "tests": 28},
-    {"name": "Evaluation Runner", "layer": "Evaluation", "status": "TESTED_ISOLATED", "description": "Dataset evaluation framework", "modules": 4, "tests": 15},
-    {"name": "Bias Evaluator", "layer": "Evaluation", "status": "TESTED_ISOLATED", "description": "Counterfactual invariance evaluation", "modules": 2, "tests": 14},
-    {"name": "Cost Model", "layer": "Evaluation", "status": "TESTED_ISOLATED", "description": "Token-based cost estimation", "modules": 1, "tests": 8},
+    {"name": "Evaluation Runner", "layer": "Evaluation", "status": "TESTED_ISOLATED", "description": "Framework de evaluacion con datasets", "modules": 4, "tests": 15},
+    {"name": "Bias Evaluator", "layer": "Evaluation", "status": "TESTED_ISOLATED", "description": "Evaluacion de invariancia contrafactual", "modules": 2, "tests": 14},
 ]
 
 STATUS_COLORS = {
@@ -49,43 +51,43 @@ STATUS_COLORS = {
 }
 
 _FLOW_STEPS = [
-    ("STREAMLIT", "UI"),
-    ("FASTAPI", "API"),
-    ("TRIAGE ENGINE", "Application"),
-    ("PROVIDER ABSTRACTION", "Ports"),
-    ("PYDANTIC CONTRACTS", "Foundation"),
-    ("RELIABILITY PIPELINE", "Reliability"),
-    ("DOMAIN / RISK", "Domain + Risk"),
-    ("DECISION", "Decision"),
-    ("HITL", "Human Oversight"),
-    ("SQLITE / AUDIT", "Persistence"),
+    ("STREAMLIT", "Interfaz de usuario"),
+    ("FASTAPI", "Transporte HTTP"),
+    ("TRIAGE ENGINE", "Orquestacion"),
+    ("PROMPT BUILDER", "Construccion de prompts"),
+    ("PROVIDER ABSTRACTION", "Agnostico a proveedores"),
+    ("RELIABILITY PIPELINE", "Validacion y reparacion"),
+    ("DOMAIN + RISK", "Politicas y riesgo"),
+    ("DECISION", "Decision final"),
+    ("HITL", "Supervision humana"),
+    ("SQLITE + AUDIT", "Persistencia y trazabilidad"),
 ]
 
 _LAYER_RULES = [
-    "Dependencies flow DOWNWARD only (UI \u2192 API \u2192 Application \u2192 Domain \u2192 Ports)",
-    "Infrastructure implements Ports, never the reverse",
-    "Domain never imports Infrastructure",
-    "Providers never make final business decisions",
-    "Reliability validates all external output",
-    "Risk increases human involvement, never decreases it",
-    "Everything important is auditable",
+    "Las dependencias fluyen SOLO HACIA ABAJO (UI \u2192 API \u2192 Application \u2192 Domain \u2192 Ports)",
+    "La infraestructura implementa Ports, nunca al reves",
+    "El dominio nunca importa infraestructura",
+    "Los proveedores nunca toman decisiones de negocio finales",
+    "La fiabilidad valida toda salida externa",
+    "El riesgo aumenta la participacion humana, nunca la disminuye",
+    "Todo lo importante es auditable",
 ]
 
 _LAYER_MAP = [
-    ("UI", "Streamlit / Presentation", "CONNECTED"),
-    ("API", "FastAPI / HTTP Transport", "CONNECTED"),
-    ("Application", "TriageEngine / Orchestration", "CONNECTED"),
-    ("Domain", "Policies / Domain Rules", "CONNECTED"),
-    ("Ports", "Interfaces / Abstractions", "CONNECTED"),
-    ("Providers", "LLM / External Services", "CONNECTED"),
-    ("Reliability", "Validation / Retry / Repair", "CONNECTED"),
-    ("Risk", "Automation / Routing Safety", "CONNECTED"),
-    ("Persistence", "SQLite / Decision + Audit", "CONNECTED"),
-    ("Human Oversight", "HITL / Override / Escalation", "CONNECTED"),
-    ("Audit", "Traceability / Event Log", "CONNECTED"),
-    ("Evaluation", "Measurement / Bias / Cost", "TESTED_ISOLATED"),
-    ("ML", "Specialist / Adaptation", "TESTED_ISOLATED"),
-    ("Governance", "Security / Compliance", "TESTED_ISOLATED"),
+    ("UI", "Streamlit / Presentacion", "CONNECTED"),
+    ("API", "FastAPI / Transporte HTTP", "CONNECTED"),
+    ("Application", "TriageEngine / Orquestacion", "CONNECTED"),
+    ("Domain", "Politicas / Reglas de Dominio", "CONNECTED"),
+    ("Ports", "Interfaces / Abstracciones", "CONNECTED"),
+    ("Providers", "LLM / Servicios Externos", "CONNECTED"),
+    ("Reliability", "Validacion / Reintentos / Reparacion", "CONNECTED"),
+    ("Risk", "Automatizacion / Seguridad de Enrutamiento", "CONNECTED"),
+    ("Persistence", "SQLite / Decision + Auditoria", "CONNECTED"),
+    ("Human Oversight", "HITL / Anulacion / Escalamiento", "CONNECTED"),
+    ("Audit", "Trazabilidad / Log de Eventos", "CONNECTED"),
+    ("Evaluation", "Medicion / Sesion / Costo", "TESTED_ISOLATED"),
+    ("ML", "Especialista / Adaptacion", "TESTED_ISOLATED"),
+    ("Governance", "Seguridad / Compliance", "TESTED_ISOLATED"),
     ("Production", "Circuit Breaker / Rate Limiter", "TESTED_ISOLATED"),
 ]
 
@@ -99,6 +101,20 @@ def render() -> None:
         f'<div class="case-page-subtitle">{t("arch_subtitle")}</div>',
         unsafe_allow_html=True,
     )
+
+    connected_count = len([c for c in CONNECTED_COMPONENTS if c["status"] == "CONNECTED"])
+    isolated_count = len(ISOLATED_EXTENSIONS)
+    layers_count = len(_LAYER_MAP)
+    rules_count = len(_LAYER_RULES)
+
+    render_metric_cards([
+        {"label": "Componentes Conectados", "value": str(connected_count), "icon": "\u2699\ufe0f", "color": "#1a7a4a"},
+        {"label": "Extensiones Aisladas", "value": str(isolated_count), "icon": "\U0001f4e6", "color": "#a06800"},
+        {"label": "Capas", "value": str(layers_count), "icon": "\U0001f3d7\ufe0f", "color": "#1a7a7a"},
+        {"label": "Reglas", "value": str(rules_count), "icon": "\U0001f4cf", "color": "#b82e2e"},
+    ])
+
+    st.markdown("")
 
     tab_connected, tab_isolated, tab_layers = st.tabs(
         [t("arch_connected"), t("arch_isolated"), t("arch_layers")]
@@ -114,9 +130,10 @@ def render() -> None:
 
 def _status_badge(status: str) -> str:
     color = STATUS_COLORS.get(status, "#555a68")
+    label = status.replace("_", " ")
     return (
         f'<span class="case-badge" '
-        f'style="background:{color}12; color:{color};">{status}</span>'
+        f'style="background:{color}12; color:{color};">{label}</span>'
     )
 
 
@@ -194,11 +211,11 @@ def _render_isolated() -> None:
     st.markdown(f"#### {t('arch_isolated')}")
     st.caption(t("arch_isolated_desc"))
 
-    modules_total: int = sum(e["modules"] for e in ISOLATED_EXTENSIONS)  # type: ignore[misc]
-    tests_total: int = sum(e["tests"] for e in ISOLATED_EXTENSIONS)  # type: ignore[misc]
+    modules_total = sum(e["modules"] for e in ISOLATED_EXTENSIONS)
+    tests_total = sum(e["tests"] for e in ISOLATED_EXTENSIONS)
     render_metric_cards([
         {"label": "Extensiones", "value": str(len(ISOLATED_EXTENSIONS)), "icon": "\u2699\ufe0f", "color": "#a06800"},
-        {"label": "M\u00f3dulos", "value": str(modules_total), "icon": "\U0001f4e6", "color": "#a06800"},
+        {"label": "Modulos", "value": str(modules_total), "icon": "\U0001f4e6", "color": "#a06800"},
         {"label": "Tests", "value": str(tests_total), "icon": "\U0001f9ea", "color": "#1a7a4a"},
     ])
 
@@ -212,23 +229,23 @@ def _render_isolated() -> None:
                 st.caption(ext["description"])
             with c2:
                 st.caption(f"Capa: {ext['layer']}")
-                st.caption(f"{ext['modules']} m\u00f3dulos \u00b7 {ext['tests']} tests")
+                st.caption(f"{ext['modules']} modulos \u00b7 {ext['tests']} tests")
             with c3:
                 st.markdown(_status_badge(str(ext["status"])), unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander(t("arch_integration")):
         st.markdown(
-            "Los m\u00f3dulos aislados NO est\u00e1n conectados al pipeline en ejecuci\u00f3n "
+            "Los modulos aislados NO estan conectados al pipeline en ejecucion "
             "a menos que se cumplan las siguientes condiciones:\n\n"
             "1. Problema real identificado\n"
             "2. Datos suficientes disponibles\n"
             "3. Baseline establecido\n"
-            "4. Costo de integraci\u00f3n justificado\n"
-            "5. Decisi\u00f3n arquitect\u00f3nica documentada\n"
+            "4. Costo de integracion justificado\n"
+            "5. Decision arquitectonica documentada\n"
             "6. Tests pasan\n"
-            "7. Verificaci\u00f3n manual completa\n\n"
-            "Ver `docs/FUTURE_EVOLUTION.md` para el marco de decisi\u00f3n completo."
+            "7. Verificacion manual completa\n\n"
+            "Ver `docs/FUTURE_EVOLUTION.md` para el marco de decision completo."
         )
 
 
@@ -250,5 +267,9 @@ def _render_layers() -> None:
 
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander(t("arch_dep_rules")):
+        st.markdown(
+            "La arquitectura de CASE sigue reglas estrictas de dependencia para "
+            "mantener la separacion de concernimientos y la mantenibilidad:\n"
+        )
         rules_md = "\n".join(f"- {r}" for r in _LAYER_RULES)
         st.markdown(rules_md)

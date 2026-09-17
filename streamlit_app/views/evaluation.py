@@ -5,8 +5,8 @@ from typing import Any
 import streamlit as st
 
 from streamlit_app.client import CASEClient
+from streamlit_app.components.state import get_client
 from streamlit_app.i18n import t
-from streamlit_app.ui.components import render_api_health_check
 
 EVAL_CASES = [
     {
@@ -18,7 +18,6 @@ EVAL_CASES = [
             {"id": "ev-001", "type": "text", "content": "Photo confirms small pothole", "source": "test", "confidence": 0.9, "extracted_at": "2026-09-14T12:00:00Z"}
         ],
         "expected_decision": "approve",
-        "expected_urgency": "LOW",
     },
     {
         "description": "Structural crack on bridge",
@@ -29,7 +28,6 @@ EVAL_CASES = [
             {"id": "ev-001", "type": "text", "content": "Inspection report flags load-bearing concern", "source": "test", "confidence": 0.95, "extracted_at": "2026-09-14T12:00:00Z"}
         ],
         "expected_decision": "escalate",
-        "expected_urgency": "CRITICAL",
     },
     {
         "description": "Illegal dumping with no evidence",
@@ -38,28 +36,20 @@ EVAL_CASES = [
         "urgency": "LOW",
         "evidence": [],
         "expected_decision": "reject",
-        "expected_urgency": "LOW",
         "expected_failure": True,
         "failure_reason": "Urban domain requires evidence; this case has none. Terminal failure is expected behavior.",
     },
 ]
 
 
-def _get_client() -> CASEClient:
-    api_url = st.session_state.get("case_api_url", "http://localhost:8000")
-    return CASEClient(base_url=api_url)
-
-
 def render() -> None:
     st.markdown(f'<div class="case-page-title">{t("eval_title")}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="case-page-subtitle">{t("eval_subtitle")}</div>', unsafe_allow_html=True)
 
-    st.info(t("eval_data_source"))
+    st.markdown(f'<div class="case-page-subtitle">{t("eval_synthetic_label")}</div>', unsafe_allow_html=True)
 
-    client = _get_client()
+    st.warning(t("eval_disclaimer"))
 
-    if not render_api_health_check(client):
-        return
+    client = get_client()
 
     st.markdown("---")
 
@@ -92,34 +82,22 @@ def _run_evaluation(client: CASEClient) -> list[dict[str, Any]]:
                         "index": i,
                         "description": test_case["description"],
                         "expected_decision": test_case["expected_decision"],
-                        "expected_urgency": test_case["expected_urgency"],
                         "expected_failure": is_expected,
                         "failure_reason": test_case.get("failure_reason", ""),
                         "status": "expected_behavior" if is_expected else "unexpected_error",
                         "actual_decision": None,
-                        "actual_urgency": None,
                         "error": error_msg,
-                        "confidence": 0,
-                        "processing_time_ms": 0,
-                        "provider_info": None,
                     })
                     continue
 
                 data = result.get("data", {})
                 actual_decision = data.get("action", t("common_n_a"))
-                actual_urgency = data.get("urgency", t("common_n_a"))
                 expected_decision = test_case["expected_decision"]
-                expected_urgency = test_case["expected_urgency"]
-
-                decision_match = actual_decision == expected_decision
-                urgency_match = actual_urgency == expected_urgency
 
                 if test_case.get("expected_failure"):
                     status = "expected_behavior"
-                elif decision_match and urgency_match:
+                elif actual_decision == expected_decision:
                     status = "match"
-                elif decision_match:
-                    status = "partial_match"
                 else:
                     status = "mismatch"
 
@@ -127,32 +105,22 @@ def _run_evaluation(client: CASEClient) -> list[dict[str, Any]]:
                     "index": i,
                     "description": test_case["description"],
                     "expected_decision": expected_decision,
-                    "expected_urgency": expected_urgency,
                     "expected_failure": test_case.get("expected_failure", False),
                     "failure_reason": test_case.get("failure_reason", ""),
                     "status": status,
                     "actual_decision": actual_decision,
-                    "actual_urgency": actual_urgency,
                     "error": None,
-                    "confidence": data.get("confidence", 0),
-                    "processing_time_ms": data.get("processing_time_ms", 0),
-                    "provider_info": data.get("provider_info"),
                 })
             except Exception as e:
                 results.append({
                     "index": i,
                     "description": test_case["description"],
                     "expected_decision": test_case["expected_decision"],
-                    "expected_urgency": test_case["expected_urgency"],
                     "expected_failure": test_case.get("expected_failure", False),
                     "failure_reason": test_case.get("failure_reason", ""),
                     "status": "unexpected_error",
                     "actual_decision": None,
-                    "actual_urgency": None,
                     "error": str(e),
-                    "confidence": 0,
-                    "processing_time_ms": 0,
-                    "provider_info": None,
                 })
 
     return results
@@ -163,96 +131,57 @@ def _render_results(results: list[dict[str, Any]]) -> None:
         st.info(t("eval_no_results"))
         return
 
-    status_labels = {
-        "match": ("pass", "Full match"),
-        "partial_match": ("warn", "Decision matches"),
-        "mismatch": ("error", "Mismatch"),
-        "expected_behavior": ("info", "Expected"),
-        "unexpected_error": ("error", "Unexpected error"),
-    }
-
     st.markdown("---")
     st.markdown(f"#### {t('eval_results')}")
 
-    valid_results = [r for r in results if not r["expected_failure"] and r["status"] != "unexpected_error"]
-    expected_failures = [r for r in results if r["expected_failure"]]
-    unexpected_errors = [r for r in results if r["status"] == "unexpected_error"]
-
     for r in results:
-        status_type, status_text = status_labels.get(r["status"], ("info", r["status"]))
-
         with st.container(border=True):
-            st.markdown(f"**{r['description']}**")
+            st.markdown(f"**{r['description']}** `{t('eval_simulated_badge')}`")
 
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 st.caption(t("field_action"))
                 if r["actual_decision"]:
                     match = r["actual_decision"] == r["expected_decision"]
-                    st.markdown(f"`{r['actual_decision']}` (expected `{r['expected_decision']}`)")
+                    st.markdown(f"`{r['actual_decision']}`")
                     if match:
-                        st.success("Match")
+                        st.success(t("eval_match"))
                     else:
-                        st.error("Mismatch")
+                        st.error(t("eval_mismatch"))
                 elif r["error"]:
                     st.error(r["error"][:100])
             with col2:
-                st.caption(t("field_urgency"))
-                if r["actual_urgency"]:
-                    st.markdown(f"`{r['actual_urgency']}` (expected `{r['expected_urgency']}`)")
+                st.caption(t("eval_expected_action"))
+                st.markdown(f"`{r['expected_decision']}`")
             with col3:
-                st.caption("Status")
-                if status_type == "pass":
-                    st.success(status_text)
-                elif status_type == "warn":
-                    st.warning(status_text)
-                elif status_type == "error":
-                    st.error(status_text)
+                st.caption(t("eval_status"))
+                if r["status"] == "match":
+                    st.success(t("eval_match"))
+                elif r["status"] == "mismatch":
+                    st.error(t("eval_mismatch"))
+                elif r["status"] == "expected_behavior":
+                    st.info(t("eval_expected_behavior"))
                 else:
-                    st.info(status_text)
-            with col4:
-                st.caption(t("field_confidence"))
-                if r["confidence"]:
-                    st.markdown(f"{r['confidence']:.0%}")
+                    st.error(t("eval_unexpected_error"))
 
             if r["failure_reason"]:
                 st.caption(r["failure_reason"])
-
-            pi = r.get("provider_info")
-            if pi:
-                st.caption(f"{t('field_provider')}: {pi.get('provider', t('common_n_a'))} | {t('field_model')}: {pi.get('model', t('common_n_a'))} | {t('field_tokens')}: {pi.get('total_tokens', 0)}")
 
     st.markdown("---")
     st.markdown(f"#### {t('eval_summary')}")
 
     total = len(results)
-    successful = len([r for r in results if r["status"] not in ("unexpected_error",)])
-    errors = len(unexpected_errors)
-    matches = len([r for r in valid_results if r["status"] == "match"])
-    valid_count = len(valid_results)
+    matches = len([r for r in results if r["status"] == "match"])
+    mismatches = len([r for r in results if r["status"] == "mismatch"])
+    errors = len([r for r in results if r["status"] == "unexpected_error"])
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric(t("eval_pipeline_success"), f"{successful}/{total}")
-    m2.metric(t("eval_accuracy"), f"{matches}/{valid_count}" if valid_count else "N/A")
-    m3.metric(t("eval_errors"), f"{errors}/{total}")
-    m4.metric(t("eval_expected_failures"), f"{len(expected_failures)}")
+    m1.metric(t("eval_total"), f"{total}")
+    m2.metric(t("eval_matches"), f"{matches}")
+    m3.metric(t("eval_mismatches"), f"{mismatches}")
+    m4.metric(t("eval_errors"), f"{errors}")
 
-    if expected_failures:
-        st.markdown(f"**{t('eval_expected_failures')}:**")
-        for r in expected_failures:
-            st.caption(f"- {r['description']}: {r['failure_reason']}")
-
-    if unexpected_errors:
-        st.markdown(f"**{t('eval_errors')}:**")
-        for r in unexpected_errors:
-            st.error(f"- {r['description']}: {r['error']}")
+    st.info(t("eval_simulated_banner"))
 
     with st.expander(t("eval_limitations")):
-        st.markdown("""
-- MockProvider returns deterministic responses; does not reflect real LLM analysis
-- Only 3 synthetic cases in urban_operations domain
-- No cross-domain evaluation
-- No real-world data
-- Cost estimates are illustrative only (based on default pricing, not actual usage)
-- For accurate evaluation, use OllamaProvider or a cloud provider with real cases
-""")
+        st.markdown(t("eval_limitations_text"))
