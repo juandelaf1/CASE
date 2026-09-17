@@ -684,7 +684,7 @@ CASE/
 
 The academic project presentation is available at:
 
-[`docs/presentation/CASE_AI_Governance.pptx`](docs/presentation/CASE_AI_Governance.pptx)
+[`docs/presentation/CASE_Decision_Architecture.pptx`](docs/presentation/CASE_Decision_Architecture.pptx)
 
 ---
 
