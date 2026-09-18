@@ -54,13 +54,30 @@ def _render_live_tab() -> None:
         unsafe_allow_html=True,
     )
 
+    # Load from Decision Center if available
+    compare_ctx = st.session_state.pop("compare_from_dc", None)
+    default_report = compare_ctx.get("report_text", "") if compare_ctx else ""
+    default_domain = compare_ctx.get("domain", domains[0] if domains else "default") if compare_ctx else (domains[0] if domains else "default")
+    default_urgency = compare_ctx.get("urgency", "MEDIUM") if compare_ctx else "MEDIUM"
+    default_evidence = compare_ctx.get("evidence", []) if compare_ctx else []
+    default_metadata = compare_ctx.get("metadata", {}) if compare_ctx else {}
+    auto_run = compare_ctx is not None
+
+    # Store for comparison API call
+    st.session_state._comparison_evidence = default_evidence
+    st.session_state._comparison_metadata = default_metadata
+
     with st.form("live_comparison_form"):
         col_input, col_providers = st.columns([3, 2])
 
         with col_input:
+            domain_idx = 0
+            if default_domain in domains:
+                domain_idx = domains.index(default_domain)
             domain = st.selectbox(
                 t("triage_domain"),
                 options=domains if domains else ["default"],
+                index=domain_idx,
                 key="live_cmp_domain",
             )
             report_text = st.text_area(
@@ -68,12 +85,31 @@ def _render_live_tab() -> None:
                 height=120,
                 placeholder=t("triage_report_ph"),
                 key="live_cmp_report",
+                value=default_report,
             )
+            urgency_options = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+            urgency_idx = urgency_options.index(default_urgency) if default_urgency in urgency_options else 1
             urgency = st.selectbox(
                 t("triage_urgency"),
-                options=["LOW", "MEDIUM", "HIGH", "CRITICAL"],
-                index=1,
+                options=urgency_options,
+                index=urgency_idx,
                 key="live_cmp_urgency",
+            )
+            # Evidence from Decision Center context
+            evidence = st.text_area(
+                t("field_evidence"),
+                height=60,
+                placeholder="Ej: Standard ARV adult shipment...",
+                key="live_cmp_evidence",
+                value="\n".join(default_evidence) if default_evidence else "",
+            )
+            # Metadata from Decision Center context
+            metadata = st.text_area(
+                t("triage_metadata"),
+                height=60,
+                placeholder='{"key": "value"}',
+                key="live_cmp_metadata",
+                value=str(default_metadata) if default_metadata else "",
             )
 
         with col_providers:
@@ -87,6 +123,10 @@ def _render_live_tab() -> None:
             type="primary",
             use_container_width=True,
         )
+
+    if auto_run and not submitted:
+        submitted = True
+        report_text = default_report
 
     if not submitted:
         return
@@ -107,7 +147,7 @@ def _render_live_tab() -> None:
         st.warning(t("comp_select_at_least_one"))
         return
 
-    _run_live_comparison(report_text, domain, urgency, selected_providers)
+    _run_live_comparison(report_text, domain, urgency, selected_providers, evidence, metadata)
 
 
 def _run_live_comparison(
@@ -115,6 +155,8 @@ def _run_live_comparison(
     domain: str,
     urgency: str,
     providers: list[str],
+    evidence: str,
+    metadata: str,
 ) -> None:
     api_url = st.session_state.get("case_api_url", "http://localhost:8000")
     base = api_url.rstrip("/")
@@ -137,6 +179,8 @@ def _run_live_comparison(
                         "domain": domain,
                         "urgency": urgency,
                         "provider": provider,
+                        "evidence": evidence,
+                        "metadata": metadata,
                     },
                 )
             if resp.status_code in (400, 422):

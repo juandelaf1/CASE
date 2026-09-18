@@ -12,7 +12,7 @@ import streamlit as st
 from streamlit_app.ui.theme import inject_global_css
 
 st.set_page_config(
-    page_title="CASE \u2014 Centro de Decisiones IA",
+    page_title="CASE — Centro de Decisiones IA",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
@@ -20,34 +20,28 @@ st.set_page_config(
 
 inject_global_css()
 
-PAGES = {
-    "operacion": {
-        "decision_center": ("nav_decision_center", "\u2b21"),
-        "triage": ("nav_triage", "\u2697"),
-        "cases": ("nav_cases", "\u2611"),
-        "human_review": ("nav_review", "\u2696"),
-    },
-    "observabilidad": {
-        "control_room": ("nav_control_room", "\u2699"),
-        "audit_trail": ("nav_audit", "\u2630"),
-        "status": ("nav_status", "\u26a1"),
-    },
-    "evaluacion": {
-        "comparison": ("nav_comparison", "\u21c4"),
-        "evaluation": ("nav_evaluation", "\u25b2"),
-        "counterfactual": ("nav_counterfactual", "\u2601"),
-    },
-    "laboratorio": {
-        "provider_lab": ("nav_provider_lab", "\u2697"),
-        "architecture": ("nav_architecture", "\u2302"),
-    },
+PAGES_DEMO: dict[str, tuple[str, str]] = {
+    "decision_center": ("nav_decision_center", "📋"),
+    "triage": ("nav_triage", "⚗"),
+    "comparison": ("nav_comparison", "⇄"),
+    "human_review": ("nav_review", "⚖"),
+    "audit_trail": ("nav_audit", "☰"),
+}
+
+PAGES_TECH: dict[str, tuple[str, str]] = {
+    "cases": ("nav_cases", "☑"),
+    "control_room": ("nav_control_room", "⚙"),
+    "status": ("nav_status", "⚡"),
+    "evaluation": ("nav_evaluation", "▲"),
+    "counterfactual": ("nav_counterfactual", "☁"),
+    "provider_lab": ("nav_provider_lab", "⚗"),
+    "architecture": ("nav_architecture", "⌂"),
 }
 
 ALL_PAGES: dict[str, tuple[str, str]] = {}
-for section_pages in PAGES.values():
-    ALL_PAGES.update(section_pages)
+ALL_PAGES.update(PAGES_DEMO)
+ALL_PAGES.update(PAGES_TECH)
 
-# Banner asset path (relative to repo root)
 _BANNER_PATH = Path(_repo_root) / "docs" / "images" / "CASE_banner.jpg"
 
 
@@ -68,7 +62,7 @@ def _render_sidebar() -> None:
         st.divider()
 
         lang = st.session_state.get("language", "es")
-        lang_options = {"Espa\u00f1ol": "es", "English": "en"}
+        lang_options = {"Español": "es", "English": "en"}
         selected_lang = st.selectbox(
             t("language_label"),
             options=list(lang_options.keys()),
@@ -88,22 +82,31 @@ def _render_sidebar() -> None:
 
         current = st.session_state["current_page"]
 
-        section_labels = {
-            "operacion": "nav_decision_flow",
-            "observabilidad": "nav_operations",
-            "evaluacion": "nav_evaluation_section",
-            "laboratorio": "nav_labs",
-        }
+        # ── GROUP 1: OPERATION / DEMO ──
+        st.markdown(
+            f'<div class="sidebar-nav-section">{t("nav_demo_flow")}</div>',
+            unsafe_allow_html=True,
+        )
+        for key in PAGES_DEMO:
+            label_key, icon = ALL_PAGES[key]
+            is_active = current == key
+            if st.sidebar.button(
+                f"{icon}  {t(label_key)}",
+                key=f"nav_{key}",
+                use_container_width=True,
+                type="primary" if is_active else "secondary",
+            ):
+                st.session_state["current_page"] = key
+                st.rerun()
 
-        for section_key, pages in PAGES.items():
-            st.markdown(
-                f'<div class="sidebar-nav-section">{t(section_labels[section_key])}</div>',
-                unsafe_allow_html=True,
-            )
-            for key in pages:
+        st.divider()
+
+        # ── GROUP 2: TECHNICAL / ENGINEERING (collapsed expander) ──
+        with st.expander(t("nav_technical"), expanded=False):
+            for key in PAGES_TECH:
                 label_key, icon = ALL_PAGES[key]
                 is_active = current == key
-                if st.sidebar.button(
+                if st.button(
                     f"{icon}  {t(label_key)}",
                     key=f"nav_{key}",
                     use_container_width=True,
@@ -111,7 +114,8 @@ def _render_sidebar() -> None:
                 ):
                     st.session_state["current_page"] = key
                     st.rerun()
-            st.divider()
+
+        st.divider()
 
         api_url = st.text_input(
             "API URL",

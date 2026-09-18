@@ -11,6 +11,8 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "language_label": "Language",
 
         # Sidebar
+        "nav_demo_flow": "OPERATION / DEMO",
+        "nav_technical": "TECHNICAL / ENGINEERING",
         "nav_decision_flow": "Decision Flow",
         "nav_operations": "Operations",
         "nav_evaluation_section": "Evaluation",
@@ -105,7 +107,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "cases_view_details": "View Details",
         "cases_loading_detail": "Loading case detail...",
         "cases_reason": "Reason",
-        "cases_human_override": "HUMAN OVERRIDE",
+        "cases_human_override": "Human Review",
         "cases_audit_trail": "Audit Trail ({count} events)",
 
         # Human Review
@@ -368,7 +370,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "sec_validation": "VALIDATION",
         "sec_model_proposal": "MODEL PROPOSAL",
         "sec_case_decision": "CASE DECISION",
-        "sec_human_override": "HUMAN OVERRIDE",
+        "sec_human_override": "Human Review",
 
         # Fields
         "field_action": "Action",
@@ -386,6 +388,9 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "field_model": "Model",
         "field_tokens": "Tokens",
         "field_latency": "Latency",
+        "field_product": "Producto",
+        "field_origen": "Origen",
+        "field_transporte": "Transporte",
         "field_finish_reason": "Finish Reason",
         "field_actor": "Actor",
         "field_justification": "Justification",
@@ -396,6 +401,65 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "offline_title": "Backend Unavailable",
         "offline_desc": "CASE API is not reachable at {url}. Start the API and retry.",
         "offline_start_api": "Start the API with: uvicorn case_api.api.v1.app:app",
+
+        # Decision Center — Result Sections
+        "dc_result_decision": "Decision",
+        "dc_result_urgency": "Urgency",
+        "dc_result_confidence": "Confidence",
+        "dc_result_risk": "Risk Level",
+        "dc_summary": "Summary",
+        "dc_rationale": "Reasoning",
+        "dc_factors": "Key Factors",
+        "dc_how_case_decided": "How CASE reached this decision",
+        "dc_react_title": "Analysis Trace",
+        "dc_react_explain": "Before consulting the LLM, CASE runs structured pre-checks to assess evidence, urgency, and domain compliance.",
+        "dc_validation_title": "Response Validation",
+        "dc_validation_explain": "CASE does not accept raw model output. The response is validated before becoming a CASE decision.",
+        "dc_model_title": "Model Used",
+        "dc_model_provider": "Provider",
+        "dc_model_model": "Model",
+        "dc_model_tokens_in": "Input Tokens",
+        "dc_model_tokens_out": "Output Tokens",
+        "dc_model_tokens_total": "Total Tokens",
+        "dc_model_latency": "Latency",
+        "dc_model_cost": "Estimated Cost",
+        "dc_model_finish": "Finish Reason",
+        "dc_compare_case": "Compare this case",
+        "dc_no_summary": "No summary available.",
+        "dc_no_rationale": "No detailed reasoning recorded.",
+        "dc_no_factors": "No factors recorded.",
+        "dc_no_react": "No analysis trace recorded.",
+        "dc_validation_pass": "Validation passed",
+        "dc_validation_detail": "The model response is validated before becoming a CASE decision.",
+        "dc_system_status": "System Status",
+        "dc_api_status": "API",
+        "dc_db_status": "Database",
+        "dc_provider_status": "Provider",
+
+        # React Trace Labels
+        "react_CHECK_EVIDENCE": "Evidence check",
+        "react_CHECK_URGENCY": "Urgency assessment",
+        "react_CHECK_DOMAIN": "Domain validation",
+        "react_CHECK_RISK": "Risk evaluation",
+        "react_DEFAULT": "Analysis step",
+
+        # Domain Labels
+        "domain_logistics": "Logistics",
+        "domain_urban_operations": "Urban Operations",
+        "domain_infrastructure": "Infrastructure",
+        "domain_default": "General",
+
+        # Audit Event Translations
+        "event_CASE_RECEIVED": "Case received",
+        "event_AI_GENERATED": "AI analysis generated",
+        "event_AUTOMATION_ASSESSED": "Automation assessed",
+        "event_AUTO_APPROVED": "Automatically approved",
+        "event_HUMAN_REVIEW": "Sent to human review",
+        "event_HUMAN_APPROVED": "Operator approved",
+        "event_HUMAN_REJECTED": "Operator rejected",
+        "event_HUMAN_ESCALATED": "Escalated to supervisor",
+        "event_HUMAN_MODIFIED": "Operator modified decision",
+        "event_FINAL_DECISION": "Final decision recorded",
 
         # Common
         "common_n_a": "N/A",
@@ -410,6 +474,8 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "language_label": "Idioma",
 
         # Sidebar
+        "nav_demo_flow": "OPERACIÓN / DEMO",
+        "nav_technical": "TÉCNICO / INGENIERÍA",
         "nav_decision_flow": "Flujo de Decisi\u00f3n",
         "nav_operations": "Observabilidad",
         "nav_evaluation_section": "Evaluaci\u00f3n",
@@ -446,7 +512,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "dc_evidence_desc": "La evidencia es la informaci\u00f3n disponible para CASE al evaluar la propuesta.",
         "dc_model_perf": "Modelo y Rendimiento",
         "dc_latency_desc": "Latencia del proveedor = tiempo de llamada al LLM. Tiempo de procesamiento = tiempo total del pipeline CASE.",
-        "dc_human_override": "Anulaci\u00f3n Humana",
+        "dc_human_override": "Revisión Humana",
         "dc_technical": "Detalles T\u00e9cnicos",
         "dc_select_case_demo": "Casos de Demostraci\u00f3n",
         "dc_custom_case": "Analizar un Caso Personalizado",
@@ -504,7 +570,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "cases_view_details": "Ver Detalles",
         "cases_loading_detail": "Cargando detalle del caso...",
         "cases_reason": "Raz\u00f3n",
-        "cases_human_override": "ANULACI\u00d3N HUMANA",
+        "cases_human_override": "Revisión Humana",
         "cases_audit_trail": "Cadena de Auditor\u00eda ({count} eventos)",
 
         # Human Review
@@ -767,7 +833,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "sec_validation": "VALIDACI\u00d3N",
         "sec_model_proposal": "PROPUESTA DEL MODELO",
         "sec_case_decision": "DECISI\u00d3N CASE",
-        "sec_human_override": "ANULACI\u00d3N HUMANA",
+        "sec_human_override": "Revisión Humana",
 
         # Fields
         "field_action": "Acci\u00f3n",
@@ -796,9 +862,68 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "offline_desc": "La API de CASE no es alcanzable en {url}. Inicie la API y reintente.",
         "offline_start_api": "Inicie la API con: uvicorn case_api.api.v1.app:app",
 
+        # Decision Center — Result Sections
+        "dc_result_decision": "Decisión",
+        "dc_result_urgency": "Urgencia",
+        "dc_result_confidence": "Confianza",
+        "dc_result_risk": "Nivel de Riesgo",
+        "dc_summary": "Resumen",
+        "dc_rationale": "Razonamiento",
+        "dc_factors": "Factores Clave",
+        "dc_how_case_decided": "Cómo llegó CASE a esta propuesta",
+        "dc_react_title": "Trazabilidad del Análisis",
+        "dc_react_explain": "Antes de consultar al LLM, CASE ejecuta pre-validaciones estructuradas para evaluar evidencia, urgencia y cumplimiento del dominio.",
+        "dc_validation_title": "Validación de la Respuesta",
+        "dc_validation_explain": "CASE no acepta la salida bruta del modelo. La respuesta se valida antes de convertirse en una decisión CASE.",
+        "dc_model_title": "Modelo Utilizado",
+        "dc_model_provider": "Proveedor",
+        "dc_model_model": "Modelo",
+        "dc_model_tokens_in": "Tokens de Entrada",
+        "dc_model_tokens_out": "Tokens de Salida",
+        "dc_model_tokens_total": "Tokens Totales",
+        "dc_model_latency": "Latencia",
+        "dc_model_cost": "Coste Estimado",
+        "dc_model_finish": "Razón de Finalización",
+        "dc_compare_case": "Comparar este caso",
+        "dc_no_summary": "No hay resumen disponible.",
+        "dc_no_rationale": "No se registró razonamiento detallado.",
+        "dc_no_factors": "No se registraron factores.",
+        "dc_no_react": "No se registró trazabilidad del análisis.",
+        "dc_validation_pass": "Validación aprobada",
+        "dc_validation_detail": "La respuesta del modelo se valida antes de convertirse en una decisión CASE.",
+        "dc_system_status": "Estado del Sistema",
+        "dc_api_status": "API",
+        "dc_db_status": "Base de Datos",
+        "dc_provider_status": "Proveedor",
+
+        # React Trace Labels
+        "react_CHECK_EVIDENCE": "Comprobación de evidencia",
+        "react_CHECK_URGENCY": "Evaluación de urgencia",
+        "react_CHECK_DOMAIN": "Validación del dominio",
+        "react_CHECK_RISK": "Evaluación de riesgo",
+        "react_DEFAULT": "Paso de análisis",
+
+        # Domain Labels
+        "domain_logistics": "Logística",
+        "domain_urban_operations": "Operaciones Urbanas",
+        "domain_infrastructure": "Infraestructura",
+        "domain_default": "General",
+
+        # Audit Event Translations
+        "event_CASE_RECEIVED": "Incidencia recibida",
+        "event_AI_GENERATED": "Análisis IA generado",
+        "event_AUTOMATION_ASSESSED": "Automatización evaluada",
+        "event_AUTO_APPROVED": "Aprobación automática",
+        "event_HUMAN_REVIEW": "Enviado a revisión humana",
+        "event_HUMAN_APPROVED": "Operador aprobó la decisión",
+        "event_HUMAN_REJECTED": "Operador rechazó la decisión",
+        "event_HUMAN_ESCALATED": "Escalado a supervisor",
+        "event_HUMAN_MODIFIED": "Operador modificó la decisión",
+        "event_FINAL_DECISION": "Decisión final registrada",
+
         # Common
-        "common_n_a": "N/D",
-        "common_error": "Ocurri\u00f3 un error",
+        "common_n_a": "No disponible",
+        "common_error": "Ocurrió un error",
         "common_retry": "Reintentar",
     },
 }

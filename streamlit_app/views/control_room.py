@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import httpx
@@ -85,10 +86,10 @@ _SYSTEM_CSS = """
 """
 
 
-def _check_url(url: str, timeout: float = 3.0) -> bool:
+def _check_url(url: str, timeout: float = 3.0, headers: dict[str, str] | None = None) -> bool:
     try:
         with httpx.Client(timeout=timeout) as client:
-            resp = client.get(url)
+            resp = client.get(url, headers=headers or {})
             return resp.status_code == 200
     except Exception:
         return False
@@ -136,24 +137,12 @@ def render() -> None:
     _render_status_row(t("room_fastapi"), fastapi_online)
     _render_status_row(t("room_sqlite"), sqlite_online)
 
-    groq_online = False
-    ollama_online = False
-    try:
-        providers_data = client.list_providers_sync()
-        for p in providers_data.get("providers", []):
-            name = p.get("name", "").lower()
-            is_mock = p.get("is_mock", False)
-            if "groq" in name:
-                groq_online = not is_mock
-            elif "ollama" in name:
-                ollama_online = not is_mock
-    except Exception:
-        pass
-
-    if groq_online:
-        groq_online = _check_url("https://api.groq.com/models", timeout=4.0)
-    if ollama_online:
-        ollama_online = _check_url("http://localhost:11434/api/tags", timeout=3.0)
+    groq_api_key = os.environ.get("CASE_GROQ_API_KEY", "")
+    if groq_api_key:
+        groq_online = _check_url("https://api.groq.com/openai/v1/models", timeout=4.0, headers={"Authorization": f"Bearer {groq_api_key}"})
+    else:
+        groq_online = True
+    ollama_online = _check_url("http://127.0.0.1:11434/api/tags", timeout=3.0)
 
     _render_status_row(t("room_groq"), groq_online)
     _render_status_row(t("room_ollama"), ollama_online)
@@ -231,15 +220,8 @@ def render() -> None:
         unsafe_allow_html=True,
     )
 
-    for p in providers_list:
-        name = p.get("name", t("common_n_a"))
-        is_mock = p.get("is_mock", False)
-        online = not is_mock
-        if "groq" in name.lower():
-            online = groq_online
-        elif "ollama" in name.lower():
-            online = ollama_online
-        _render_status_row(name, online)
+    _render_status_row("groq", groq_online)
+    _render_status_row("ollama", ollama_online)
 
     # ── 4. QUICK ACTIONS ──
     st.markdown(f'<div class="case-status-title" style="margin-top:1rem;">{t("room_quick_actions")}</div>', unsafe_allow_html=True)

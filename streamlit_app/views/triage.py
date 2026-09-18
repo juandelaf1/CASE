@@ -30,11 +30,7 @@ _LIFECYCLE_LABELS: dict[str, str] = {
     "escalated": "ESCALADO",
 }
 
-_PROVIDER_MODELS: dict[str, str] = {
-    "Groq": "llama-3.3-70b-versatile",
-    "Ollama": "llama3.2",
-    "Mock": "mock-deterministic",
-}
+
 
 
 def render() -> None:
@@ -68,16 +64,12 @@ def render() -> None:
 def _render_submit(client: CASEClient, domains: list[str]) -> None:
     st.markdown(f"#### {t('triage_new')}")
 
-    provider_name = st.radio(
-        "Proveedor",
-        options=["Groq", "Ollama", "Mock"],
-        horizontal=True,
-        key="triage_provider_radio",
-    )
-    model_name = _PROVIDER_MODELS.get(provider_name, t("common_n_a"))
+    provider_info = st.session_state.get("active_provider", {})
+    provider_name = provider_info.get("name", "unknown")
+    model_name = provider_info.get("model", t("common_n_a"))
     st.markdown(
         f'<div class="case-provider-badge">'
-        f'\u25cf Modelo: <strong>{model_name}</strong>'
+        f'● Proveedor: <strong>{provider_name.upper()}</strong> · Modelo: <strong>{model_name}</strong>'
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -92,9 +84,12 @@ def _render_submit(client: CASEClient, domains: list[str]) -> None:
                 placeholder=t("triage_report_ph"),
             )
         with col2:
+            # Force logistics domain for demo — technical domains (urban_operations, infrastructure)
+            # are available in Technical / Engineering section only
             domain = st.selectbox(
                 t("triage_domain"),
-                options=domains if domains else ["default"],
+                options=["logistics"] + (domains if domains else []),
+                index=0,
             )
             urgency = st.selectbox(
                 t("triage_urgency"),

@@ -9,14 +9,9 @@ from streamlit_app.client import CASEClient
 from streamlit_app.components.state import get_client
 from streamlit_app.i18n import t
 from streamlit_app.ui.components import (
-    render_action_badge,
     render_backend_offline,
-    render_confidence,
     render_empty_state,
     render_field_row,
-    render_pipeline_visual,
-    render_section_close,
-    render_section_header,
 )
 
 DEMO_CASES: dict[str, dict[str, Any]] = {
@@ -134,15 +129,31 @@ def _get_pending_count(client: CASEClient) -> int:
         return 0
 
 
+def _get_system_status(client: CASEClient) -> dict[str, str]:
+    status = {"api": "❌", "db": "❌", "provider": "—"}
+    try:
+        health = client.health_sync()
+        if health.get("status") == "ok":
+            status["api"] = "✅"
+            status["db"] = "✅"
+    except Exception:
+        pass
+    try:
+        data = client.list_providers_sync()
+        active = data.get("active_provider", "unknown")
+        status["provider"] = active.upper()
+    except Exception:
+        pass
+    return status
+
+
 def render() -> None:
     client = get_client()
     provider = _get_active_provider(client)
     st.session_state["active_provider"] = provider
 
     _render_hero()
-    _render_pipeline_visual()
-    st.markdown("---")
-    _render_provider_status(provider)
+    _render_system_status(client)
     st.markdown("---")
     _render_case_selection(client, provider)
     _render_pending_link(client)
@@ -151,7 +162,7 @@ def render() -> None:
 def _render_hero() -> None:
     st.markdown(
         '<div class="case-hero">'
-        f'<div class="case-hero-title">{t("dc_hero_title")}</div>'
+        f'<div class="case-hero-title">CASE</div>'
         f'<div class="case-hero-subtitle">{t("dc_hero_subtitle")}</div>'
         f'<div class="case-hero-desc">{t("dc_hero_desc")}</div>'
         f'<div class="case-hero-tagline">{t("app_principle")}</div>'
@@ -160,54 +171,14 @@ def _render_hero() -> None:
     )
 
 
-def _render_pipeline_visual() -> None:
-    steps = [
-        (t("pipe_input"), "1", "#1a7a7a"),
-        (t("pipe_ai"), "2", "#1a7a7a"),
-        (t("pipe_reliability"), "3", "#1a7a7a"),
-        (t("pipe_risk"), "4", "#1a7a7a"),
-        (t("pipe_decision"), "5", "#1a7a7a"),
-        (t("pipe_human"), "6", "#a06800"),
-        (t("pipe_audit"), "7", "#555a68"),
-    ]
-    render_pipeline_visual(steps)
-
-
-def _render_provider_status(provider: dict[str, Any]) -> None:
-    provider_name = provider.get("name", "unknown")
-    provider_model = provider.get("model", "unknown")
-    is_mock = provider.get("is_mock", True)
-
-    if provider_name == "unknown":
-        status_label = t("common_n_a")
-        status_color = "#8b90a0"
-    elif is_mock:
-        status_label = t("dc_provider_demo")
-        status_color = "#a06800"
-    else:
-        status_label = t("dc_provider_live", model=provider_model)
-        status_color = "#1a7a4a"
-
+def _render_system_status(client: CASEClient) -> None:
+    status = _get_system_status(client)
     st.markdown(
-        f'<div style="display:flex; align-items:center; gap:1rem; padding:0.8rem 1.2rem; '
-        f'background:var(--bg-surface); border:1px solid var(--border); border-radius:10px;">'
-        f'<div style="width:10px; height:10px; border-radius:50%; background:{status_color}; flex-shrink:0;"></div>'
-        f'<div style="flex:1;">'
-        f'<div style="font-size:0.82rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:600;">'
-        f'{t("field_provider")}</div>'
-        f'<div style="font-size:1.1rem; font-weight:700; color:var(--text-primary);">'
-        f'{provider_name.upper()}</div>'
-        f'</div>'
-        f'<div style="flex:1;">'
-        f'<div style="font-size:0.82rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:600;">'
-        f'{t("field_model")}</div>'
-        f'<div style="font-size:1.0rem; color:var(--text-secondary);">'
-        f'{provider_model}</div>'
-        f'</div>'
-        f'<div style="flex-shrink:0; padding:0.25rem 0.75rem; border-radius:9999px; '
-        f'font-size:0.82rem; font-weight:700; letter-spacing:0.04em; '
-        f'background:{status_color}12; color:{status_color};">'
-        f'{status_label.upper()}</div>'
+        f'<div style="display:flex; align-items:center; justify-content:center; gap:2rem; '
+        f'padding:0.6rem 1.2rem; font-size:0.82rem; color:var(--text-muted);">'
+        f'<span>{t("dc_api_status")}: {status["api"]}</span>'
+        f'<span>{t("dc_db_status")}: {status["db"]}</span>'
+        f'<span>{t("dc_provider_status")}: <strong>{status["provider"]}</strong></span>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -215,7 +186,6 @@ def _render_provider_status(provider: dict[str, Any]) -> None:
 
 def _render_case_selection(client: CASEClient, provider: dict[str, Any]) -> None:
     st.markdown(f"#### {t('dc_select_case')}")
-
     st.markdown(
         f'<div style="font-size:0.82rem; text-transform:uppercase; letter-spacing:0.06em; '
         f'color:var(--text-muted); font-weight:700; margin-bottom:0.8rem;">'
@@ -241,10 +211,10 @@ def _render_case_selection(client: CASEClient, provider: dict[str, Any]) -> None
             st.markdown(
                 f'<div class="{card_class}">'
                 f'<div class="case-selector-label">{t(info["label_key"])}</div>'
-                f'<div class="case-selector-id">ID: CASE-{info["id"]}</div>'
+                f'<div class="case-selector-id">CASE-{info["id"]}</div>'
                 f'<div class="case-selector-meta">'
                 f'{t(info["short_key"])}<br>'
-                f'{info["transport"]} \u00b7 {info["domain"]}'
+                f'{info["transport"]} · {info["domain"]}'
                 f'</div>'
                 f'<div style="margin-top:0.5rem;">'
                 f'<span class="case-badge {urgency_badge_cls}">{urgency}</span>'
@@ -266,14 +236,15 @@ def _render_case_selection(client: CASEClient, provider: dict[str, Any]) -> None
 
     if selected_case and selected_case in DEMO_CASES:
         info = DEMO_CASES[selected_case]
-        with st.expander(f"{t(info['label_key'])} \u2014 {t('cases_view_details')}", expanded=False):
+        with st.expander(f"{t(info['label_key'])} — {t('cases_view_details')}", expanded=False):
             c1, c2 = st.columns(2)
             with c1:
                 render_field_row(t("triage_case_id"), f"CASE-{info['id']}")
                 render_field_row(t("triage_domain"), info["domain"])
-                render_field_row(t("field_model"), info["product"])
+                render_field_row(t("field_product"), info["product"])
             with c2:
-                render_field_row(t("field_provider"), info["origin"])
+                render_field_row(t("field_transporte"), info.get("transport", "Camión"))
+                render_field_row(t("field_origen"), info["origin"])
                 render_field_row(t("field_urgency"), info.get("urgency", "MEDIUM"))
                 if "destination" in info:
                     render_field_row(t("field_reason"), info["destination"])
@@ -283,7 +254,7 @@ def _render_case_selection(client: CASEClient, provider: dict[str, Any]) -> None
         col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 1])
         with col_btn1:
             if st.button(
-                f"\u25b6  {t('dc_analyze')}",
+                f"▶  {t('dc_analyze')}",
                 key="run_case",
                 type="primary",
                 use_container_width=True,
@@ -316,7 +287,7 @@ def _render_case_selection(client: CASEClient, provider: dict[str, Any]) -> None
         unsafe_allow_html=True,
     )
     if st.button(
-        f"\u2795  {t('dc_custom_case')}",
+        f"➕  {t('dc_custom_case')}",
         key="custom_case_link",
         use_container_width=True,
     ):
@@ -331,7 +302,7 @@ def _render_pending_link(client: CASEClient) -> None:
         st.markdown(
             f'<div style="display:flex; align-items:center; gap:0.75rem; padding:0.8rem 1.2rem; '
             f'background:var(--color-amber-bg); border:1px solid var(--color-amber-border); border-radius:10px;">'
-            f'<div style="font-size:1.3rem;">\u2696</div>'
+            f'<div style="font-size:1.3rem;">⚖</div>'
             f'<div style="flex:1;">'
             f'<div style="font-size:0.95rem; font-weight:700; color:var(--color-amber);">'
             f'{count} {t("review_pending")}</div>'
@@ -404,8 +375,10 @@ def _render_result(data: dict[str, Any]) -> None:
     lifecycle = data.get("lifecycle", "ai_proposed")
     confidence = data.get("confidence", 0)
     urgency = data.get("urgency", t("common_n_a"))
-    reason = data.get("reason", "")
-    processing_time = data.get("processing_time_ms", 0)
+    risk_level = t("common_n_a")
+    automation = data.get("automation_assessment", {})
+    if automation:
+        risk_level = automation.get("risk_level", t("common_n_a"))
 
     action_class_map = {
         "approve": "case-decision-hero-approve",
@@ -422,47 +395,68 @@ def _render_result(data: dict[str, Any]) -> None:
         unsafe_allow_html=True,
     )
 
+    # ── KEY METRICS ROW ──
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric(t("dc_result_decision"), action.upper())
+    with col2:
+        st.metric(t("dc_result_urgency"), urgency)
+    with col3:
+        st.metric(t("dc_result_confidence"), f"{confidence:.0%}")
+    with col4:
+        st.metric(t("dc_result_risk"), risk_level)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── SUMMARY ──
+    summary = data.get("summary", "")
+    if summary:
+        st.markdown(f"**{t('dc_summary')}**")
+        st.markdown(f'<div style="font-size:1.05rem; color:var(--text-primary); padding:0.5rem 0;">{summary}</div>', unsafe_allow_html=True)
+
+    # ── WHY? ──
+    reason = data.get("reason", "")
     if reason:
-        st.markdown(f"**{t('dc_why')}** {reason}")
+        st.markdown(f"**{t('dc_why')}**")
+        st.markdown(f'<div style="font-size:0.95rem; color:var(--text-secondary); padding:0.3rem 0;">{reason}</div>', unsafe_allow_html=True)
+
+    # ── RATIONALE ──
+    rationale = data.get("decision_rationale", "")
+    if rationale:
+        st.markdown(f"**{t('dc_rationale')}**")
+        st.markdown(f'<div style="font-size:0.92rem; color:var(--text-secondary); padding:0.3rem 0; line-height:1.6;">{rationale}</div>', unsafe_allow_html=True)
+
+    # ── FACTORS ──
+    factors = data.get("decision_factors", [])
+    if factors:
+        st.markdown(f"**{t('dc_factors')}**")
+        for factor in factors:
+            st.markdown(f'<div style="font-size:0.92rem; color:var(--text-secondary); padding:0.15rem 0;">• {factor}</div>', unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    col_risk, col_urgency, col_confidence, col_time = st.columns(4)
-    with col_risk:
-        automation = data.get("automation_assessment", {})
-        risk_level = automation.get("risk_level", t("common_n_a"))
-        st.metric(t("field_risk_level"), risk_level)
-    with col_urgency:
-        st.metric(t("field_urgency"), urgency)
-    with col_confidence:
-        st.metric(t("field_confidence"), f"{confidence:.0%}")
-    with col_time:
-        st.metric(t("field_processing_time"), f"{processing_time:.0f} ms")
+    # ── HOW CASE REACHED THIS ──
+    _render_react_trace(data)
+
+    # ── VALIDATION ──
+    _render_validation(data)
+
+    # ── MODEL INFO ──
+    _render_model_info(data, data.get("processing_time_ms", 0))
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    _render_ai_proposal(data)
-    render_down_arrow()
-    _render_case_governance(data)
-    render_down_arrow()
-    _render_final_decision(data)
-
-    _render_educational_note()
-    _render_provider_telemetry(data, processing_time)
-
-    human_override = data.get("human_override")
-    if human_override:
-        st.markdown("<br>", unsafe_allow_html=True)
-        with st.expander(t("dc_human_override"), expanded=True):
-            c1, c2 = st.columns(2)
-            with c1:
-                render_field_row(t("field_actor"), human_override.get("actor", t("common_n_a")))
-                render_field_row(t("field_justification"), human_override.get("justification", t("common_n_a")))
-            with c2:
-                render_field_row(t("field_original_action"), human_override.get("original_action", t("common_n_a")))
-                render_field_row(t("field_original_urgency"), human_override.get("original_urgency", t("common_n_a")))
-
-    col_audit, col_cases = st.columns(2)
+    # ── ACTION BUTTONS ──
+    col_compare, col_audit, col_cases = st.columns([2, 1, 1])
+    with col_compare:
+        if st.button(f"🔬  {t('dc_compare_case')}", key="compare_this_case", use_container_width=True, type="primary"):
+            st.session_state["compare_from_dc"] = {
+                "report_text": f"Case {data.get('case_id', '')}: {reason}",
+                "domain": data.get("domain", "logistics"),
+                "urgency": urgency,
+            }
+            st.session_state["current_page"] = "comparison"
+            st.rerun()
     with col_audit:
         if st.button(t("dc_view_audit"), key="result_view_audit", use_container_width=True):
             st.session_state["current_page"] = "audit_trail"
@@ -472,113 +466,104 @@ def _render_result(data: dict[str, Any]) -> None:
             st.session_state["current_page"] = "cases"
             st.rerun()
 
+    # ── TECHNICAL JSON ──
     with st.expander(t("dc_technical"), expanded=False):
         st.json(data)
 
 
-def _render_ai_proposal(data: dict[str, Any]) -> None:
-    original_ai = data.get("original_ai_proposal")
-    render_section_header(t("sec_ai_proposal"), "", "case-section-proposal")
+def _render_react_trace(data: dict[str, Any]) -> None:
+    st.markdown(f"**{t('dc_how_case_decided')}**")
 
-    if original_ai:
-        render_field_row(t("field_action"), original_ai.get("action", t("common_n_a")))
-        render_field_row(t("field_urgency"), original_ai.get("urgency", t("common_n_a")))
-        render_field_row(t("field_reason"), original_ai.get("reason", t("common_n_a"))[:200])
-        conf = original_ai.get("confidence")
-        if conf is not None:
-            render_field_row(t("field_confidence"), "")
-            render_confidence(conf)
-    else:
-        st.caption(t("dc_no_proposal"))
-
-    render_section_close()
-
-
-def _render_case_governance(data: dict[str, Any]) -> None:
-    render_section_header(t("sec_case_governance"), "", "case-section-governance")
-
-    render_field_row(t("field_reliability"), t("dc_validation_desc"))
-    automation = data.get("automation_assessment", {})
-    if automation:
-        render_field_row(t("field_risk_level"), automation.get("risk_level", t("common_n_a")))
-        render_field_row(t("field_automation"), automation.get("automation_decision", t("common_n_a")))
-        factors = automation.get("factors", [])
-        if factors:
-            render_field_row(t("field_factors"), ", ".join(factors))
-
-    st.markdown(
-        f'<div class="case-section-educational">'
-        f'<p>{t("dc_reliability_desc")}</p>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-    render_section_close()
-
-
-def _render_final_decision(data: dict[str, Any]) -> None:
-    render_section_header(t("sec_final_decision"), "", "case-section-decision")
-
-    action = data.get("action", t("common_n_a"))
-    lifecycle = data.get("lifecycle", t("common_n_a"))
-
-    render_action_badge(action)
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    render_field_row(t("field_action"), action)
-    render_field_row(t("field_lifecycle"), lifecycle.replace("_", " ").upper())
-    render_field_row(t("field_urgency"), data.get("urgency", t("common_n_a")))
-
-    conf = data.get("confidence")
-    if conf is not None:
-        render_field_row(t("field_confidence"), "")
-        render_confidence(conf)
-
-    st.markdown(
-        f'<div class="case-section-educational">'
-        f'<p>{t("dc_final_desc")}</p>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-    render_section_close()
-
-
-def _render_educational_note() -> None:
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="case-section-educational">'
-        f'<p>{t("dc_proposal_vs_governance")}</p>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-
-def _render_provider_telemetry(data: dict[str, Any], processing_time: float) -> None:
-    provider_info = data.get("provider_info")
-    if not provider_info:
+    react_trace = data.get("react_trace")
+    if not react_trace:
+        st.caption(t("dc_no_react"))
         return
-    st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander(t("dc_model_perf"), expanded=False):
-        c1, c2 = st.columns(2)
-        with c1:
-            render_field_row(t("field_provider"), provider_info.get("provider", t("common_n_a")))
-            render_field_row(t("field_model"), provider_info.get("model", t("common_n_a")))
-            render_field_row(
-                t("field_tokens"),
-                f"{provider_info.get('total_tokens', 0)} "
-                f"(prompt: {provider_info.get('prompt_tokens', 0)}, "
-                f"completion: {provider_info.get('completion_tokens', 0)})",
+
+    st.markdown(
+        f'<div class="case-section-educational">'
+        f'<p>{t("dc_react_explain")}</p>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    steps = react_trace.get("steps", [])
+    if steps:
+        for step in steps:
+            step_name = step.get("step", "")
+            observation = step.get("observation", "")
+            label_key = f"react_{step_name}"
+            label = t(label_key) if t(label_key) != label_key else step_name
+            st.markdown(
+                f'<div style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.5rem 0; '
+                f'border-bottom:1px solid var(--border);">'
+                f'<div style="width:8px; height:8px; border-radius:50%; background:var(--brand-teal); '
+                f'margin-top:6px; flex-shrink:0;"></div>'
+                f'<div>'
+                f'<div style="font-size:0.92rem; font-weight:600; color:var(--text-primary);">{label}</div>'
+                f'<div style="font-size:0.85rem; color:var(--text-muted);">{observation}</div>'
+                f'</div>'
+                f'</div>',
+                unsafe_allow_html=True,
             )
-        with c2:
-            render_field_row(t("field_latency"), f"{provider_info.get('latency_ms', 0):.1f} ms")
-            render_field_row(t("field_finish_reason"), provider_info.get("finish_reason", t("common_n_a")))
-            render_field_row(t("field_processing_time"), f"{processing_time:.1f} ms")
+
+    react_summary = react_trace.get("summary", "")
+    if react_summary:
         st.markdown(
-            f'<div class="case-section-educational">'
-            f'<p>{t("dc_latency_desc")}</p>'
-            f'</div>',
+            f'<div style="font-size:0.88rem; color:var(--text-muted); font-style:italic; padding:0.5rem 0;">'
+            f'{react_summary}</div>',
             unsafe_allow_html=True,
         )
 
 
-def render_down_arrow() -> None:
-    st.markdown('<div class="case-flow-connector">\u2193</div>', unsafe_allow_html=True)
+def _render_validation(data: dict[str, Any]) -> None:
+    st.markdown(f"**{t('dc_validation_title')}**")
+    st.markdown(
+        f'<div class="case-section-educational">'
+        f'<p>{t("dc_validation_explain")}</p>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    automation = data.get("automation_assessment", {})
+    if automation:
+        validation_status = automation.get("validation_status", "")
+        evidence_quality = automation.get("evidence_quality", "")
+        items = []
+        if validation_status:
+            items.append(f"✓ {t('dc_validation_pass')}" if validation_status == "valid" else f"⚠ {validation_status}")
+        if evidence_quality:
+            items.append(f"✓ Evidencia: {evidence_quality}")
+        requires_hitl = automation.get("requires_hitl", False)
+        if requires_hitl:
+            items.append("⚠ Requiere supervisión humana")
+        for item in items:
+            st.markdown(f'<div style="font-size:0.92rem; color:var(--text-secondary); padding:0.15rem 0;">{item}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(
+            '<div style="font-size:0.92rem; color:var(--text-secondary); padding:0.3rem 0;">'
+            f'{t("dc_validation_detail")}</div>',
+            unsafe_allow_html=True,
+        )
+
+
+def _render_model_info(data: dict[str, Any], processing_time: float) -> None:
+    provider_info = data.get("provider_info")
+    if not provider_info:
+        return
+
+    with st.expander(t("dc_model_title"), expanded=False):
+        c1, c2 = st.columns(2)
+        with c1:
+            render_field_row(t("dc_model_provider"), provider_info.get("provider", t("common_n_a")))
+            render_field_row(t("dc_model_model"), provider_info.get("model", t("common_n_a")))
+            render_field_row(t("dc_model_tokens_in"), str(provider_info.get("prompt_tokens", 0)))
+            render_field_row(t("dc_model_tokens_out"), str(provider_info.get("completion_tokens", 0)))
+        with c2:
+            render_field_row(t("dc_model_tokens_total"), str(provider_info.get("total_tokens", 0)))
+            render_field_row(t("dc_model_latency"), f"{provider_info.get('latency_ms', 0):.1f} ms")
+            render_field_row(t("field_processing_time"), f"{processing_time:.1f} ms")
+            render_field_row(t("dc_model_finish"), provider_info.get("finish_reason", t("common_n_a")))
+
+        cost = data.get("cost")
+        if cost:
+            render_field_row(t("dc_model_cost"), str(cost))
