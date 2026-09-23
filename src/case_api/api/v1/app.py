@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
+from case_api.api.v1.auth import APIKeyAuthMiddleware
 from case_core.composition import create_app_dependencies
 from case_core.contracts.audit import AuditEvent
 from case_core.contracts.decision import HumanOverride
@@ -18,6 +19,8 @@ app = FastAPI(
     version=VERSION,
     description="Domain-agnostic AI Decision Platform for operational case triage",
 )
+
+app.add_middleware(APIKeyAuthMiddleware)
 
 _deps = create_app_dependencies()
 engine = _deps.engine

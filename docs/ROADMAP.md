@@ -1,6 +1,6 @@
 # CASE Roadmap
 
-> Strategic and technical roadmap. Last verified: 2026-09-14.
+> Strategic and technical roadmap. Last verified: 2026-09-23.
 > Source of truth for planning, priorities, and phases.
 
 ---
@@ -53,13 +53,13 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform that transform
 ```
 Streamlit (display only)
    ↓
-FastAPI (HTTP adapter, 11 endpoints)
+FastAPI (HTTP adapter, 11 endpoints + APIKeyAuthMiddleware)
    ↓
 composition.py (dependency wiring)
    ↓
 TriageEngine (application layer orchestrator)
    ↓
-DomainRegistry → DomainPolicy (3 registered domains)
+DomainRegistry → DomainPolicy (4 registered domains)
    ↓
 PromptBuilder → LLMProvider (via port)
    ↓
@@ -84,14 +84,19 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 |-----------|--------|----------|
 | Contracts (Pydantic v2) | CONNECTED | 9 contract files |
 | Ports (ABC interfaces) | CONNECTED | 6 ports |
-| DomainRegistry | CONNECTED | 3 domains registered |
+| DomainRegistry | CONNECTED | 4 domains registered (urban, logistics, infrastructure, seismic) |
 | ReliabilityPipeline | CONNECTED | Full validation chain |
 | PromptBuilder | CONNECTED | TIER1_SYSTEM + TIER3_DEVELOPER security |
 | TriageEngine | CONNECTED | Application layer orchestrator |
 | Composition Root | CONNECTED | `composition.py` |
 | MockProvider | CONNECTED | Default provider, 30 tests |
+| GroqProvider | CONNECTED | Cloud API, real inference |
 | OllamaProvider | CONNECTED | Local LLM, 13 tests + 5 integration |
-| CloudProvider | CONNECTED | API-based, 28 tests |
+| CloudProvider | CONNECTED | OpenAI-compatible API, 28 tests |
+| CircuitBreakerProvider | CONNECTED | Fault tolerance wrapper |
+| APIKeyAuthMiddleware | CONNECTED | Simple API key authentication |
+| UrbanAutomationPolicy | CONNECTED | Domain-specific risk assessment |
+| InfrastructureAutomationPolicy | CONNECTED | Domain-specific risk assessment |
 | Evaluation Runner | CONNECTED | Single + dataset execution |
 | Streamlit UI | CONNECTED | Decision Center, Status, HITL |
 | HITL Lifecycle | CONNECTED | 6 API endpoints |

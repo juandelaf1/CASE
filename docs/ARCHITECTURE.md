@@ -1,6 +1,6 @@
 # CASE Architecture
 
-> Technical architecture documentation. Last verified: 2026-09-14.
+> Technical architecture documentation. Last verified: 2026-09-23.
 
 ---
 
@@ -28,7 +28,7 @@ CASE is a layered AI decision platform with clear separation of concerns:
                           │
 ┌─────────────────────────▼───────────────────────────────┐
 │                    Domain Layer                         │
-│     DomainRegistry (3 registered domains)               │
+│     DomainRegistry (4 registered domains)               │
 │     DomainPolicy (validation, urgency, context)         │
 │     AutomationPolicy (risk assessment)                  │
 └─────────────────────────┬───────────────────────────────┘
@@ -42,9 +42,11 @@ CASE is a layered AI decision platform with clear separation of concerns:
                           │
 ┌─────────────────────────▼───────────────────────────────┐
 │                 Infrastructure Layer                    │
-│     Providers (Mock, Ollama, Cloud)                    │
+│     Providers (Mock, Groq, Ollama, Cloud)              │
 │     Persistence (SQLite adapters)                      │
 │     ReliabilityPipeline (validation chain)             │
+│     CircuitBreakerProvider (fault tolerance)           │
+│     APIKeyAuthMiddleware (authentication)              │
 └─────────────────────────────────────────────────────────┘
 ```
 

@@ -185,6 +185,69 @@ def render_api_health_check(client: Any) -> bool:
         return False
 
 
+def check_groq_health() -> tuple[bool, str]:
+    import os
+
+    import httpx
+
+    api_key = os.environ.get("CASE_GROQ_API_KEY", "")
+    base_url = os.environ.get("CASE_GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+    if not api_key:
+        return False, "No API key configured"
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            resp = client.get(
+                f"{base_url}/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+            if resp.status_code == 200:
+                return True, "Connected"
+            return False, f"HTTP {resp.status_code}"
+    except httpx.ConnectError:
+        return False, "Connection failed"
+    except httpx.TimeoutException:
+        return False, "Timeout"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def check_ollama_health() -> tuple[bool, str]:
+    import os
+
+    import httpx
+
+    base_url = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            resp = client.get(f"{base_url}/api/tags")
+            if resp.status_code == 200:
+                data = resp.json()
+                models = data.get("models", [])
+                return True, f"{len(models)} models available"
+            return False, f"HTTP {resp.status_code}"
+    except httpx.ConnectError:
+        return False, "Connection failed"
+    except httpx.TimeoutException:
+        return False, "Timeout"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def render_provider_status_row(name: str, healthy: bool, message: str) -> None:
+    from html import escape as _html_escape
+    dot_color = "#22c55e" if healthy else "#ef4444"
+    status_text = "ONLINE" if healthy else "OFFLINE"
+    st.markdown(
+        f'<div style="display:flex; align-items:center; gap:8px; margin:4px 0;">'
+        f'<div style="width:8px; height:8px; border-radius:50%; background:{dot_color};"></div>'
+        f'<span style="font-weight:600; min-width:80px;">{_html_escape(name)}</span>'
+        f'<span style="color:var(--text-muted);">{_html_escape(status_text)}</span>'
+        f'<span style="color:var(--text-muted); font-size:0.85em;">({_html_escape(message)})</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def render_backend_offline(url: str = "http://localhost:8000") -> None:
     from streamlit_app.i18n import t
     st.markdown(
