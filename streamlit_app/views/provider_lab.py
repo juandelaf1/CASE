@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 import httpx
 import streamlit as st
@@ -62,6 +63,61 @@ def _check_provider_health(provider: dict[str, str]) -> tuple[bool, str, str]:
         return available, status, url
 
     return False, t("pl_unknown"), ""
+
+
+def _render_provider_metrics(available_providers: list[tuple[str, list[dict[str, Any]]]]) -> None:
+    groq_latencies = []
+    ollama_latencies = []
+    groq_costs = []
+    ollama_costs = []
+
+    for provider_name, runs in available_providers:
+        if provider_name.lower() == "groq":
+            for run in runs:
+                latency = run.get("provider_info", {}).get("latency_ms", 0)
+                if latency:
+                    groq_latencies.append(latency)
+                cost = run.get("cost")
+                if cost:
+                    try:
+                        groq_costs.append(float(cost))
+                    except (ValueError, TypeError):
+                        pass
+        elif provider_name.lower() == "ollama":
+            for run in runs:
+                latency = run.get("provider_info", {}).get("latency_ms", 0)
+                if latency:
+                    ollama_latencies.append(latency)
+                cost = run.get("cost")
+                if cost:
+                    try:
+                        ollama_costs.append(float(cost))
+                    except (ValueError, TypeError):
+                        pass
+
+    if groq_latencies or ollama_latencies:
+        st.markdown(f"**{t('pl_latency_comparison')}**")
+        st.markdown(f'<p class="case-text-muted">{t("pl_latency_desc")}</p>', unsafe_allow_html=True)
+        chart_data = {"Groq": groq_latencies if groq_latencies else [0], "Ollama": ollama_latencies if ollama_latencies else [0]}
+        st.bar_chart(chart_data)
+        if groq_latencies and ollama_latencies:
+            avg_groq = sum(groq_latencies) / len(groq_latencies)
+            avg_ollama = sum(ollama_latencies) / len(ollama_latencies)
+            ratio = avg_ollama / avg_groq if avg_groq > 0 else 0
+            st.caption(t("pl_latency_note", avg_groq=avg_groq, avg_ollama=avg_ollama, ratio=ratio))
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if groq_costs or ollama_costs:
+        st.markdown(f"**{t('pl_cost_comparison')}**")
+        st.markdown(f'<p class="case-text-muted">{t("pl_cost_desc")}</p>', unsafe_allow_html=True)
+        chart_data = {"Groq": groq_costs if groq_costs else [0], "Ollama": ollama_costs if ollama_costs else [0]}
+        st.bar_chart(chart_data)
+        if groq_costs and ollama_costs:
+            avg_groq_cost = sum(groq_costs) / len(groq_costs)
+            avg_ollama_cost = sum(ollama_costs) / len(ollama_costs)
+            ratio = avg_ollama_cost / avg_groq_cost if avg_groq_cost > 0 else 0
+            st.caption(t("pl_cost_note", avg_groq_cost=avg_groq_cost, avg_ollama_cost=avg_ollama_cost, ratio=ratio))
 
 
 def render() -> None:
@@ -199,16 +255,42 @@ def render() -> None:
     except Exception:
         st.info(t("pl_could_not_load"))
 
+    st.markdown(f"#### {t('pl_metrics_title')}")
+
+    try:
+        client = get_client()
+        cases_result = client.list_cases_sync(limit=100, offset=0)
+        decisions = cases_result.get("decisions", [])
+        
+        groq_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "groq"]
+        ollama_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "ollama"]
+        mock_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "mock"]
+        
+        available_providers = []
+        if groq_runs:
+            available_providers.append(("Groq", groq_runs))
+        if ollama_runs:
+            available_providers.append(("Ollama", ollama_runs))
+        if mock_runs:
+            available_providers.append(("Mock", mock_runs))
+            
+        if available_providers:
+            _render_provider_metrics(available_providers)
+        else:
+            render_empty_state(t("pl_no_runs"))
+    except Exception:
+        st.info(t("pl_could_not_load"))
+
     with st.expander(t("pl_config")):
         st.markdown("""
 **Supported Providers:**
 
 | Provider | Env Vars | Status |
 |----------|----------|--------|
-| MockProvider | (none) | CONNECTED \u2014 deterministic test/demo |
-| GroqProvider | `CASE_GROQ_API_KEY`, `CASE_GROQ_MODEL` | CONNECTED \u2014 real inference |
-| OllamaProvider | `CASE_OLLAMA_BASE_URL` | TESTED_ISOLATED \u2014 local LLM |
-| CloudProvider | `CASE_CLOUD_API_KEY`, `CASE_CLOUD_BASE_URL` | TESTED_ISOLATED \u2014 OpenAI-compatible |
+| MockProvider | (none) | CONNECTED — deterministic test/demo |
+| GroqProvider | `CASE_GROQ_API_KEY`, `CASE_GROQ_MODEL` | CONNECTED — real inference |
+| OllamaProvider | `CASE_OLLAMA_BASE_URL` | TESTED_ISOLATED — local LLM |
+| CloudProvider | `CASE_CLOUD_API_KEY`, `CASE_CLOUD_BASE_URL` | TESTED_ISOLATED — OpenAI-compatible |
 
 **How to enable Groq:**
 
@@ -219,5 +301,5 @@ export CASE_GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
 **Important:** CASE validation remains active regardless of provider.
-The provider may be probabilistic \u2014 the system around it remains controlled.
+The provider may be probabilistic — the system around it remains controlled.
 """)

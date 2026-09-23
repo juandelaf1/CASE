@@ -283,6 +283,14 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "pl_mock_endpoint": "Internal \u2014 no external endpoint",
         "pl_neutrality_title": "Provider Neutrality",
         "pl_neutrality_explain": "CASE is provider-agnostic. The same pipeline, validation, risk assessment, and HITL logic execute regardless of which provider is configured. Switching providers does not change governance behavior.",
+        "pl_metrics_title": "Provider Metrics",
+        "pl_metrics_desc": "Historical latency and cost comparison across providers. Data comes from actual triage runs.",
+        "pl_latency_comparison": "Latency Comparison",
+        "pl_latency_desc": "Average latency in milliseconds per provider.",
+        "pl_latency_note": "Groq avg: {avg_groq} ms | Ollama avg: {avg_ollama} ms | Ratio: {ratio}x",
+        "pl_cost_comparison": "Estimated Cost Comparison",
+        "pl_cost_desc": "Estimated cost per request in USD.",
+        "pl_cost_note": "Groq avg: ${avg_groq_cost} | Ollama avg: ${avg_ollama_cost} | Ratio: {ratio}x",
 
         # Evaluation Lab
         "eval_title": "Evaluation Lab",
@@ -745,6 +753,14 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "pl_ollama_endpoint": "http://localhost:11434/api/tags",
         "pl_mock_endpoint": "Interno \u2014 sin endpoint externo",
         "pl_neutrality_title": "Neutralidad del Proveedor",
+        "pl_metrics_title": "Métricas de Proveedores",
+        "pl_metrics_desc": "Comparación histórica de latencia y coste entre proveedores. Datos de ejecuciones reales de triage.",
+        "pl_latency_comparison": "Comparación de Latencia",
+        "pl_latency_desc": "Latencia promedio por proveedor, en milisegundos.",
+        "pl_latency_note": "Promedio Groq: {avg_groq} ms | Promedio Ollama: {avg_ollama} ms | Ratio: {ratio}x",
+        "pl_cost_comparison": "Comparación de Coste Estimado",
+        "pl_cost_desc": "Coste estimado por solicitud en USD.",
+        "pl_cost_note": "Promedio Groq: ${avg_groq_cost} | Promedio Ollama: ${avg_ollama_cost} | Ratio: {ratio}x",
         "pl_neutrality_explain": "CASE es agn\u00f3stico al proveedor. El mismo pipeline, validaci\u00f3n, evaluaci\u00f3n de riesgo y l\u00f3gica HITL se ejecutan independientemente del proveedor configurado. Cambiar de proveedor no altera el comportamiento de gobernanza.",
 
         # Evaluation Lab
