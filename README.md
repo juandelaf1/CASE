@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <strong>692 passed (deterministic) · 7 skipped · 0 failed</strong><br>
+  <strong>813 passed · 0 failed</strong><br>
   <sub>ruff 0 errors · mypy 0 errors · 93 source files</sub><br>
   <sub>Live tests (Groq/Ollama): require API key and running server</sub>
 </p>
@@ -116,6 +116,7 @@ graph TB
         DP2[LogisticsPolicy]
         DP3[InfrastructurePolicy]
         DP4[SeismicRiskPolicy]
+        DP5[RealEstatePolicy]
     end
 
     subgraph Intelligence
@@ -804,6 +805,7 @@ graph TB
         DP2[LogisticsPolicy]
         DP3[InfrastructurePolicy]
         DP4[SeismicRiskPolicy]
+        DP5[RealEstatePolicy]
     end
 
     subgraph Intelligence

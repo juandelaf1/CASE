@@ -103,6 +103,18 @@ DEMO_CASES: dict[str, dict[str, Any]] = {
             },
         ],
     },
+    "failure": {
+        "id": "failure",
+        "label_key": "case_failure_label",
+        "short_key": "case_failure_short",
+        "description": "Deliberately invalid case to demonstrate CASE reliability pipeline: empty evidence triggers domain validation failure.",
+        "domain": "logistics",
+        "product": "N/A",
+        "origin": "N/A",
+        "transport": "N/A",
+        "urgency": "LOW",
+        "evidence": [],
+    },
 }
 
 
@@ -193,7 +205,7 @@ def _render_case_selection(client: CASEClient, provider: dict[str, Any]) -> None
         unsafe_allow_html=True,
     )
 
-    cols = st.columns(3)
+    cols = st.columns(4)
     selected_case = st.session_state.get("selected_demo_case")
 
     for i, (case_id, info) in enumerate(DEMO_CASES.items()):
@@ -532,10 +544,10 @@ def _render_validation(data: dict[str, Any]) -> None:
         if validation_status:
             items.append(f"✓ {t('dc_validation_pass')}" if validation_status == "valid" else f"⚠ {validation_status}")
         if evidence_quality:
-            items.append(f"✓ Evidencia: {evidence_quality}")
+            items.append(f"✓ {t('room_evidence_type')}: {evidence_quality}")
         requires_hitl = automation.get("requires_hitl", False)
         if requires_hitl:
-            items.append("⚠ Requiere supervisión humana")
+            items.append(f"⚠ {t('room_human_review')}")
         for item in items:
             st.markdown(f'<div style="font-size:0.92rem; color:var(--text-secondary); padding:0.15rem 0;">{item}</div>', unsafe_allow_html=True)
     else:

@@ -118,10 +118,10 @@ def _render_results(results: list[dict[str, Any]]) -> None:
 
             c1, c2, c3 = st.columns([3, 3, 2])
             with c1:
-                st.markdown(f"**Case A**")
+                st.markdown(f"**{t('cf_case_a')}**")
                 st.markdown(f"`{r['decision_a']}`")
             with c2:
-                st.markdown(f"**Case B**")
+                st.markdown(f"**{t('cf_case_b')}**")
                 st.markdown(f"`{r['decision_b']}`")
             with c3:
                 if r["decision_consistent"]:

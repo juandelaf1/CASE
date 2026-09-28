@@ -116,8 +116,8 @@ def render() -> None:
 
     st.markdown("")
 
-    tab_connected, tab_isolated, tab_layers = st.tabs(
-        [t("arch_connected"), t("arch_isolated"), t("arch_layers")]
+    tab_connected, tab_isolated, tab_layers, tab_portfolio = st.tabs(
+        [t("arch_connected"), t("arch_isolated"), t("arch_layers"), t("arch_portfolio")]
     )
 
     with tab_connected:
@@ -126,6 +126,8 @@ def render() -> None:
         _render_isolated()
     with tab_layers:
         _render_layers()
+    with tab_portfolio:
+        _render_portfolio()
 
 
 def _status_badge(status: str) -> str:
@@ -273,3 +275,102 @@ def _render_layers() -> None:
         )
         rules_md = "\n".join(f"- {r}" for r in _LAYER_RULES)
         st.markdown(rules_md)
+
+
+def _render_portfolio() -> None:
+    st.markdown(f"#### {t('arch_portfolio_title')}")
+    st.caption(t("arch_portfolio_desc"))
+
+    st.markdown(f"##### {t('arch_connected_core')}")
+    st.markdown(t("arch_connected_core_desc"))
+    connected_core = [
+        ("Contracts (Pydantic v2)", "All public boundaries typed and validated"),
+        ("ReliabilityPipeline", "Parse → Schema → Semantic → Domain + retries"),
+        ("TriageEngine", "Orchestrator wiring all components"),
+        ("PromptBuilder", "Structured prompt construction with security constraints"),
+        ("AutomationEvaluator", "Risk-based routing, never auto-approves critical"),
+    ]
+    for name, desc in connected_core:
+        st.markdown(
+            f'<div style="display:flex; gap:10px; padding:4px 0; align-items:baseline;">'
+            f'<code style="font-size:0.82rem;">{name}</code>'
+            f'<span style="font-size:0.78rem; color:var(--text-secondary);">{desc}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"##### {t('arch_provider_port')}")
+    st.markdown(t("arch_provider_port_desc"))
+    providers = [
+        ("MockProvider", "Deterministic, for testing and demos"),
+        ("GroqProvider", "Cloud inference, real LLM responses"),
+        ("OllamaProvider", "Local inference, requires Ollama"),
+        ("CloudProvider", "OpenAI-compatible cloud endpoints"),
+    ]
+    for name, desc in providers:
+        st.markdown(
+            f'<div style="display:flex; gap:10px; padding:4px 0; align-items:baseline;">'
+            f'<code style="font-size:0.82rem;">{name}</code>'
+            f'<span style="font-size:0.78rem; color:var(--text-secondary);">{desc}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"##### {t('arch_domain_layer')}")
+    st.markdown(t("arch_domain_layer_desc"))
+    domains = [
+        ("UrbanOperations", "City infrastructure and services"),
+        ("Logistics", "Shipping, carriers, routes"),
+        ("Infrastructure", "Bridges, roads, utilities"),
+        ("SeismicRisk", "Earthquake risk assessment"),
+        ("RealEstate", "Property transactions"),
+    ]
+    for name, desc in domains:
+        st.markdown(
+            f'<div style="display:flex; gap:10px; padding:4px 0; align-items:baseline;">'
+            f'<code style="font-size:0.82rem;">{name}</code>'
+            f'<span style="font-size:0.78rem; color:var(--text-secondary);">{desc}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"##### {t('arch_platform_capabilities')}")
+    st.markdown(t("arch_platform_capabilities_desc"))
+    capabilities = [
+        ("SQLite Persistence", "Decisions and audit trail with lifecycle tracking"),
+        ("Human Oversight", "Approve / Reject / Modify / Escalate cycle"),
+        ("Risk-Based Routing", "Automatic / human_required / mandatory_human thresholds"),
+        ("Rate Limiting", "Per-IP sliding window, configurable via CASE_RATE_LIMIT"),
+        ("Auth Middleware", "Constant-time token comparison, no query-string tokens"),
+        ("Cost Model", "Token-based cost estimation per decision"),
+    ]
+    for name, desc in capabilities:
+        st.markdown(
+            f'<div style="display:flex; gap:10px; padding:4px 0; align-items:baseline;">'
+            f'<code style="font-size:0.82rem;">{name}</code>'
+            f'<span style="font-size:0.78rem; color:var(--text-secondary);">{desc}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(f"##### {t('arch_isolated_future')}")
+    st.markdown(t("arch_isolated_future_desc"))
+    isolated_summary = [
+        ("ML Adaptation", "Dataset pipelines, training abstractions"),
+        ("Specialist Models", "Keyword-based classification and risk scoring"),
+        ("Governance", "RBAC, compliance, security policies"),
+        ("Hybrid Decision Engine", "Multi-source decision combination"),
+        ("Evaluation Runner", "Automated evaluation framework with datasets"),
+    ]
+    for name, desc in isolated_summary:
+        st.markdown(
+            f'<div style="display:flex; gap:10px; padding:4px 0; align-items:baseline;">'
+            f'<code style="font-size:0.82rem;">{name}</code>'
+            f'<span style="font-size:0.78rem; color:var(--text-secondary);">{desc}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
