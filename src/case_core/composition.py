@@ -21,6 +21,7 @@ from case_core.domain.urban_policy import UrbanPolicy  # noqa: E402
 from case_core.evaluation.cost import CostModel  # noqa: E402
 from case_core.ports.automation import AutomationPolicy  # noqa: E402
 from case_core.ports.llm import LLMProvider  # noqa: E402
+from case_core.providers.circuit_breaker import CircuitBreakerProvider  # noqa: E402
 from case_core.providers.cloud import CloudProvider  # noqa: E402
 from case_core.providers.groq import GroqProvider  # noqa: E402
 from case_core.providers.mock import MockProvider  # noqa: E402
@@ -69,13 +70,24 @@ def _resolve_provider() -> LLMProvider:
 
 
 def _resolve_all_providers() -> dict[str, LLMProvider]:
-    providers: dict[str, LLMProvider] = {
+    failure_threshold = int(os.environ.get("CASE_CB_FAILURE_THRESHOLD", "5"))
+    recovery_timeout = int(os.environ.get("CASE_CB_RECOVERY_TIMEOUT", "30"))
+
+    raw_providers: dict[str, LLMProvider] = {
         "groq": GroqProvider(),
         "ollama": OllamaProvider(),
         "mock": MockProvider(),
     }
     if os.environ.get("CASE_CLOUD_API_KEY"):
-        providers["cloud"] = CloudProvider()
+        raw_providers["cloud"] = CloudProvider()
+
+    providers: dict[str, LLMProvider] = {}
+    for name, provider in raw_providers.items():
+        providers[name] = CircuitBreakerProvider(
+            provider,
+            failure_threshold=failure_threshold,
+            recovery_timeout_seconds=recovery_timeout,
+        )
     return providers
 
 

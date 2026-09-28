@@ -44,7 +44,7 @@ class SQLiteAuditAdapter(AuditPort):
         self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         conn.execute(
-            """INSERT OR REPLACE INTO audit_events
+            """INSERT INTO audit_events
                (event_id, case_id, decision_id, event_type, timestamp, details, actor)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (

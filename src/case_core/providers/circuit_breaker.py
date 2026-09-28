@@ -13,7 +13,11 @@ from case_core.production import CircuitBreaker
 
 
 class CircuitBreakerProvider(LLMProvider):
-    """Wrapper that adds circuit breaker to any LLMProvider."""
+    """Wrapper that adds circuit breaker to any LLMProvider.
+
+    State machine: CLOSED -> OPEN (after threshold failures) -> CLOSED (after recovery + success).
+    When circuit is OPEN, calls are blocked with ConnectionError until recovery timeout expires.
+    """
 
     def __init__(
         self,
@@ -32,6 +36,15 @@ class CircuitBreakerProvider(LLMProvider):
     def name(self) -> str:
         return f"{self._provider.name}_circuit_breaker"
 
+    @property
+    def model(self) -> str:
+        return self._provider.model
+
+    async def health_check(self) -> bool:
+        if self._circuit.is_open() and not self._recovery_expired():
+            return False
+        return await self._provider.health_check()
+
     async def complete(self, request: LLMRequest) -> LLMResponse:
         if self._circuit.is_open():
             if not self._recovery_expired():
@@ -41,11 +54,17 @@ class CircuitBreakerProvider(LLMProvider):
                 )
             self._circuit._is_open = False
             self._circuit._failure_count = 0
+            self._last_failure_time = 0.0
 
         try:
             response = await self._provider.complete(request)
             self._circuit.record_success()
+            self._last_failure_time = 0.0
             return response
+        except ConnectionError:
+            self._circuit.record_failure()
+            self._last_failure_time = time.time()
+            raise
         except Exception:
             self._circuit.record_failure()
             self._last_failure_time = time.time()

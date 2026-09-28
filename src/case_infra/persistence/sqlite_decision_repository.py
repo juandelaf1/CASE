@@ -3,6 +3,7 @@ import sqlite3
 from pathlib import Path
 
 from case_core.contracts.decision import AIProposal, HumanOverride, TriageDecision
+from case_core.contracts.error import CASEError
 from case_core.contracts.lifecycle import DecisionLifecycle
 from case_core.ports.decision_repository import DecisionRepositoryPort
 
@@ -25,6 +26,10 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
                 urgency TEXT NOT NULL,
                 confidence REAL NOT NULL,
                 evidence_summary TEXT NOT NULL,
+                decision_rationale TEXT DEFAULT '',
+                decision_factors TEXT DEFAULT '[]',
+                summary TEXT DEFAULT '',
+                error TEXT,
                 lifecycle TEXT NOT NULL DEFAULT 'ai_proposed',
                 processing_time_ms REAL DEFAULT 0.0,
                 metadata TEXT DEFAULT '{}',
@@ -34,7 +39,7 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        for col in ["original_ai_proposal", "human_override"]:
+        for col in ["original_ai_proposal", "human_override", "decision_rationale", "decision_factors", "summary", "error"]:
             try:
                 conn.execute(f"ALTER TABLE decisions ADD COLUMN {col} TEXT")
             except sqlite3.OperationalError:
@@ -58,12 +63,14 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         self._ensure_tables()
         original_ai = json.dumps(decision.original_ai_proposal.model_dump()) if decision.original_ai_proposal else '{}'
         human_override = json.dumps(decision.human_override.model_dump()) if decision.human_override else None
+        error_data = json.dumps(decision.error.model_dump()) if decision.error else None
         conn = sqlite3.connect(self._db_path)
         conn.execute(
             """INSERT OR REPLACE INTO decisions
                (decision_id, case_id, domain, action, reason, urgency, confidence,
-                evidence_summary, lifecycle, processing_time_ms, metadata, original_ai_proposal, human_override, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                evidence_summary, decision_rationale, decision_factors, summary, error,
+                lifecycle, processing_time_ms, metadata, original_ai_proposal, human_override, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
             (
                 decision.decision_id,
                 decision.case_id,
@@ -73,6 +80,10 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
                 decision.urgency,
                 decision.confidence,
                 decision.evidence_summary,
+                decision.decision_rationale,
+                json.dumps(decision.decision_factors),
+                decision.summary,
+                error_data,
                 decision.lifecycle.value,
                 decision.processing_time_ms,
                 json.dumps(decision.metadata),
@@ -168,10 +179,12 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
         conn.close()
 
     def _row_to_decision(self, row: tuple[str, ...]) -> TriageDecision:
-        original_ai_data = json.loads(row[11]) if row[11] else None
+        original_ai_data = json.loads(row[15]) if row[15] else None
         original_ai = AIProposal(**original_ai_data) if original_ai_data else None
-        human_override_data = json.loads(row[12]) if row[12] else None
+        human_override_data = json.loads(row[16]) if row[16] else None
         human_override = HumanOverride(**human_override_data) if human_override_data else None
+        error_data = json.loads(row[11]) if row[11] else None
+        error = CASEError(**error_data) if error_data else None
         return TriageDecision(
             decision_id=row[0],
             case_id=row[1],
@@ -181,9 +194,13 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
             urgency=row[5],
             confidence=float(row[6]),
             evidence_summary=row[7],
-            lifecycle=DecisionLifecycle(row[8]),
-            processing_time_ms=float(row[9]),
-            metadata=json.loads(row[10]) if row[10] else {},
+            decision_rationale=row[8] or "",
+            decision_factors=json.loads(row[9]) if row[9] else [],
+            summary=row[10] or "",
+            error=error,
+            lifecycle=DecisionLifecycle(row[12]),
+            processing_time_ms=float(row[13]),
+            metadata=json.loads(row[14]) if row[14] else {},
             original_ai_proposal=original_ai,
             human_override=human_override,
         )

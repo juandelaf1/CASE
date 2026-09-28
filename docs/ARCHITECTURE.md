@@ -1,6 +1,6 @@
 # CASE Architecture
 
-> Technical architecture documentation. Last verified: 2026-09-23.
+> Technical architecture documentation. Last verified: 2026-09-28.
 
 ---
 
@@ -43,10 +43,10 @@ CASE is a layered AI decision platform with clear separation of concerns:
 ┌─────────────────────────▼───────────────────────────────┐
 │                 Infrastructure Layer                    │
 │     Providers (Mock, Groq, Ollama, Cloud)              │
+│     CircuitBreakerProvider (fault tolerance, WRAPPED)   │
 │     Persistence (SQLite adapters)                      │
 │     ReliabilityPipeline (validation chain)             │
-│     CircuitBreakerProvider (fault tolerance)           │
-│     APIKeyAuthMiddleware (authentication)              │
+│     APIKeyAuthMiddleware (constant-time comparison)    │
 └─────────────────────────────────────────────────────────┘
 ```
 
