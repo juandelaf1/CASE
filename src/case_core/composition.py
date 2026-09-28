@@ -13,6 +13,10 @@ from case_core.domain.infrastructure_automation import InfrastructureAutomationP
 from case_core.domain.infrastructure_policy import InfrastructurePolicy  # noqa: E402
 from case_core.domain.logistics_automation import LogisticsAutomationPolicy  # noqa: E402
 from case_core.domain.logistics_policy import LogisticsPolicy  # noqa: E402
+from case_core.domain.real_estate_policy import (  # noqa: E402
+    RealEstateAutomationPolicy,
+    RealEstatePolicy,
+)
 from case_core.domain.registry import DomainRegistry  # noqa: E402
 from case_core.domain.seismic_automation import SeismicAutomationPolicy  # noqa: E402
 from case_core.domain.seismic_policy import SeismicRiskPolicy  # noqa: E402
@@ -33,12 +37,14 @@ _LOGISTICS_AUTOMATION = LogisticsAutomationPolicy()
 _URBAN_AUTOMATION = UrbanAutomationPolicy()
 _INFRASTRUCTURE_AUTOMATION = InfrastructureAutomationPolicy()
 _SEISMIC_AUTOMATION = SeismicAutomationPolicy()
+_REAL_ESTATE_AUTOMATION = RealEstateAutomationPolicy()
 
 _AUTOMATION_POLICIES: dict[str, AutomationPolicy] = {
     "logistics": _LOGISTICS_AUTOMATION,
     "urban_operations": _URBAN_AUTOMATION,
     "infrastructure": _INFRASTRUCTURE_AUTOMATION,
     "seismic_risk": _SEISMIC_AUTOMATION,
+    "real_estate": _REAL_ESTATE_AUTOMATION,
 }
 
 
@@ -97,6 +103,7 @@ def create_app_dependencies() -> AppDependencies:
     registry.register(LogisticsPolicy())
     registry.register(InfrastructurePolicy())
     registry.register(SeismicRiskPolicy())
+    registry.register(RealEstatePolicy())
 
     providers = _resolve_all_providers()
     provider: LLMProvider = _resolve_provider()

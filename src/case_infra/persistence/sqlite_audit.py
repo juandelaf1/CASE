@@ -23,17 +23,27 @@ class SQLiteAuditAdapter(AuditPort):
                 timestamp TEXT NOT NULL,
                 details TEXT NOT NULL,
                 actor TEXT DEFAULT 'system',
+                correlation_id TEXT DEFAULT '',
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_case_id ON audit_events(case_id)")
+        self._migrate_add_correlation_id(conn)
         conn.commit()
         conn.close()
+
+    def _migrate_add_correlation_id(self, conn: sqlite3.Connection) -> None:
+        cursor = conn.execute("PRAGMA table_info(audit_events)")
+        columns = {row[1] for row in cursor.fetchall()}
+        if "correlation_id" not in columns:
+            conn.execute("ALTER TABLE audit_events ADD COLUMN correlation_id TEXT DEFAULT ''")
 
     def _ensure_tables(self) -> None:
         conn = sqlite3.connect(self._db_path)
         try:
             conn.execute("SELECT 1 FROM audit_events LIMIT 1")
+            self._migrate_add_correlation_id(conn)
+            conn.commit()
         except sqlite3.OperationalError:
             conn.close()
             self._init_db()
@@ -45,8 +55,8 @@ class SQLiteAuditAdapter(AuditPort):
         conn = sqlite3.connect(self._db_path)
         conn.execute(
             """INSERT INTO audit_events
-               (event_id, case_id, decision_id, event_type, timestamp, details, actor)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+               (event_id, case_id, decision_id, event_type, timestamp, details, actor, correlation_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 event.event_id,
                 event.case_id,
@@ -55,6 +65,7 @@ class SQLiteAuditAdapter(AuditPort):
                 event.timestamp,
                 json.dumps(event.details),
                 event.actor,
+                event.correlation_id,
             ),
         )
         conn.commit()
@@ -64,7 +75,7 @@ class SQLiteAuditAdapter(AuditPort):
         self._ensure_tables()
         conn = sqlite3.connect(self._db_path)
         cursor = conn.execute(
-            "SELECT event_id, case_id, decision_id, event_type, timestamp, details, actor FROM audit_events WHERE case_id = ? ORDER BY created_at",
+            "SELECT event_id, case_id, decision_id, event_type, timestamp, details, actor, correlation_id FROM audit_events WHERE case_id = ? ORDER BY created_at",
             (case_id,),
         )
         rows = cursor.fetchall()
@@ -78,6 +89,7 @@ class SQLiteAuditAdapter(AuditPort):
                 timestamp=row[4],
                 details=json.loads(row[5]),
                 actor=row[6],
+                correlation_id=row[7] or "",
             )
             for row in rows
         ]

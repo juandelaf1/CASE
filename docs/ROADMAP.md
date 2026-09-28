@@ -1,6 +1,6 @@
 # CASE Roadmap
 
-> Strategic and technical roadmap. Last verified: 2026-09-28.
+> Strategic and technical roadmap. Last verified: 2026-09-28 (V3).
 > Source of truth for planning, priorities, and phases.
 
 ---
@@ -48,18 +48,21 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform that transform
 
 ---
 
-## Current Architecture — Connected Pipeline
+## Current Architecture — Connected Pipeline (V3)
 
 ```
 Streamlit (display only)
    ↓
-FastAPI (HTTP adapter, 11 endpoints + APIKeyAuthMiddleware)
+FastAPI (HTTP adapter, 15 endpoints)
+   ↓
+APIKeyAuthMiddleware (constant-time comparison)
+RateLimitMiddleware (per-IP sliding window)
    ↓
 composition.py (dependency wiring)
    ↓
 TriageEngine (application layer orchestrator)
    ↓
-DomainRegistry → DomainPolicy (4 registered domains)
+DomainRegistry → DomainPolicy (5 registered domains)
    ↓
 PromptBuilder → LLMProvider (via port)
    ↓
@@ -69,7 +72,7 @@ AutomationEvaluator (risk assessment → AUTO_APPROVE / HUMAN_REVIEW / ESCALATE)
    ↓
 DecisionRepositoryPort (persistence)
    ↓
-AuditPort (audit trail)
+AuditPort (audit trail with correlation_id)
 ```
 
 ---

@@ -1,6 +1,6 @@
 # CASE Architecture
 
-> Technical architecture documentation. Last verified: 2026-09-28.
+> Technical architecture documentation. Last verified: 2026-09-28 (V3).
 
 ---
 
@@ -16,19 +16,20 @@ CASE is a layered AI decision platform with clear separation of concerns:
                           │ HTTP
 ┌─────────────────────────▼───────────────────────────────┐
 │                     API Layer                           │
-│           FastAPI (HTTP adapter, 11 endpoints)          │
+│           FastAPI (HTTP adapter, 15 endpoints)          │
+│           Auth + Rate Limiting middleware                │
 │           Delegates to TriageEngine                     │
 └─────────────────────────┬───────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────┐
 │                  Application Layer                      │
 │     composition.py (dependency wiring)                  │
-│     TriageEngine (orchestrator, 179 lines)              │
+│     TriageEngine (orchestrator, 246 lines)              │
 └─────────────────────────┬───────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────┐
 │                    Domain Layer                         │
-│     DomainRegistry (4 registered domains)               │
+│     DomainRegistry (5 registered domains)               │
 │     DomainPolicy (validation, urgency, context)         │
 │     AutomationPolicy (risk assessment)                  │
 └─────────────────────────┬───────────────────────────────┘
@@ -47,6 +48,7 @@ CASE is a layered AI decision platform with clear separation of concerns:
 │     Persistence (SQLite adapters)                      │
 │     ReliabilityPipeline (validation chain)             │
 │     APIKeyAuthMiddleware (constant-time comparison)    │
+│     RateLimitMiddleware (per-IP sliding window)        │
 └─────────────────────────────────────────────────────────┘
 ```
 

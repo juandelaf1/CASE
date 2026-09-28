@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from case_api.api.v1.auth import APIKeyAuthMiddleware
+from case_api.api.v1.rate_limit import RateLimitMiddleware
 from case_core.composition import create_app_dependencies
 from case_core.contracts.audit import AuditEvent
 from case_core.contracts.decision import HumanOverride
@@ -21,6 +22,7 @@ app = FastAPI(
 )
 
 app.add_middleware(APIKeyAuthMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 _deps = create_app_dependencies()
 engine = _deps.engine
@@ -233,11 +235,22 @@ async def health() -> dict[str, object]:
     except Exception:
         db_ok = False
 
+    provider_info = []
+    for _name, p in providers.items():
+        provider_info.append({
+            "name": p.name,
+            "model": p.model,
+        })
+
     return {
         "status": "ok" if db_ok else "degraded",
         "version": VERSION,
         "database": "ok" if db_ok else "missing_tables",
         "db_path": db_path,
+        "domains": registry.list_domains(),
+        "domain_count": len(registry.list_domains()),
+        "active_provider": provider.name,
+        "providers": provider_info,
     }
 
 
@@ -599,4 +612,36 @@ async def compare(request: ComparisonRequest) -> dict[str, object]:
     return {
         "case_id": base_case_id,
         "results": results,
+    }
+
+
+@app.get("/api/v1/seismic/events")
+async def get_seismic_events(
+    min_magnitude: float = 4.5,
+    lookback_days: int = 30,
+    limit: int = 50,
+) -> dict[str, object]:
+    from usgs_adapter.client import USGSClient
+
+    client = USGSClient(min_magnitude=min_magnitude, lookback_days=lookback_days)
+    events = client.fetch_recent()
+    return {
+        "events": [e.to_dict() for e in events[:limit]],
+        "count": min(len(events), limit),
+        "total_available": len(events),
+        "min_magnitude": min_magnitude,
+        "lookback_days": lookback_days,
+    }
+
+
+@app.get("/api/v1/seismic/health")
+async def seismic_health() -> dict[str, object]:
+    from usgs_adapter.client import USGSClient
+
+    client = USGSClient()
+    reachable = client.health_check()
+    return {
+        "status": "ok" if reachable else "unreachable",
+        "api": "USGS Earthquake Hazards API",
+        "reachable": reachable,
     }
