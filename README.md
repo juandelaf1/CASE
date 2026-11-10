@@ -685,6 +685,7 @@ CASE/
 | [ROADMAP.md](docs/ROADMAP.md) | Fases, hitos y planificación futura |
 | [DECISION_LOG.md](docs/DECISION_LOG.md) | Registro de decisiones técnicas significativas (D001-D010) |
 | [CAPABILITY_AUDIT.md](docs/CAPABILITY_AUDIT.md) | Auditoría de módulos aislados con propuestas de integración |
+| [docs/case-study.md](docs/case-study.md) | Caso de estudio técnico (problema, decisiones, trade-offs, evidencia, límites) |
 | [CHANGELOG.md](CHANGELOG.md) | Historial completo de versiones |
 | [RELEASES.md](docs/RELEASES.md) | Hitos de release y estado |
 | [AGENT_CONTEXT.md](docs/AGENT_CONTEXT.md) | Estado del repositorio para agentes IA y contribuidores |
@@ -1374,6 +1375,7 @@ CASE/
 | [ROADMAP.md](docs/ROADMAP.md) | Phases, milestones, and future planning |
 | [DECISION_LOG.md](docs/DECISION_LOG.md) | Record of significant technical decisions (D001-D010) |
 | [CAPABILITY_AUDIT.md](docs/CAPABILITY_AUDIT.md) | Audit of isolated modules with integration proposals |
+| [docs/case-study.md](docs/case-study.md) | Technical case study (problem, decisions, trade-offs, evidence, limits) |
 | [CHANGELOG.md](CHANGELOG.md) | Complete version history |
 | [RELEASES.md](docs/RELEASES.md) | Release milestones and status |
 | [AGENT_CONTEXT.md](docs/AGENT_CONTEXT.md) | Repository state for AI agents and contributors |
