@@ -9,17 +9,24 @@ from dotenv import load_dotenv
 load_dotenv(override=False)
 
 from case_core.application.engine import TriageEngine  # noqa: E402
-from case_core.domain.default_automation import DefaultAutomationPolicy  # noqa: E402
+from case_core.domain.infrastructure_automation import InfrastructureAutomationPolicy  # noqa: E402
 from case_core.domain.infrastructure_policy import InfrastructurePolicy  # noqa: E402
 from case_core.domain.logistics_automation import LogisticsAutomationPolicy  # noqa: E402
 from case_core.domain.logistics_policy import LogisticsPolicy  # noqa: E402
+from case_core.domain.real_estate_policy import (  # noqa: E402
+    RealEstateAutomationPolicy,
+    RealEstatePolicy,
+)
 from case_core.domain.registry import DomainRegistry  # noqa: E402
 from case_core.domain.seismic_automation import SeismicAutomationPolicy  # noqa: E402
 from case_core.domain.seismic_policy import SeismicRiskPolicy  # noqa: E402
+from case_core.domain.urban_automation import UrbanAutomationPolicy  # noqa: E402
 from case_core.domain.urban_policy import UrbanPolicy  # noqa: E402
 from case_core.evaluation.cost import CostModel  # noqa: E402
 from case_core.ports.automation import AutomationPolicy  # noqa: E402
 from case_core.ports.llm import LLMProvider  # noqa: E402
+from case_core.providers.circuit_breaker import CircuitBreakerProvider  # noqa: E402
+from case_core.providers.cloud import CloudProvider  # noqa: E402
 from case_core.providers.groq import GroqProvider  # noqa: E402
 from case_core.providers.mock import MockProvider  # noqa: E402
 from case_core.providers.ollama import OllamaProvider  # noqa: E402
@@ -27,14 +34,17 @@ from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter  # noqa: E402
 from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository  # noqa: E402
 
 _LOGISTICS_AUTOMATION = LogisticsAutomationPolicy()
-_DEFAULT_AUTOMATION = DefaultAutomationPolicy()
+_URBAN_AUTOMATION = UrbanAutomationPolicy()
+_INFRASTRUCTURE_AUTOMATION = InfrastructureAutomationPolicy()
 _SEISMIC_AUTOMATION = SeismicAutomationPolicy()
+_REAL_ESTATE_AUTOMATION = RealEstateAutomationPolicy()
 
 _AUTOMATION_POLICIES: dict[str, AutomationPolicy] = {
     "logistics": _LOGISTICS_AUTOMATION,
-    "urban_operations": _DEFAULT_AUTOMATION,
-    "infrastructure": _DEFAULT_AUTOMATION,
+    "urban_operations": _URBAN_AUTOMATION,
+    "infrastructure": _INFRASTRUCTURE_AUTOMATION,
     "seismic_risk": _SEISMIC_AUTOMATION,
+    "real_estate": _REAL_ESTATE_AUTOMATION,
 }
 
 
@@ -66,11 +76,25 @@ def _resolve_provider() -> LLMProvider:
 
 
 def _resolve_all_providers() -> dict[str, LLMProvider]:
-    return {
+    failure_threshold = int(os.environ.get("CASE_CB_FAILURE_THRESHOLD", "5"))
+    recovery_timeout = int(os.environ.get("CASE_CB_RECOVERY_TIMEOUT", "30"))
+
+    raw_providers: dict[str, LLMProvider] = {
         "groq": GroqProvider(),
         "ollama": OllamaProvider(),
         "mock": MockProvider(),
     }
+    if os.environ.get("CASE_CLOUD_API_KEY"):
+        raw_providers["cloud"] = CloudProvider()
+
+    providers: dict[str, LLMProvider] = {}
+    for name, provider in raw_providers.items():
+        providers[name] = CircuitBreakerProvider(
+            provider,
+            failure_threshold=failure_threshold,
+            recovery_timeout_seconds=recovery_timeout,
+        )
+    return providers
 
 
 def create_app_dependencies() -> AppDependencies:
@@ -79,6 +103,7 @@ def create_app_dependencies() -> AppDependencies:
     registry.register(LogisticsPolicy())
     registry.register(InfrastructurePolicy())
     registry.register(SeismicRiskPolicy())
+    registry.register(RealEstatePolicy())
 
     providers = _resolve_all_providers()
     provider: LLMProvider = _resolve_provider()

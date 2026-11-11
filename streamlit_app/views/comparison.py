@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
-import httpx
 import streamlit as st
 
 from streamlit_app.components.state import get_client
@@ -150,6 +150,35 @@ def _render_live_tab() -> None:
     _run_live_comparison(report_text, domain, urgency, selected_providers, evidence, metadata)
 
 
+def _parse_evidence(evidence_text: str) -> list[dict[str, Any]]:
+    if not evidence_text or not evidence_text.strip():
+        return []
+    lines = [line.strip() for line in evidence_text.strip().split("\n") if line.strip()]
+    evidence_list: list[dict[str, Any]] = []
+    for i, line in enumerate(lines, 1):
+        evidence_list.append({
+            "id": f"ev-{i}",
+            "type": "text",
+            "content": line,
+            "source": "user_input",
+            "confidence": 0.9,
+            "extracted_at": "2026-09-23T00:00:00Z",
+        })
+    return evidence_list
+
+
+def _parse_metadata(metadata_text: str) -> dict[str, str]:
+    if not metadata_text or not metadata_text.strip():
+        return {}
+    try:
+        parsed = json.loads(metadata_text)
+        if isinstance(parsed, dict):
+            return {str(k): str(v) for k, v in parsed.items()}
+    except json.JSONDecodeError:
+        pass
+    return {"raw": metadata_text}
+
+
 def _run_live_comparison(
     report_text: str,
     domain: str,
@@ -158,8 +187,10 @@ def _run_live_comparison(
     evidence: str,
     metadata: str,
 ) -> None:
-    api_url = st.session_state.get("case_api_url", "http://localhost:8000")
-    base = api_url.rstrip("/")
+    client = get_client()
+
+    evidence_list = _parse_evidence(evidence)
+    metadata_dict = _parse_metadata(metadata)
 
     progress = st.progress(0, text=t("comp_executing"))
     results: dict[str, dict[str, Any]] = {}
@@ -171,41 +202,20 @@ def _run_live_comparison(
             text=t("comp_running_provider", name=provider.upper()),
         )
         try:
-            with httpx.Client(timeout=60.0) as http:
-                resp = http.post(
-                    f"{base}/api/v1/triage",
-                    json={
-                        "report_text": report_text,
-                        "domain": domain,
-                        "urgency": urgency,
-                        "provider": provider,
-                        "evidence": evidence,
-                        "metadata": metadata,
-                    },
-                )
-            if resp.status_code in (400, 422):
-                detail = resp.json().get("detail", {})
-                results[provider] = {"error": True, "detail": detail}
-            elif resp.status_code >= 500:
-                results[provider] = {
-                    "error": True,
-                    "detail": f"HTTP {resp.status_code}",
-                }
-            else:
-                resp.raise_for_status()
-                results[provider] = {"error": False, "data": resp.json()}
-        except httpx.ConnectError:
+            result = client.triage_sync(
+                report_text=report_text,
+                domain=domain,
+                urgency=urgency,
+                provider=provider,
+                evidence=evidence_list,
+                metadata=metadata_dict,
+            )
+            results[provider] = result
+        except Exception as exc:
             results[provider] = {
                 "error": True,
-                "detail": t("comp_provider_offline"),
+                "detail": str(exc),
             }
-        except httpx.TimeoutException:
-            results[provider] = {
-                "error": True,
-                "detail": t("comp_provider_timeout"),
-            }
-        except httpx.HTTPError as exc:
-            results[provider] = {"error": True, "detail": str(exc)}
 
     progress.progress(100, text=t("comp_complete"))
     progress.empty()

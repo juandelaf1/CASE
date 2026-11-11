@@ -6,8 +6,6 @@ import sqlite3
 import sys
 import tempfile
 
-import pytest
-
 sys.path.insert(0, "src")
 
 

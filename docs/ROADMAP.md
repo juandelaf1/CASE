@@ -1,6 +1,6 @@
 # CASE Roadmap
 
-> Strategic and technical roadmap. Last verified: 2026-09-14.
+> Strategic and technical roadmap. Last verified: 2026-09-28 (V3).
 > Source of truth for planning, priorities, and phases.
 
 ---
@@ -48,18 +48,21 @@ CASE is a domain-agnostic, provider-agnostic AI Decision Platform that transform
 
 ---
 
-## Current Architecture — Connected Pipeline
+## Current Architecture — Connected Pipeline (V3)
 
 ```
 Streamlit (display only)
    ↓
-FastAPI (HTTP adapter, 11 endpoints)
+FastAPI (HTTP adapter, 15 endpoints)
+   ↓
+APIKeyAuthMiddleware (constant-time comparison)
+RateLimitMiddleware (per-IP sliding window)
    ↓
 composition.py (dependency wiring)
    ↓
 TriageEngine (application layer orchestrator)
    ↓
-DomainRegistry → DomainPolicy (3 registered domains)
+DomainRegistry → DomainPolicy (5 registered domains)
    ↓
 PromptBuilder → LLMProvider (via port)
    ↓
@@ -69,7 +72,7 @@ AutomationEvaluator (risk assessment → AUTO_APPROVE / HUMAN_REVIEW / ESCALATE)
    ↓
 DecisionRepositoryPort (persistence)
    ↓
-AuditPort (audit trail)
+AuditPort (audit trail with correlation_id)
 ```
 
 ---
@@ -84,14 +87,19 @@ CASE v1 consolidates the Foundation, Providers/Evaluation/UI, Governance, and Fi
 |-----------|--------|----------|
 | Contracts (Pydantic v2) | CONNECTED | 9 contract files |
 | Ports (ABC interfaces) | CONNECTED | 6 ports |
-| DomainRegistry | CONNECTED | 3 domains registered |
+| DomainRegistry | CONNECTED | 4 domains registered (urban, logistics, infrastructure, seismic) |
 | ReliabilityPipeline | CONNECTED | Full validation chain |
 | PromptBuilder | CONNECTED | TIER1_SYSTEM + TIER3_DEVELOPER security |
 | TriageEngine | CONNECTED | Application layer orchestrator |
 | Composition Root | CONNECTED | `composition.py` |
 | MockProvider | CONNECTED | Default provider, 30 tests |
+| GroqProvider | CONNECTED | Cloud API, real inference |
 | OllamaProvider | CONNECTED | Local LLM, 13 tests + 5 integration |
-| CloudProvider | CONNECTED | API-based, 28 tests |
+| CloudProvider | CONNECTED | OpenAI-compatible API, 28 tests |
+| CircuitBreakerProvider | CONNECTED | Fault tolerance wrapper |
+| APIKeyAuthMiddleware | CONNECTED | Simple API key authentication |
+| UrbanAutomationPolicy | CONNECTED | Domain-specific risk assessment |
+| InfrastructureAutomationPolicy | CONNECTED | Domain-specific risk assessment |
 | Evaluation Runner | CONNECTED | Single + dataset execution |
 | Streamlit UI | CONNECTED | Decision Center, Status, HITL |
 | HITL Lifecycle | CONNECTED | 6 API endpoints |

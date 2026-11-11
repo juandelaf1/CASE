@@ -5,6 +5,8 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
+from case_api.api.v1.auth import APIKeyAuthMiddleware
+from case_api.api.v1.rate_limit import RateLimitMiddleware
 from case_core.composition import create_app_dependencies
 from case_core.contracts.audit import AuditEvent
 from case_core.contracts.decision import HumanOverride
@@ -18,6 +20,9 @@ app = FastAPI(
     version=VERSION,
     description="Domain-agnostic AI Decision Platform for operational case triage",
 )
+
+app.add_middleware(APIKeyAuthMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 _deps = create_app_dependencies()
 engine = _deps.engine
@@ -215,6 +220,172 @@ class HITLEscalateRequest(BaseModel):
     escalate_to: str = "supervisor"
 
 
+# --- case.evaluate boundary adapter (dev-stage, additive; no execution authority) ---
+class EvaluatePayload(BaseModel):
+    case_id: str | None = None
+    domain: str
+    summary: str | None = None
+    report_text: str | None = None
+    urgency: str = "MEDIUM"
+    evidence: list[dict[str, Any]] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    provider: str | None = None
+    options: dict[str, Any] = Field(default_factory=dict)
+
+
+class EvaluateEnvelopeRequest(BaseModel):
+    contract_version: str = "case-eval/v0.1-draft"
+    capability_id: str = "case.evaluate"
+    correlation_id: str
+    idempotency_key: str | None = None
+    caller: dict[str, Any] = Field(default_factory=dict)
+    tenant_context: dict[str, Any] | None = None
+    organization_context: dict[str, Any] | None = None
+    scopes: list[str] = Field(default_factory=list)
+    data_classification: str | None = None
+    data_status: str | None = None
+    provenance: dict[str, Any] = Field(default_factory=dict)
+    payload: EvaluatePayload
+
+
+def _build_triage_request_from_evaluate(env: EvaluateEnvelopeRequest) -> tuple[TriageRequest, list[str]]:
+    warnings: list[dict[str, Any]] = []
+    p = env.payload
+    report_text = (p.report_text or p.summary or "").strip()
+    if not report_text:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "payload.summary or payload.report_text is required",
+                "code": "VALIDATION_MISSING_FIELD",
+                "correlation_id": env.correlation_id,
+            },
+        )
+    evidence_items: list[EvidenceRequest] = []
+    for i, e in enumerate(p.evidence or []):
+        if not isinstance(e, dict):
+            continue
+        ev_type = str(e.get("type", "text"))
+        if ev_type not in VALID_EVIDENCE_TYPES:
+            ev_type = "text"
+        content = str(e.get("content", "") or "").strip() or "(no content)"
+        source = str(e.get("source", "unknown") or "unknown").strip() or "unknown"
+        try:
+            conf = float(e.get("confidence", 0.5))
+        except Exception:
+            conf = 0.5
+        conf = max(0.0, min(1.0, conf))
+        evidence_items.append(
+            EvidenceRequest(
+                id=str(e.get("id") or f"ev-{i+1}"),
+                type=ev_type,
+                content=content[:MAX_EVIDENCE_CONTENT_LENGTH],
+                source=source,
+                confidence=conf,
+                extracted_at=str(e.get("extracted_at") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
+            )
+        )
+    meta = dict(p.metadata or {})
+    meta.setdefault("correlation_id", env.correlation_id)
+    if env.tenant_context:
+        meta.setdefault("tenant_context", "provided")
+    if env.organization_context:
+        meta.setdefault("organization_context", "provided")
+    urgency = p.urgency if p.urgency in VALID_URGENCY_LEVELS else "MEDIUM"
+    triage = TriageRequest(
+        case_id=p.case_id,
+        report_text=report_text[:MAX_REPORT_LENGTH],
+        domain=str(p.domain).strip(),
+        urgency=urgency,
+        evidence=evidence_items[:MAX_EVIDENCE_ITEMS],
+        metadata={k: str(v) for k, v in meta.items() if isinstance(k, str)},
+        provider=p.provider,
+    )
+    return triage, warnings
+
+
+def _map_triage_to_evaluate_response(env: EvaluateEnvelopeRequest, triage: TriageDecisionResponse) -> dict[str, Any]:
+    requires_human_review = triage.lifecycle in {"AI_PROPOSED", "UNDER_REVIEW", "PENDING_REVIEW"}
+    status = "pending_review" if requires_human_review else "ok"
+    # If escalated/rejected etc still return ok status with lifecycle hint in dev adapter; keep additive
+    return {
+        "contract_version": "case-eval/v0.1-draft",
+        "capability_id": "case.evaluate",
+        "correlation_id": env.correlation_id,
+        "idempotency_key": env.idempotency_key,
+        "status": status,
+        "data_status": env.data_status or "derived",
+        "provenance": {
+            "provider": "case",
+            "mapping": "case.evaluate adapter over /api/v1/triage",
+            "upstream_lifecycle": triage.lifecycle,
+            **(env.provenance or {}),
+        },
+        "result": {
+            "decision_type": "recommendation",
+            "case_ref": triage.case_id,
+            "action": triage.action,
+            "urgency": triage.urgency,
+            "confidence": triage.confidence,
+            "risks": [],
+            "decision_factors": list(triage.decision_factors or []),
+            "evidence_summary": triage.evidence_summary,
+            "requires_human_review": requires_human_review,
+            "lifecycle_hint": triage.lifecycle,
+            "reason": triage.reason,
+            "summary": triage.summary,
+            "decision_rationale": triage.decision_rationale,
+            "processing_time_ms": triage.processing_time_ms,
+        },
+        "warnings": [],
+        "errors": [],
+    }
+
+
+@app.post("/api/v1/evaluate")
+async def evaluate_case(request: EvaluateEnvelopeRequest) -> dict[str, Any]:
+    # Dev-stage scope/capability checks (additive boundary; CASE does not execute effects)
+    if request.capability_id not in ("case.evaluate", ""):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": f"Unsupported capability_id: {request.capability_id}",
+                "code": "CONTRACT_UNSUPPORTED",
+                "correlation_id": request.correlation_id,
+            },
+        )
+    if request.scopes and "case:evaluate" not in request.scopes:
+        # dev-tolerant: warn via error response contract style? reject to be explicit
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "Missing required scope: case:evaluate",
+                "code": "AUTHZ_SCOPE_MISSING",
+                "correlation_id": request.correlation_id,
+            },
+        )
+    triage_req, warnings = _build_triage_request_from_evaluate(request)
+    try:
+        triage_resp = await triage(triage_req)
+    except HTTPException as e:
+        detail = e.detail if isinstance(e.detail, dict) else {"error": str(e.detail)}
+        return {
+            "contract_version": "case-eval/v0.1-draft",
+            "capability_id": "case.evaluate",
+            "correlation_id": request.correlation_id,
+            "status": "error",
+            "data_status": request.data_status or "unknown",
+            "provenance": {"provider": "case", "mapping": "case.evaluate adapter"},
+            "result": {"decision_type": "recommendation", "requires_human_review": True, "case_ref": None},
+            "warnings": warnings,
+            "errors": [{"code": str(detail.get("category") or "EVALUATION_ERROR"), "message": str(detail.get("error") or detail)}],
+        }
+    out = _map_triage_to_evaluate_response(request, triage_resp)
+    out["warnings"] = warnings
+    return out
+
+
+
 @app.get("/health")
 async def health() -> dict[str, object]:
     import sqlite3 as _sqlite3
@@ -230,11 +401,22 @@ async def health() -> dict[str, object]:
     except Exception:
         db_ok = False
 
+    provider_info = []
+    for _name, p in providers.items():
+        provider_info.append({
+            "name": p.name,
+            "model": p.model,
+        })
+
     return {
         "status": "ok" if db_ok else "degraded",
         "version": VERSION,
         "database": "ok" if db_ok else "missing_tables",
         "db_path": db_path,
+        "domains": registry.list_domains(),
+        "domain_count": len(registry.list_domains()),
+        "active_provider": provider.name,
+        "providers": provider_info,
     }
 
 
@@ -596,4 +778,36 @@ async def compare(request: ComparisonRequest) -> dict[str, object]:
     return {
         "case_id": base_case_id,
         "results": results,
+    }
+
+
+@app.get("/api/v1/seismic/events")
+async def get_seismic_events(
+    min_magnitude: float = 4.5,
+    lookback_days: int = 30,
+    limit: int = 50,
+) -> dict[str, object]:
+    from usgs_adapter.client import USGSClient
+
+    client = USGSClient(min_magnitude=min_magnitude, lookback_days=lookback_days)
+    events = client.fetch_recent()
+    return {
+        "events": [e.to_dict() for e in events[:limit]],
+        "count": min(len(events), limit),
+        "total_available": len(events),
+        "min_magnitude": min_magnitude,
+        "lookback_days": lookback_days,
+    }
+
+
+@app.get("/api/v1/seismic/health")
+async def seismic_health() -> dict[str, object]:
+    from usgs_adapter.client import USGSClient
+
+    client = USGSClient()
+    reachable = client.health_check()
+    return {
+        "status": "ok" if reachable else "unreachable",
+        "api": "USGS Earthquake Hazards API",
+        "reachable": reachable,
     }

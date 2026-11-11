@@ -7,24 +7,36 @@ import httpx
 
 
 class CASEClient:
-    def __init__(self, base_url: str | None = None, timeout_seconds: float = 30.0) -> None:
+    def __init__(
+        self,
+        base_url: str | None = None,
+        timeout_seconds: float = 30.0,
+        api_key: str | None = None,
+    ) -> None:
         self._base_url = (
             base_url or os.environ.get("CASE_API_BASE_URL", "http://localhost:8000")
         ).rstrip("/")
         self._timeout = timeout_seconds
+        self._api_key = api_key or os.environ.get("CASE_API_KEY", "")
 
     @property
     def base_url(self) -> str:
         return self._base_url
 
+    def _get_auth_headers(self) -> dict[str, str]:
+        """Build authentication headers if API key is configured."""
+        if not self._api_key:
+            return {}
+        return {"X-API-Key": self._api_key}
+
     async def health(self) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.get(f"{self._base_url}/health")
             response.raise_for_status()
             return response.json()
 
     async def list_domains(self) -> list[str]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.get(f"{self._base_url}/domains")
             response.raise_for_status()
             data = response.json()
@@ -54,7 +66,7 @@ class CASEClient:
         if metadata:
             payload["metadata"] = metadata
 
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/triage",
                 json=payload,
@@ -62,11 +74,13 @@ class CASEClient:
             if response.status_code in (400, 422):
                 detail = response.json().get("detail", {})
                 return {"error": True, "detail": detail}
+            if response.status_code == 401:
+                return {"error": True, "error_type": "auth", "detail": "Authentication failed"}
             response.raise_for_status()
             return {"error": False, "data": response.json()}
 
     async def get_audit_events(self, case_id: str) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.get(
                 f"{self._base_url}/api/v1/audit/{case_id}",
             )
@@ -76,26 +90,26 @@ class CASEClient:
             return response.json()
 
     def health_sync(self) -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.get(f"{self._base_url}/health")
             response.raise_for_status()
             return response.json()
 
     def list_domains_sync(self) -> list[str]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.get(f"{self._base_url}/domains")
             response.raise_for_status()
             data = response.json()
             return data.get("domains", [])
 
     def list_providers_sync(self) -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.get(f"{self._base_url}/api/v1/providers")
             response.raise_for_status()
             return response.json()
 
     async def list_providers(self) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.get(f"{self._base_url}/api/v1/providers")
             response.raise_for_status()
             return response.json()
@@ -124,7 +138,7 @@ class CASEClient:
         if metadata:
             payload["metadata"] = metadata
 
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             try:
                 response = client.post(
                     f"{self._base_url}/api/v1/triage",
@@ -140,13 +154,15 @@ class CASEClient:
             if response.status_code in (400, 422):
                 detail = response.json().get("detail", {})
                 return {"error": True, "error_type": "validation", "status": response.status_code, "detail": detail}
+            if response.status_code == 401:
+                return {"error": True, "error_type": "auth", "detail": "Authentication failed"}
             if response.status_code >= 500:
                 return {"error": True, "error_type": "backend_error", "status": response.status_code, "detail": f"HTTP {response.status_code}"}
             response.raise_for_status()
             return {"error": False, "data": response.json()}
 
     def get_audit_events_sync(self, case_id: str) -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.get(
                 f"{self._base_url}/api/v1/audit/{case_id}",
             )
@@ -156,7 +172,7 @@ class CASEClient:
             return response.json()
 
     async def list_pending_review(self, limit: int = 100) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.get(
                 f"{self._base_url}/api/v1/hitl/pending",
                 params={"limit": limit},
@@ -165,7 +181,7 @@ class CASEClient:
             return response.json()
 
     async def get_decision(self, decision_id: str) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.get(
                 f"{self._base_url}/api/v1/hitl/{decision_id}",
             )
@@ -175,7 +191,7 @@ class CASEClient:
             return response.json()
 
     async def approve_decision(self, decision_id: str, actor: str = "human", notes: str = "") -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/approve",
                 json={"actor": actor, "notes": notes},
@@ -186,7 +202,7 @@ class CASEClient:
             return response.json()
 
     async def reject_decision(self, decision_id: str, actor: str = "human", notes: str = "") -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/reject",
                 json={"actor": actor, "notes": notes},
@@ -208,7 +224,7 @@ class CASEClient:
         notes: str = "",
         justification: str = "",
     ) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/modify",
                 json={
@@ -228,7 +244,7 @@ class CASEClient:
             return response.json()
 
     async def start_review(self, decision_id: str, actor: str = "human", justification: str = "") -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/under-review",
                 json={"actor": actor, "justification": justification},
@@ -239,7 +255,7 @@ class CASEClient:
             return response.json()
 
     async def escalate_decision(self, decision_id: str, actor: str = "human", justification: str = "", escalate_to: str = "supervisor") -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/escalate",
                 json={"actor": actor, "justification": justification, "escalate_to": escalate_to},
@@ -250,7 +266,7 @@ class CASEClient:
             return response.json()
 
     def list_pending_review_sync(self, limit: int = 100) -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.get(
                 f"{self._base_url}/api/v1/hitl/pending",
                 params={"limit": limit},
@@ -259,7 +275,7 @@ class CASEClient:
             return response.json()
 
     def get_decision_sync(self, decision_id: str) -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.get(
                 f"{self._base_url}/api/v1/hitl/{decision_id}",
             )
@@ -269,7 +285,7 @@ class CASEClient:
             return response.json()
 
     def approve_decision_sync(self, decision_id: str, actor: str = "human", notes: str = "", justification: str = "") -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/approve",
                 json={"actor": actor, "notes": notes, "justification": justification},
@@ -280,7 +296,7 @@ class CASEClient:
             return response.json()
 
     def reject_decision_sync(self, decision_id: str, actor: str = "human", notes: str = "", justification: str = "") -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/reject",
                 json={"actor": actor, "notes": notes, "justification": justification},
@@ -291,7 +307,7 @@ class CASEClient:
             return response.json()
 
     def escalate_decision_sync(self, decision_id: str, actor: str = "human", justification: str = "", escalate_to: str = "supervisor") -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/escalate",
                 json={"actor": actor, "justification": justification, "escalate_to": escalate_to},
@@ -313,7 +329,7 @@ class CASEClient:
         notes: str = "",
         justification: str = "",
     ) -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/modify",
                 json={
@@ -333,7 +349,7 @@ class CASEClient:
             return response.json()
 
     def start_review_sync(self, decision_id: str, actor: str = "human", justification: str = "") -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.post(
                 f"{self._base_url}/api/v1/hitl/{decision_id}/under-review",
                 json={"actor": actor, "justification": justification},
@@ -344,7 +360,7 @@ class CASEClient:
             return response.json()
 
     def list_cases_sync(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.get(
                 f"{self._base_url}/api/v1/cases",
                 params={"limit": limit, "offset": offset},
@@ -353,7 +369,7 @@ class CASEClient:
             return response.json()
 
     def get_case_sync(self, case_id: str) -> dict[str, Any]:
-        with httpx.Client(timeout=self._timeout) as client:
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = client.get(
                 f"{self._base_url}/api/v1/cases/{case_id}",
             )
@@ -363,7 +379,7 @@ class CASEClient:
             return response.json()
 
     async def list_cases(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.get(
                 f"{self._base_url}/api/v1/cases",
                 params={"limit": limit, "offset": offset},
@@ -372,7 +388,7 @@ class CASEClient:
             return response.json()
 
     async def get_case(self, case_id: str) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        async with httpx.AsyncClient(timeout=self._timeout, headers=self._get_auth_headers()) as client:
             response = await client.get(
                 f"{self._base_url}/api/v1/cases/{case_id}",
             )
@@ -380,3 +396,46 @@ class CASEClient:
                 return {"error": True, "detail": f"No decision found for case: {case_id}"}
             response.raise_for_status()
             return response.json()
+
+    def comparison_sync(
+        self,
+        report_text: str,
+        domain: str,
+        providers: list[str],
+        urgency: str = "MEDIUM",
+        evidence: list[dict[str, Any]] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "report_text": report_text,
+            "domain": domain,
+            "providers": providers,
+            "urgency": urgency,
+        }
+        if evidence:
+            payload["evidence"] = evidence
+        if metadata:
+            payload["metadata"] = metadata
+
+        with httpx.Client(timeout=self._timeout, headers=self._get_auth_headers()) as client:
+            try:
+                response = client.post(
+                    f"{self._base_url}/api/v1/comparison",
+                    json=payload,
+                )
+            except httpx.ConnectError:
+                return {"error": True, "error_type": "backend_offline", "detail": "Connection refused"}
+            except httpx.TimeoutException:
+                return {"error": True, "error_type": "backend_offline", "detail": "Connection timeout"}
+            except httpx.HTTPError as exc:
+                return {"error": True, "error_type": "backend_offline", "detail": str(exc)}
+
+            if response.status_code in (400, 422):
+                detail = response.json().get("detail", {})
+                return {"error": True, "error_type": "validation", "status": response.status_code, "detail": detail}
+            if response.status_code == 401:
+                return {"error": True, "error_type": "auth", "detail": "Authentication failed"}
+            if response.status_code >= 500:
+                return {"error": True, "error_type": "backend_error", "status": response.status_code, "detail": f"HTTP {response.status_code}"}
+            response.raise_for_status()
+            return {"error": False, "data": response.json()}

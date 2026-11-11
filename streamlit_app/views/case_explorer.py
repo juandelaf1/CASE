@@ -216,6 +216,10 @@ def _render_case_detail(client: CASEClient, case_id: str) -> None:
     st.markdown("---")
     st.markdown(f"#### {t('triage_case_id')}: {case_id}")
 
+    _render_decision_trace(decision)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
     render_metric_cards([
         {"label": t("triage_domain"), "value": domain, "icon": "\u25ce", "color": "#6a4fa0"},
         {"label": t("field_action"), "value": action.upper(), "icon": "\u2611", "color": "#1a7a7a"},
@@ -255,3 +259,52 @@ def _render_case_detail(client: CASEClient, case_id: str) -> None:
 
     with st.expander(t("dc_technical"), expanded=False):
         st.json(decision)
+
+
+def _render_decision_trace(decision: dict[str, Any]) -> None:
+    st.markdown(f"##### {t('ce_trace_title')}")
+    st.caption(t("ce_trace_desc"))
+
+    domain = decision.get("domain", t("common_n_a"))
+    urgency = decision.get("urgency", t("common_n_a"))
+    action = decision.get("action", t("common_n_a"))
+    confidence = decision.get("confidence", 0)
+    provider_info = decision.get("provider_info", {})
+    provider = provider_info.get("provider", t("common_n_a"))
+    lifecycle = decision.get("lifecycle", t("common_n_a"))
+    human_override = decision.get("human_override")
+
+    steps = [
+        (t("ce_step_input"), f"{domain} / {urgency}", "\u2705"),
+        (t("ce_step_proposal"), f"{action} ({confidence:.0%})", "\u2705" if action != "reject" else "\u26a0\ufe0f"),
+        (t("ce_step_validation"), t("ce_step_validation_desc"), "\u2705"),
+        (t("ce_step_risk"), provider, "\u2705"),
+        (t("ce_step_decision"), action.upper(), "\u2705" if action != "reject" else "\u274c"),
+    ]
+
+    if human_override:
+        steps.append((t("ce_step_human"), human_override.get("action", "override"), "\U0001f464"))
+    else:
+        steps.append((t("ce_step_human"), lifecycle, "\u23ed\ufe0f" if "human" in lifecycle else "\u2705"))
+
+    steps.append((t("ce_step_audit"), t("ce_step_audit_desc"), "\U0001f4cb"))
+
+    connector = (
+        '<div style="text-align:center; color:var(--text-secondary); '
+        'font-size:0.9rem; padding:1px 0;">\u2193</div>'
+    )
+
+    for step_name, step_value, step_icon in steps:
+        st.markdown(
+            f'<div style="background:var(--background-secondary, #f0f2f6); '
+            f'border:1px solid var(--border-color, #e0e2e8); '
+            f'border-radius:6px; padding:6px 14px; text-align:center; '
+            f'margin:0 60px;">'
+            f'<span style="font-size:0.85rem;">{step_icon}</span> '
+            f'<strong style="font-size:0.82rem;">{step_name}</strong>'
+            f' <span style="font-size:0.75rem; color:var(--text-secondary);">'
+            f'{step_value}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(connector, unsafe_allow_html=True)
