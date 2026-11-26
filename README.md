@@ -18,8 +18,8 @@
 </p>
 
 <p align="center">
-  <strong>813 passed · 0 failed</strong><br>
-  <sub>ruff 0 errors · mypy 0 errors · 93 source files</sub><br>
+  <strong>871 passed ? 0 failed</strong><br>
+  <sub>ruff 0 errors ? mypy 0 errors ? 116 source files</sub><br>
   <sub>Live tests (Groq/Ollama): require API key and running server</sub>
 </p>
 
@@ -38,6 +38,8 @@
 ## ¿Qué es CASE?
 
 CASE es una plataforma de orquestación de decisiones IA, de dominio agnóstico y de proveedor agnóstico. Transforma casos operativos no estructurados en decisiones estructuradas, validadas y respaldadas por evidencia — con supervisión humana enforce por diseño.
+
+**Visi?n de producto:** CASE es la plataforma modular de decisi?n; los dominios se integran como *domain packs* y los consumidores externos (p. ej. Poolar) se integran por contratos versionados como `case.evaluate`, sin acoplar su l?gica al core. Log?stica es el vertical de referencia actual, no el l?mite del producto.
 
 > **El LLM propone. CASE valida, evalúa y gobierna la decisión.**
 
@@ -340,7 +342,7 @@ ruff check src
 # Esperado: All checks passed
 
 mypy src --ignore-missing-imports
-# Esperado: Success: no issues found in 93 source files
+# Esperado: Success: no issues found in 116 source files
 ```
 
 ### Ejecutar la API
@@ -560,7 +562,7 @@ from case_core.providers.cloud import CloudProvider
 |-------------|-----------|
 | pytest (determinista) | 692 passed, 7 skipped, 0 failed |
 | ruff | 0 errors (src) |
-| mypy | 0 errors (93 source files) |
+| mypy | 0 errors (116 source files) |
 
 ### Clasificación de Tests
 
@@ -729,6 +731,8 @@ MIT — Ver [LICENSE](LICENSE) para detalles.
 ## What is CASE?
 
 CASE is a domain-agnostic, provider-agnostic AI decision orchestration platform. It transforms unstructured operational cases into structured, validated, evidence-backed decisions — with human oversight enforced by design.
+
+**Product vision:** CASE is the modular decision platform; domains plug in as *domain packs* and external consumers (e.g. Poolar) integrate through versioned contracts such as `case.evaluate`, without coupling their logic into core. Logistics is the current reference vertical, not the product boundary.
 
 > **El LLM propone. CASE valida, evalúa y gobierna la decisión.**
 
@@ -970,7 +974,7 @@ These components are wired into the running system via `composition.py` and `Tri
 |-----------|----------|--------|
 | Contracts (Pydantic v2 schemas) | `contracts/` | Connected |
 | Ports (6 ABC interfaces) | `ports/` | Connected |
-| DomainRegistry (4 domains) | `domain/registry.py` | Connected |
+| DomainRegistry (5 domains) | `domain/registry.py` | Connected |
 | TriageEngine | `application/engine.py` | Connected |
 | ReliabilityPipeline | `reliability/pipeline.py` | Connected |
 | AutomationEvaluator | `reliability/automation.py` | Connected |
@@ -1031,7 +1035,7 @@ ruff check src
 # Expected: All checks passed
 
 mypy src --ignore-missing-imports
-# Expected: Success: no issues found in 93 source files
+# Expected: Success: no issues found in 116 source files
 ```
 
 ### Run the API
@@ -1110,7 +1114,7 @@ The `examples/` directory contains deterministic demo scripts:
 | `demo_escalate.py` | Critical case | ESCALATE |
 | `demo_invalid_output.py` | Empty evidence | Terminal failure (domain validation) |
 | `demo_hitl_lifecycle.py` | Full HITL workflow | Approve → Reject → Modify |
-| `demo_all_domains.py` | All 4 domains | Domain-specific routing |
+| `demo_all_domains.py` | All 5 domains | Domain-specific routing |
 
 ```bash
 python examples/demo_auto_approve.py
@@ -1251,7 +1255,7 @@ from case_core.providers.cloud import CloudProvider
 |-------|--------|
 | pytest (deterministic) | 692 passed, 7 skipped, 0 failed |
 | ruff | 0 errors (src) |
-| mypy | 0 errors (93 source files) |
+| mypy | 0 errors (116 source files) |
 
 ### Test Classification
 
