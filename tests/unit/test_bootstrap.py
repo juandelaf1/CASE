@@ -6,8 +6,6 @@ import sqlite3
 import sys
 import tempfile
 
-import pytest
-
 sys.path.insert(0, "src")
 
 
@@ -19,7 +17,7 @@ class TestDBBootstrap:
         try:
             from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
 
-            repo = SQLiteDecisionRepository(db_path=db_path)
+            SQLiteDecisionRepository(db_path=db_path)
             conn = sqlite3.connect(db_path)
             tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
             conn.close()
@@ -34,7 +32,7 @@ class TestDBBootstrap:
         try:
             from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
 
-            repo = SQLiteDecisionRepository(db_path=db_path)
+            SQLiteDecisionRepository(db_path=db_path)
             assert os.path.exists(db_path)
             assert os.path.getsize(db_path) > 0
         finally:
@@ -49,7 +47,7 @@ class TestDBBootstrap:
         try:
             from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
 
-            repo = SQLiteDecisionRepository(db_path=db_path)
+            SQLiteDecisionRepository(db_path=db_path)
             conn = sqlite3.connect(db_path)
             tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
             conn.close()
@@ -67,7 +65,7 @@ class TestDBBootstrap:
         try:
             from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository
 
-            repo = SQLiteDecisionRepository(db_path=db_path)
+            SQLiteDecisionRepository(db_path=db_path)
             conn2 = sqlite3.connect(db_path)
             tables = [r[0] for r in conn2.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
             conn2.close()
@@ -84,7 +82,7 @@ class TestAuditBootstrap:
         try:
             from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter
 
-            adapter = SQLiteAuditAdapter(db_path=db_path)
+            SQLiteAuditAdapter(db_path=db_path)
             conn = sqlite3.connect(db_path)
             tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
             conn.close()
@@ -101,7 +99,7 @@ class TestAuditBootstrap:
         try:
             from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter
 
-            adapter = SQLiteAuditAdapter(db_path=db_path)
+            SQLiteAuditAdapter(db_path=db_path)
             conn = sqlite3.connect(db_path)
             tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
             conn.close()

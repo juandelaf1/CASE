@@ -185,3 +185,6 @@ def _render_results(results: list[dict[str, Any]]) -> None:
 
     with st.expander(t("eval_limitations")):
         st.markdown(t("eval_limitations_text"))
+
+    with st.expander(t("eval_metric_defs_title")):
+        st.markdown(t("eval_metric_defs"))

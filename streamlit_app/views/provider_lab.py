@@ -21,20 +21,31 @@ PROVIDER_DEFINITIONS: list[dict[str, str]] = [
         "model_key": "CASE_MOCK_MODEL",
         "default_model": "mock-model",
         "health_type": "always_available",
+        "status_label": "DETERMINISTIC",
     },
     {
         "name": "groq",
         "model_key": "CASE_GROQ_MODEL",
-        "default_model": "llama-3.3-70b-versatile",
+        "default_model": "qwen/qwen3.8-27b",
         "health_type": "api_key_check",
         "api_key_env": "CASE_GROQ_API_KEY",
+        "status_label": "REAL INFERENCE",
     },
     {
         "name": "ollama",
         "model_key": "CASE_OLLAMA_MODEL",
-        "default_model": "llama3",
+        "default_model": "llama3.2",
         "health_type": "http_endpoint",
         "health_url": "http://localhost:11434/api/tags",
+        "status_label": "REAL INFERENCE",
+    },
+    {
+        "name": "cloud",
+        "model_key": "CASE_CLOUD_MODEL",
+        "default_model": "gpt-4o-mini",
+        "health_type": "api_key_check",
+        "api_key_env": "CASE_CLOUD_API_KEY",
+        "status_label": "NOT VERIFIED",
     },
 ]
 
@@ -218,6 +229,17 @@ def render() -> None:
     st.caption(t("pl_neutrality_explain"))
 
     st.markdown("<br>", unsafe_allow_html=True)
+
+    # Provider abstraction story
+    st.markdown(f"#### {t('pl_abstraction_title')}")
+    st.markdown(
+        f'<div style="font-size:0.88rem; color:var(--text-secondary); line-height:1.6; padding:0.5rem 0;">'
+        f'{t("pl_abstraction_desc")}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(f"#### {t('pl_telemetry')}")
     st.caption(t("pl_telemetry_desc"))
 
@@ -261,11 +283,11 @@ def render() -> None:
         client = get_client()
         cases_result = client.list_cases_sync(limit=100, offset=0)
         decisions = cases_result.get("decisions", [])
-        
+
         groq_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "groq"]
         ollama_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "ollama"]
         mock_runs = [d for d in decisions if d.get("provider_info", {}).get("provider") == "mock"]
-        
+
         available_providers = []
         if groq_runs:
             available_providers.append(("Groq", groq_runs))
@@ -273,7 +295,7 @@ def render() -> None:
             available_providers.append(("Ollama", ollama_runs))
         if mock_runs:
             available_providers.append(("Mock", mock_runs))
-            
+
         if available_providers:
             _render_provider_metrics(available_providers)
         else:

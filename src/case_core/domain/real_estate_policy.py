@@ -87,7 +87,7 @@ class RealEstatePolicy(DomainPolicy):
             "property_types": [pt.value for pt in PropertyType],
             "transaction_types": [tt.value for tt in TransactionType],
             "incident_types": [it.value for it in RealEstateIncidentType],
-            "evidence_requirements": ["text", "metric", "document"],
+            "evidence_types": ["text", "metric"],
             "departments": ["valuation", "legal", "sales", "maintenance", "compliance"],
         }
 
