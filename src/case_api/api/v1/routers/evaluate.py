@@ -45,6 +45,9 @@ router = APIRouter()
 
 
 # --- case.evaluate boundary adapter (dev-stage, additive; no execution authority) ---
+SUPPORTED_EVALUATE_CONTRACT_VERSIONS = {"case-eval/v0.1-draft"}
+
+
 class EvaluatePayload(BaseModel):
     case_id: str | None = None
     domain: str
@@ -167,7 +170,17 @@ def _map_triage_to_evaluate_response(env: EvaluateEnvelopeRequest, triage_resp: 
 
 @router.post("/api/v1/evaluate")
 async def evaluate_case(request: EvaluateEnvelopeRequest, http_request: Request) -> dict[str, Any]:
-    # Capability check (additive boundary; CASE does not execute effects)
+    # Contract/capability checks (additive boundary; CASE does not execute effects)
+    if request.contract_version not in SUPPORTED_EVALUATE_CONTRACT_VERSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": f"Unsupported contract_version: {request.contract_version}",
+                "code": "CONTRACT_UNSUPPORTED",
+                "supported_versions": sorted(SUPPORTED_EVALUATE_CONTRACT_VERSIONS),
+                "correlation_id": request.correlation_id,
+            },
+        )
     if request.capability_id not in ("case.evaluate", ""):
         raise HTTPException(
             status_code=400,

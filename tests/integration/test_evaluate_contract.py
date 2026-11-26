@@ -102,3 +102,12 @@ class TestEvaluateContract:
         assert isinstance(data.get("errors"), list)
         assert data["result"]["decision_type"] == "recommendation"
         assert data["result"]["requires_human_review"] is True
+
+    def test_unsupported_contract_version_rejected(self):
+        req = self._sample_request()
+        req["contract_version"] = "case-eval/v9.9"
+        response = client.post("/api/v1/evaluate", json=req)
+        assert response.status_code == 400
+        detail = response.json().get("detail", {})
+        assert detail.get("code") == "CONTRACT_UNSUPPORTED"
+        assert detail.get("correlation_id") == req["correlation_id"]
