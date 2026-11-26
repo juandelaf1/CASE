@@ -86,8 +86,8 @@ A new scenario should **not** require changes to core orchestration logic, provi
 
 | Issue | Why it matters | Direction |
 |---|---|---|
-| `app.py` is monolithic | Hard to evolve capabilities independently | Split into routers by capability |
-| `evaluate` contract embedded in app.py | Poolar/consumer boundary should be versioned and isolated | Extract schema/router/service for evaluate contract |
+| `app.py` is monolithic | Hard to evolve capabilities independently | Resolved: split into `case_api/api/v1/routers/*` (PR #12). |
+| `evaluate` contract embedded in app.py | Poolar/consumer boundary should be versioned and isolated | Resolved: router extracted; contract documented in `docs/CASE_EVALUATE_CONTRACT.md` (issue #8). |
 | Logistics duplication (`case_core/domain/logistics_*`, `case_logistics/`, `logistics_adapter/`) | Resolved | `case_core/domain/logistics_*` = canonical domain pack; `logistics_adapter/` = data ingestion/normalization; legacy `case_logistics/` retired (issue #9). |
 | Doc/state drift (AGENT_CONTEXT/README/ARCHITECTURE) | Creates wrong operational decisions | Make one canonical status source and update links |
 | Experimental modules not classified | Can create accidental coupling or dead weight | Maintain explicit integrate/keep-isolated/extract/retire decisions |
@@ -107,3 +107,6 @@ A new scenario should **not** require changes to core orchestration logic, provi
 - [CAPABILITY_AUDIT.md](CAPABILITY_AUDIT.md)
 - [V3_ECOSYSTEM_PLAN.md](V3_ECOSYSTEM_PLAN.md)
 - [INTEGRATION_CANDIDATES.md](INTEGRATION_CANDIDATES.md)
+- [DOMAIN_PACK_GUIDE.md](DOMAIN_PACK_GUIDE.md)
+- [CASE_EVALUATE_CONTRACT.md](CASE_EVALUATE_CONTRACT.md)
+- [CONSUMER_INTEGRATION_GUIDE.md](CONSUMER_INTEGRATION_GUIDE.md)

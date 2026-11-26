@@ -71,12 +71,21 @@ On error, `status="error"` and `error` contains structured detail (`code`, `mess
 - Correlation ID propagated through request context and audit where available.
 - Fault hooks may be used in tests for integrity/recovery scenarios.
 
-## Compatibility Rules
+## Versioning & Compatibility
 
-- Additive fields are preferred for draft evolution.
-- Breaking changes require new `contract_version`.
-- Consumers should ignore unknown additive response fields.
+- **Current version:** `case-eval/v0.1-draft` (implementation-aligned, draft).
+- **Supported versions:** server accepts declared supported versions; unsupported versions return `CONTRACT_UNSUPPORTED`.
+- **Additive changes:** allowed within a version (new optional fields). Consumers must ignore unknown fields.
+- **Breaking changes:** require a new `contract_version` (e.g. `case-eval/v1.0`). Old versions may be supported during a deprecation window.
+- **Deprecation:** announce in docs/changelog, keep compatibility window, then remove with major release note.
+- **Stability target:** promote to `case-eval/v1.0` when at least one external consumer (e.g. Poolar) validates the contract in a real slice and the envelope is frozen.
+
+## Consumer Integration Rules
+
 - CASE core must not gain consumer-specific branches; consumer adapters map into this contract.
+- Consumers own mapping from their domain objects to `case.evaluate` payload.
+- Idempotency key and correlation id are consumer responsibilities to pass; CASE enforces replay/conflict semantics in strict modes.
+- Poolar integration should live in Poolar as an adapter/client calling this contract.
 
 ## Test Coverage
 

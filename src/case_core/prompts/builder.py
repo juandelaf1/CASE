@@ -77,7 +77,8 @@ def _format_evidence(evidence: list[EvidenceItem]) -> str:
 
 def _build_domain_context(policy: DomainPolicy) -> str:
     ctx = policy.get_domain_context()
-    lines = [f"Domain: {ctx['domain']}", f"Valid evidence types: {', '.join(ctx['evidence_types'])}"]
+    ev_types = ctx.get('evidence_types', [])
+    lines = [f"Domain: {ctx.get('domain', '')}", f"Valid evidence types: {', '.join(ev_types) if ev_types else 'any'}"]
     if "incident_types" in ctx:
         lines.append(f"Incident types: {', '.join(ctx['incident_types'])}")
     if "departments" in ctx:
