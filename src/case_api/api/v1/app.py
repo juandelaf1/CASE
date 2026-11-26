@@ -90,9 +90,12 @@ app = FastAPI(
 _security_config = load_security_config()
 app.state.security_config = _security_config
 
-try:
+import inspect as _inspect
+
+_auth_params = _inspect.signature(APIKeyAuthMiddleware.__init__).parameters
+if "config" in _auth_params or "kwargs" in _auth_params or any(p.kind == _inspect.Parameter.VAR_KEYWORD for p in _auth_params.values()):
     app.add_middleware(APIKeyAuthMiddleware, config=_security_config)  # type: ignore[call-arg,unused-ignore]
-except TypeError:
+else:
     app.add_middleware(APIKeyAuthMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
