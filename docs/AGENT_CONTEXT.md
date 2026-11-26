@@ -2,7 +2,7 @@
 
 READ THIS FILE BEFORE MODIFYING CASE.
 
-> Last verified: 2026-11-13 (baseline audit + quality gates). Verify again before major changes.
+> Last verified: 2026-11-26 (domain packs + case.evaluate hardening + quality gates). Verify again before major changes.
 
 ---
 
@@ -28,15 +28,15 @@ CASE (Case Assessment and Structured Evaluation) is a domain-agnostic, provider-
 | Branch | `master` |
 | Remote | `origin https://github.com/juandelaf1/CASE.git` |
 | Python | 3.13.12 via `C:\Users\JUAN\miniconda3\python.exe` (conda); `.venv` may also exist locally |
-| Working tree | **WIP/dirty** — hardening multiconsumer/idempotency, evaluate contract, docs; classify before large refactors (see issue #6) |
+| Working tree | Clean after recent commits (verify with `git status`) |
 
 ## Verified Baseline (2026-11-13)
 
 | Gate | Result |
 |---|---|
 | `ruff check src tests` | PASS |
-| `mypy src --ignore-missing-imports` | PASS (103 source files) |
-| `pytest tests/ -q --ignore=tests/unit/test_streamlit_client.py` | 871 collected; 869 passed, 2 failed env-sensitive in `test_provider_selection` (fixed in working tree, pending commit) |
+| `mypy src --ignore-missing-imports` | PASS (118 source files) |
+| `pytest tests/ -q --ignore=tests/unit/test_streamlit_client.py` | 875 passed, 0 failed |
 | Platform | Windows (PowerShell) |
 
 ---
@@ -45,9 +45,9 @@ CASE (Case Assessment and Structured Evaluation) is a domain-agnostic, provider-
 
 | Check | Result |
 |-------|--------|
-| pytest | 871 collected, 869 passed, 2 env-sensitive failures fixed in working tree (2026-11-13 baseline); verify with quality gates |
+| pytest | 875 passed, 0 failed (verified 2026-11-26) |
 | ruff | 0 errors |
-| mypy | 0 errors (82 source files) |
+| mypy | 0 errors (118 source files) |
 | Integration tests | 11 pass, 7 skipped (Ollama) |
 
 ---
@@ -62,7 +62,7 @@ These components are wired into the running system via `composition.py` and `Tri
 |-----------|--------|----------|
 | Contracts (9 files, Pydantic v2) | CONNECTED | Used by all layers |
 | Ports (6 ABC interfaces) | CONNECTED | Used by engine, providers, persistence |
-| DomainRegistry | CONNECTED | 3 domains registered: urban_operations, logistics, infrastructure |
+| DomainRegistry | CONNECTED | 7 domains registered: urban_operations, logistics, infrastructure, seismic_risk, real_estate, customer_support, supply_chain_disruption |
 | TriageEngine | CONNECTED | Application-layer orchestrator |
 | ReliabilityPipeline | CONNECTED | Used by TriageEngine |
 | AutomationEvaluator | CONNECTED | Used by pipeline |
@@ -97,7 +97,9 @@ These modules exist as standalone implementations. They are tested in isolation 
 | **Logistics** | YES | Full | 6 incident types | LogisticsAutomationPolicy | 10 pairs |
 | **Urban Operations** | YES | Partial | None (keyword urgency only) | DefaultAutomationPolicy | 0 |
 | **Infrastructure** | YES | Partial | None (keyword urgency only) | DefaultAutomationPolicy | 0 |
-| **Real Estate** | NO | Implemented | Implemented | Implemented | 0 |
+| **Real Estate** | YES | Implemented | Implemented | Implemented | 0 |
+| **Customer Support** | YES | Implemented | Implemented | Implemented | 0 |
+| **Supply Chain Disruption** | YES | Implemented | Implemented | Implemented | 0 |
 
 ---
 
@@ -213,7 +215,7 @@ These modules exist as standalone implementations. They are tested in isolation 
 ## NEXT RECOMMENDED ACTION
 
 1. Integrate ShipmentUnderstanding (v1.0.1)
-2. Complete domain-pack consistency across all 5 registered domains (policy/automation/validation/routing/tests/eval)
+2. Complete domain-pack consistency across all 7 registered domains (policy/automation/validation/routing/tests/eval)
 3. Architecture review after integrations
 
 ---

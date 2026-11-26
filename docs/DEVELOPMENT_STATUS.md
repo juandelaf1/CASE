@@ -1,6 +1,6 @@
 # CASE Development Status
 
-> Detailed technical snapshot. Last verified: 2026-11-13 (local baseline + refactor session).
+> Detailed technical snapshot. Last verified: 2026-11-26 (domain packs, case.evaluate hardening, quality gates).
 > Source of truth for current implementation state. Update this file after verified changes.
 
 ---
@@ -23,7 +23,7 @@
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch (session) | `juan/ciclo4-consolidacion-case` |
 | Remote | `origin` (GitHub, `juandelaf1/CASE`) |
-| Working tree | Dirty WIP remains (hardening/idempotency/evaluate docs/tests/scripts); session changes committed separately |
+| Working tree | Clean after recent commits (verify with `git status`) |
 
 ---
 
@@ -31,9 +31,9 @@
 
 | Check | Result |
 |-------|--------|
-| pytest | 871 collected, **871 passed, 0 failed** (`--ignore=tests/unit/test_streamlit_client.py`) |
+| pytest | **875 passed, 0 failed** (`--ignore=tests/unit/test_streamlit_client.py`) |
 | ruff | 0 errors |
-| mypy | 0 errors (116 source files, `--ignore-missing-imports`) |
+| mypy | 0 errors (118 source files, `--ignore-missing-imports`) |
 | CI | GitHub Actions workflow added (`.github/workflows/ci.yml`) |
 | Dependabot | Config added (`.github/dependabot.yml`) |
 
@@ -52,7 +52,7 @@ composition.py (dependency wiring)
    ↓
 TriageEngine (application layer orchestrator)
    ↓
-DomainRegistry → DomainPolicy (5 registered domains: urban_operations, logistics, infrastructure, seismic_risk, real_estate)
+DomainRegistry → DomainPolicy (7 registered domains: urban_operations, logistics, infrastructure, seismic_risk, real_estate, customer_support, supply_chain_disruption)
    ↓
 PromptBuilder → LLMProvider (via port)
    ↓
@@ -89,7 +89,7 @@ These modules exist as standalone implementations. They are tested but NOT wired
 | ML Adaptation | ml/*.py (7 files) | Training abstractions, dataset pipeline, LoRA config |
 | Specialist Models | ml/specialist_*.py (2 files) | Keyword-based classification/risk/routing specialists |
 | Hybrid Decision Engine | hybrid/decision_engine.py | Multi-source decision combination |
-| Real Estate Domain | domain/real_estate_policy.py | Domain policy (NOT registered) |
+| (none - all listed domain packs registered) | - | - |
 | Governance | governance/__init__.py | Security, compliance, access control |
 | Production | production/__init__.py | Circuit breaker, rate limiter, health checks |
 
