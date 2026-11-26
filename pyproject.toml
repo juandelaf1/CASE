@@ -34,6 +34,9 @@ target-version = "py311"
 select = ["E", "F", "I", "W", "UP", "B", "C4", "T20"]
 ignore = ["E501", "B008", "UP042", "UP017"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["case_api", "case_core", "case_infra", "case_logistics", "logistics_adapter", "usgs_adapter"]
+
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true
@@ -49,10 +52,14 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "integration: marks integration tests (deselect with '-m \"not integration\"')",
+    "live: marks tests that require live external services or API keys (opt-in)",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["case_*"]
+include = ["case_*", "logistics_adapter", "usgs_adapter"]
 
 [tool.coverage.run]
 source = ["src/case_core", "src/case_api", "src/case_infra"]
