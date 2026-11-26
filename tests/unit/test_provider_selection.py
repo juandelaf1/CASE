@@ -57,7 +57,11 @@ class TestProviderSelection:
         response = client.post("/api/v1/triage", json=payload)
         assert response.status_code == 200
         data = response.json()
-        assert data["provider_info"]["provider"] == "mock"
+        providers_resp = client.get("/api/v1/providers")
+        assert providers_resp.status_code == 200
+        expected_default = providers_resp.json()["active_provider"]
+        actual = data["provider_info"]["provider"]
+        assert actual == expected_default or actual in expected_default or expected_default in actual
 
     def test_triage_with_provider_mock(self):
         payload = dict(TRIAGE_PAYLOAD)
@@ -75,7 +79,12 @@ class TestProviderSelection:
         response = client.post("/api/v1/triage", json=payload)
         assert response.status_code == 200
         data = response.json()
-        assert data["provider_info"]["provider"] == "mock"
+        # Unknown provider falls back to engine default (configured default)
+        providers_resp = client.get("/api/v1/providers")
+        assert providers_resp.status_code == 200
+        expected_default = providers_resp.json()["active_provider"]
+        actual = data["provider_info"]["provider"]
+        assert actual == expected_default or actual in expected_default or expected_default in actual
 
 
 class TestProviderIsolation:

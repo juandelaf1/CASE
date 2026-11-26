@@ -681,6 +681,7 @@ CASE/
 | Documento | Propósito |
 |-----------|-----------|
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitectura técnica y descripciones de capas |
+| [MODULE_MAP.md](docs/MODULE_MAP.md) | Mapa canónico de módulos, límites y regla de vertical logística de referencia |
 | [DEVELOPMENT_STATUS.md](docs/DEVELOPMENT_STATUS.md) | Estado detallado de implementación y matriz de tests |
 | [ROADMAP.md](docs/ROADMAP.md) | Fases, hitos y planificación futura |
 | [DECISION_LOG.md](docs/DECISION_LOG.md) | Registro de decisiones técnicas significativas (D001-D010) |

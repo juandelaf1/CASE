@@ -2,7 +2,7 @@
 
 READ THIS FILE BEFORE MODIFYING CASE.
 
-> Last verified: 2026-09-14 by autonomous agent. All claims verified against actual repository state.
+> Last verified: 2026-11-13 (baseline audit + quality gates). Verify again before major changes.
 
 ---
 
@@ -16,6 +16,8 @@ CASE (Case Assessment and Structured Evaluation) is a domain-agnostic, provider-
 
 **Project type:** Portfolio-grade research/engineering project. Production-oriented architecture. Not a production system.
 
+**Module strategy:** Core agnóstico de proveedor y dominio; CASE debe valer para cualquier escenario. Logística es el primer vertical slice/demo de referencia, no el límite. Poolar es un consumidor/integración, no el techo. Ver [MODULE_MAP.md](MODULE_MAP.md).
+
 ---
 
 ## Current Repository
@@ -24,11 +26,17 @@ CASE (Case Assessment and Structured Evaluation) is a domain-agnostic, provider-
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
 | Branch | `master` |
-| HEAD | `4775be3` |
-| Commits | 22 |
-| Remote | NONE |
-| Working tree | Clean |
-| Python | 3.13.12 via `C:\Users\JUAN\miniconda3\python.exe` |
+| Remote | `origin https://github.com/juandelaf1/CASE.git` |
+| Python | 3.13.12 via `C:\Users\JUAN\miniconda3\python.exe` (conda); `.venv` may also exist locally |
+| Working tree | **WIP/dirty** — hardening multiconsumer/idempotency, evaluate contract, docs; classify before large refactors (see issue #6) |
+
+## Verified Baseline (2026-11-13)
+
+| Gate | Result |
+|---|---|
+| `ruff check src tests` | PASS |
+| `mypy src --ignore-missing-imports` | PASS (103 source files) |
+| `pytest tests/ -q --ignore=tests/unit/test_streamlit_client.py` | 871 collected; 869 passed, 2 failed env-sensitive in `test_provider_selection` (fixed in working tree, pending commit) |
 | Platform | Windows (PowerShell) |
 
 ---
@@ -37,7 +45,7 @@ CASE (Case Assessment and Structured Evaluation) is a domain-agnostic, provider-
 
 | Check | Result |
 |-------|--------|
-| pytest | 526 passed, 7 skipped, 0 failures |
+| pytest | 871 collected, 869 passed, 2 env-sensitive failures fixed in working tree (2026-11-13 baseline); verify with quality gates |
 | ruff | 0 errors |
 | mypy | 0 errors (82 source files) |
 | Integration tests | 11 pass, 7 skipped (Ollama) |
@@ -76,7 +84,7 @@ These modules exist as standalone implementations. They are tested in isolation 
 | **ML Adaptation** | ml/training_abstraction.py, ml/dataset_contracts.py, ml/dataset_pipeline.py, ml/lora_config.py, ml/adapters.py, ml/evaluation.py, ml/evaluation_dataset.py | ISOLATED | Abstract interfaces and mock implementations |
 | **Specialist Models** | ml/specialist_models.py, ml/specialist_contracts.py | ISOLATED | Keyword-based specialists, not wired to pipeline |
 | **Hybrid Decision Engine** | hybrid/decision_engine.py | ISOLATED | Standalone engine, not used by TriageEngine |
-| **Real Estate Domain** | domain/real_estate_policy.py | ISOLATED | NOT registered in DomainRegistry |
+| **Real Estate Domain** | domain/real_estate_policy.py | CONNECTED | Registered in DomainRegistry/composition; verify maturity as domain pack |
 | **Governance** | governance/__init__.py | ISOLATED | SecurityManager, ComplianceManager — standalone |
 | **Production** | production/__init__.py | ISOLATED | CircuitBreaker, RateLimiter — standalone |
 
@@ -121,7 +129,7 @@ These modules exist as standalone implementations. They are tested in isolation 
 - ML Adaptation (7 modules, abstract interfaces)
 - Specialist Models (2 modules, keyword-based)
 - Hybrid Decision Engine (1 module, standalone)
-- Real Estate Domain Pack (1 module, not registered)
+- Real Estate Domain Pack registered (verify domain-pack completeness: validation/routing/evaluation)
 - Governance Framework (1 module, standalone)
 - Production Readiness (1 module, standalone)
 
@@ -205,7 +213,7 @@ These modules exist as standalone implementations. They are tested in isolation 
 ## NEXT RECOMMENDED ACTION
 
 1. Integrate ShipmentUnderstanding (v1.0.1)
-2. Register RealEstatePolicy (v1.0.2)
+2. Complete domain-pack consistency across all 5 registered domains (policy/automation/validation/routing/tests/eval)
 3. Architecture review after integrations
 
 ---

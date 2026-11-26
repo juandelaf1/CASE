@@ -53,6 +53,13 @@ CASE is a domain-agnostic, provider-agnostic AI decision orchestration platform 
 
 Do not present isolated modules as connected. Do not claim isolated modules are part of the end-to-end execution path.
 
+### Module Strategy
+
+- **Core is provider-agnostic and domain-agnostic.** CASE must work for any scenario through contracts and domain packs.
+- **Logistics is the current reference vertical/demo slice, not the platform boundary.** Do not hardcode logistics assumptions into core.
+- **Poolar is a consumer integration, not CASE's ceiling.** Integrations consume CASE contracts; they do not define core behavior.
+- **Canonical boundaries:** see [docs/MODULE_MAP.md](docs/MODULE_MAP.md) before adding modules, adapters, or wiring isolated capabilities.
+
 ---
 
 ## Coding Conventions

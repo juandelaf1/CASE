@@ -51,3 +51,11 @@ dist/
 
 # Notebooks
 .ipynb_checkpoints/
+
+# Local agent/pytest scratch artifacts
+AGENTS.md.backup
+*.backup
+pytest_case.txt
+pytest_output.txt
+src/pytest_case.txt
+src/pytest_output.txt
