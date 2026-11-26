@@ -20,7 +20,7 @@ dev = [
     "ruff>=0.17.6",
     "mypy>=1.13.0",
     "jsonschema>=4.0.0",
-    "types-requests>=2.32.0",
+    "types-requests>=2.33.0.20261030",
 ]
 
 [build-system]
