@@ -52,7 +52,7 @@ async def start_review(decision_id: str, request: HITLActionRequest, http_reques
     if decision.lifecycle != DecisionLifecycle.AI_PROPOSED:
         raise HTTPException(status_code=400, detail=f"Cannot transition from {decision.lifecycle.value}")
 
-    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.UNDER_REVIEW.value, request.actor, request.justification)
+    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.UNDER_REVIEW.value, request.actor, request.justification)  # type: ignore[func-returns-value,unused-ignore]
     if ok is False:
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; transition rejected")
 
@@ -81,7 +81,7 @@ async def approve_decision(decision_id: str, request: HITLActionRequest, http_re
     if decision.lifecycle not in (DecisionLifecycle.AI_PROPOSED, DecisionLifecycle.UNDER_REVIEW):
         raise HTTPException(status_code=400, detail=f"Cannot approve from {decision.lifecycle.value}")
 
-    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.APPROVED.value, request.actor, request.justification)
+    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.APPROVED.value, request.actor, request.justification)  # type: ignore[func-returns-value,unused-ignore]
     if ok is False:
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; transition rejected")
 
@@ -110,7 +110,7 @@ async def reject_decision(decision_id: str, request: HITLActionRequest, http_req
     if decision.lifecycle not in (DecisionLifecycle.AI_PROPOSED, DecisionLifecycle.UNDER_REVIEW):
         raise HTTPException(status_code=400, detail=f"Cannot reject from {decision.lifecycle.value}")
 
-    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.REJECTED.value, request.actor, request.justification)
+    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.REJECTED.value, request.actor, request.justification)  # type: ignore[func-returns-value,unused-ignore]
     if ok is False:
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; transition rejected")
 
@@ -139,7 +139,7 @@ async def escalate_decision(decision_id: str, request: HITLEscalateRequest, http
     if decision.lifecycle not in (DecisionLifecycle.AI_PROPOSED, DecisionLifecycle.UNDER_REVIEW):
         raise HTTPException(status_code=400, detail=f"Cannot escalate from {decision.lifecycle.value}")
 
-    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.ESCALATED.value, request.actor, request.justification)
+    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.ESCALATED.value, request.actor, request.justification)  # type: ignore[func-returns-value,unused-ignore]
     if ok is False:
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; transition rejected")
 

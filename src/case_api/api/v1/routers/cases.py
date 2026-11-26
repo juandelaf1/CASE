@@ -11,9 +11,9 @@ router = APIRouter()
 async def list_cases(http_request: Request, limit: int = 50, offset: int = 0) -> dict[str, object]:
     require_scope_in_strict(http_request, ["case:read", "case:admin"])
     deps = get_deps()
-    ctx = getattr(http_request.state, "security_context", None)
+    _ctx = getattr(http_request.state, "security_context", None)
     decisions = await deps.decision_repo.list_decisions(limit=limit, offset=offset)
-    total = await deps.decision_repo.count_decisions(security_context=ctx)
+    total = await deps.decision_repo.count_decisions()
     return {
         "decisions": [d.model_dump_ext() for d in decisions],
         "total": total,

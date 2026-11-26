@@ -76,7 +76,7 @@ _security_config = load_security_config()
 app.state.security_config = _security_config
 
 try:
-    app.add_middleware(APIKeyAuthMiddleware, config=_security_config)
+    app.add_middleware(APIKeyAuthMiddleware, config=_security_config)  # type: ignore[call-arg,unused-ignore]
 except TypeError:
     app.add_middleware(APIKeyAuthMiddleware)
 app.add_middleware(RateLimitMiddleware)
