@@ -52,10 +52,10 @@ class InMemoryAuditPort(AuditPort):
     def __init__(self) -> None:
         self.events: list[AuditEvent] = []
 
-    async def log_event(self, event: AuditEvent) -> None:
+    async def log_event(self, event: AuditEvent, security_context=None) -> None:
         self.events.append(event)
 
-    async def get_events_by_case(self, case_id: str) -> list[AuditEvent]:
+    async def get_events_by_case(self, case_id: str, security_context=None) -> list[AuditEvent]:
         return [e for e in self.events if e.case_id == case_id]
 
 
@@ -63,32 +63,32 @@ class InMemoryDecisionRepository(DecisionRepositoryPort):
     def __init__(self) -> None:
         self.decisions: dict[str, object] = {}
 
-    async def save_decision(self, decision: object) -> None:
+    async def save_decision(self, decision: object, security_context=None) -> None:
         self.decisions[decision.decision_id] = decision
 
-    async def get_decision(self, decision_id: str) -> object | None:
+    async def get_decision(self, decision_id: str, security_context=None) -> object | None:
         return self.decisions.get(decision_id)
 
-    async def get_decision_by_case(self, case_id: str) -> object | None:
+    async def get_decision_by_case(self, case_id: str, security_context=None) -> object | None:
         for d in self.decisions.values():
             if d.case_id == case_id:
                 return d
         return None
 
-    async def list_pending_review(self, limit: int = 100) -> list[object]:
+    async def list_pending_review(self, limit: int = 100, security_context=None) -> list[object]:
         return [
             d for d in self.decisions.values()
             if hasattr(d, "lifecycle") and d.lifecycle == DecisionLifecycle.UNDER_REVIEW
         ][:limit]
 
-    async def list_decisions(self, limit: int = 50, offset: int = 0) -> list[object]:
+    async def list_decisions(self, limit: int = 50, offset: int = 0, security_context=None) -> list[object]:
         all_d = sorted(self.decisions.values(), key=lambda d: getattr(d, "processing_time_ms", 0), reverse=True)
         return all_d[offset:offset + limit]
 
-    async def count_decisions(self) -> int:
+    async def count_decisions(self, security_context=None) -> int:
         return len(self.decisions)
 
-    async def update_lifecycle(self, decision_id: str, lifecycle: str, actor: str = "human", justification: str = "", original_action: str = "", original_urgency: str = "", original_confidence: float = 0.0, original_evidence_summary: str = "") -> None:
+    async def update_lifecycle(self, decision_id: str, lifecycle: str, actor: str = "human", justification: str = "", original_action: str = "", original_urgency: str = "", original_confidence: float = 0.0, original_evidence_summary: str = "", security_context=None) -> None:
         if decision_id in self.decisions:
             self.decisions[decision_id].lifecycle = DecisionLifecycle(lifecycle)
 

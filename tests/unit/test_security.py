@@ -337,9 +337,9 @@ class TestSecurityPipeline:
         class FakeAuditPort(AuditPort):
             def __init__(self):
                 self._events: list[AuditEvent] = []
-            async def log_event(self, event: AuditEvent) -> None:
+            async def log_event(self, event: AuditEvent, security_context=None) -> None:
                 self._events.append(event)
-            async def get_events_by_case(self, case_id: str) -> list[AuditEvent]:
+            async def get_events_by_case(self, case_id: str, security_context=None) -> list[AuditEvent]:
                 return [e for e in self._events if e.case_id == case_id]
 
         audit_port = FakeAuditPort()

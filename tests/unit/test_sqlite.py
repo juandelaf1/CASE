@@ -139,7 +139,10 @@ class TestSQLiteAuditAdapter:
         )
         asyncio.run(adapter.log_event(event))
         events = asyncio.run(adapter.get_events_by_case("case-001"))
-        assert events[0].details == {"key": "value", "nested": {"a": 1}}
+        assert events[0].details.get("key") == "value"
+        assert events[0].details.get("nested") == {"a": 1}
+        # Security context is stamped for traceability (additive)
+        assert "_security" in events[0].details
 
 
 class TestSQLiteConfigurablePath:

@@ -14,7 +14,7 @@ router = APIRouter()
 async def triage(request: TriageRequest, http_request: Request) -> TriageDecisionResponse:
     require_scope_in_strict(http_request, ["case:triage", "case:evaluate", "case:admin"])
     deps = get_deps()
-    _ctx = getattr(http_request.state, "security_context", None)
+    ctx = getattr(http_request.state, "security_context", None)
     if not deps.registry.validate_domain(request.domain):
         raise HTTPException(
             status_code=400,
@@ -54,7 +54,7 @@ async def triage(request: TriageRequest, http_request: Request) -> TriageDecisio
     if meta.get("correlation_id"):
         case.metadata["correlation_id"] = str(meta.get("correlation_id", ""))
 
-    result = await deps.engine.execute(case, provider_name=request.provider)
+    result = await deps.engine.execute(case, provider_name=request.provider, security_context=ctx)
 
     if result.error is not None:
         err = result.error
