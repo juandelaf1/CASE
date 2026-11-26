@@ -37,16 +37,18 @@ class TestRealEstateRegistration:
         policy = _resolve_automation_policy("real_estate")
         assert policy is not None
 
-    def test_five_domains_registered(self) -> None:
+    def test_expected_domains_registered(self) -> None:
         from case_core.composition import create_app_dependencies
         deps = create_app_dependencies()
         domains = deps.registry.list_domains()
-        assert len(domains) == 5
+        assert len(domains) == 7
         assert "urban_operations" in domains
         assert "logistics" in domains
         assert "infrastructure" in domains
         assert "seismic_risk" in domains
         assert "real_estate" in domains
+        assert "customer_support" in domains
+        assert "supply_chain_disruption" in domains
 
 
 # ---------------------------------------------------------------------------

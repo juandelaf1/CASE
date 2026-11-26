@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 load_dotenv(override=False)
 
 from case_core.application.engine import TriageEngine  # noqa: E402
+from case_core.domain.customer_support_policy import (  # noqa: E402
+    CustomerSupportAutomation,
+    CustomerSupportPolicy,
+)
 from case_core.domain.infrastructure_automation import InfrastructureAutomationPolicy  # noqa: E402
 from case_core.domain.infrastructure_policy import InfrastructurePolicy  # noqa: E402
 from case_core.domain.logistics_automation import LogisticsAutomationPolicy  # noqa: E402
@@ -20,6 +24,10 @@ from case_core.domain.real_estate_policy import (  # noqa: E402
 from case_core.domain.registry import DomainRegistry  # noqa: E402
 from case_core.domain.seismic_automation import SeismicAutomationPolicy  # noqa: E402
 from case_core.domain.seismic_policy import SeismicRiskPolicy  # noqa: E402
+from case_core.domain.supply_chain_disruption_policy import (  # noqa: E402
+    SupplyChainDisruptionAutomation,
+    SupplyChainDisruptionPolicy,
+)
 from case_core.domain.urban_automation import UrbanAutomationPolicy  # noqa: E402
 from case_core.domain.urban_policy import UrbanPolicy  # noqa: E402
 from case_core.evaluation.cost import CostModel  # noqa: E402
@@ -33,18 +41,22 @@ from case_core.providers.ollama import OllamaProvider  # noqa: E402
 from case_infra.persistence.sqlite_audit import SQLiteAuditAdapter  # noqa: E402
 from case_infra.persistence.sqlite_decision_repository import SQLiteDecisionRepository  # noqa: E402
 
+_CUSTOMER_SUPPORT_AUTOMATION = CustomerSupportAutomation()
 _LOGISTICS_AUTOMATION = LogisticsAutomationPolicy()
 _URBAN_AUTOMATION = UrbanAutomationPolicy()
 _INFRASTRUCTURE_AUTOMATION = InfrastructureAutomationPolicy()
 _SEISMIC_AUTOMATION = SeismicAutomationPolicy()
 _REAL_ESTATE_AUTOMATION = RealEstateAutomationPolicy()
+_SUPPLY_CHAIN_DISRUPTION_AUTOMATION = SupplyChainDisruptionAutomation()
 
 _AUTOMATION_POLICIES: dict[str, AutomationPolicy] = {
+    "customer_support": _CUSTOMER_SUPPORT_AUTOMATION,
     "logistics": _LOGISTICS_AUTOMATION,
     "urban_operations": _URBAN_AUTOMATION,
     "infrastructure": _INFRASTRUCTURE_AUTOMATION,
     "seismic_risk": _SEISMIC_AUTOMATION,
     "real_estate": _REAL_ESTATE_AUTOMATION,
+    "supply_chain_disruption": _SUPPLY_CHAIN_DISRUPTION_AUTOMATION,
 }
 
 
@@ -104,6 +116,8 @@ def create_app_dependencies() -> AppDependencies:
     registry.register(InfrastructurePolicy())
     registry.register(SeismicRiskPolicy())
     registry.register(RealEstatePolicy())
+    registry.register(CustomerSupportPolicy())
+    registry.register(SupplyChainDisruptionPolicy())
 
     providers = _resolve_all_providers()
     provider: LLMProvider = _resolve_provider()

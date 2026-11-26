@@ -378,13 +378,13 @@ class TestNoAccidentalConnections:
         source = inspect.getsource(composition)
         assert "case_logistics" not in source
 
-    def test_five_domains_not_more(self) -> None:
+    def test_registered_domains_match_expected(self) -> None:
         from case_core.composition import create_app_dependencies
         deps = create_app_dependencies()
         domains = deps.registry.list_domains()
-        assert len(domains) == 5
-        expected = {"urban_operations", "logistics", "infrastructure", "seismic_risk", "real_estate"}
+        expected = {"urban_operations", "logistics", "infrastructure", "seismic_risk", "real_estate", "customer_support", "supply_chain_disruption"}
         assert set(domains) == expected
+        assert len(domains) == 7
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -18,8 +18,8 @@
 </p>
 
 <p align="center">
-  <strong>871 passed ? 0 failed</strong><br>
-  <sub>ruff 0 errors ? mypy 0 errors ? 116 source files</sub><br>
+  <strong>874 passed ? 0 failed</strong><br>
+  <sub>ruff 0 errors ? mypy 0 errors ? 118 source files</sub><br>
   <sub>Live tests (Groq/Ollama): require API key and running server</sub>
 </p>
 
@@ -342,7 +342,7 @@ ruff check src
 # Esperado: All checks passed
 
 mypy src --ignore-missing-imports
-# Esperado: Success: no issues found in 116 source files
+# Esperado: Success: no issues found in 118 source files
 ```
 
 ### Ejecutar la API
@@ -562,7 +562,7 @@ from case_core.providers.cloud import CloudProvider
 |-------------|-----------|
 | pytest (determinista) | 692 passed, 7 skipped, 0 failed |
 | ruff | 0 errors (src) |
-| mypy | 0 errors (116 source files) |
+| mypy | 0 errors (118 source files) |
 
 ### Clasificación de Tests
 
@@ -974,7 +974,7 @@ These components are wired into the running system via `composition.py` and `Tri
 |-----------|----------|--------|
 | Contracts (Pydantic v2 schemas) | `contracts/` | Connected |
 | Ports (6 ABC interfaces) | `ports/` | Connected |
-| DomainRegistry (5 domains) | `domain/registry.py` | Connected |
+| DomainRegistry (7 domains) | `domain/registry.py` | Connected |
 | TriageEngine | `application/engine.py` | Connected |
 | ReliabilityPipeline | `reliability/pipeline.py` | Connected |
 | AutomationEvaluator | `reliability/automation.py` | Connected |
@@ -1035,7 +1035,7 @@ ruff check src
 # Expected: All checks passed
 
 mypy src --ignore-missing-imports
-# Expected: Success: no issues found in 116 source files
+# Expected: Success: no issues found in 118 source files
 ```
 
 ### Run the API
@@ -1114,7 +1114,7 @@ The `examples/` directory contains deterministic demo scripts:
 | `demo_escalate.py` | Critical case | ESCALATE |
 | `demo_invalid_output.py` | Empty evidence | Terminal failure (domain validation) |
 | `demo_hitl_lifecycle.py` | Full HITL workflow | Approve → Reject → Modify |
-| `demo_all_domains.py` | All 5 domains | Domain-specific routing |
+| `demo_all_domains.py` | All 7 domains | Domain-specific routing |
 
 ```bash
 python examples/demo_auto_approve.py
@@ -1255,7 +1255,7 @@ from case_core.providers.cloud import CloudProvider
 |-------|--------|
 | pytest (deterministic) | 692 passed, 7 skipped, 0 failed |
 | ruff | 0 errors (src) |
-| mypy | 0 errors (116 source files) |
+| mypy | 0 errors (118 source files) |
 
 ### Test Classification
 
