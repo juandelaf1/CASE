@@ -1,0 +1,36 @@
+{
+  "contract_version": "case-eval/v0.1-draft",
+  "capability_id": "case.evaluate",
+  "correlation_id": "corr-poolar-scd-001",
+  "idempotency_key": "idem-poolar-scd-001",
+  "data_status": "synthetic",
+  "payload": {
+    "domain": "supply_chain_disruption",
+    "summary": "Port closure and customs hold create critical shipment delay. Urgency: CRITICAL.",
+    "urgency": "CRITICAL",
+    "evidence": [
+      {
+        "id": "ev-port",
+        "type": "text",
+        "content": "Port terminal closed due to severe weather; containers held.",
+        "source": "ops-feed",
+        "confidence": 0.92
+      },
+      {
+        "id": "ev-customs",
+        "type": "text",
+        "content": "Customs clearance hold pending documentation review.",
+        "source": "compliance",
+        "confidence": 0.88
+      },
+      {
+        "id": "ev-impact",
+        "type": "metric",
+        "content": "Estimated delay 72h; 3 priority orders affected.",
+        "source": "erp",
+        "confidence": 0.9
+      }
+    ],
+    "provider": "mock"
+  }
+}

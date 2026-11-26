@@ -169,7 +169,10 @@ class MockProvider(LLMProvider):
                 metadata={"mock_id": mock_id, "error": "invalid_response"},
             )
 
-        response_data = TEST_MOCK_RESPONSES.get(mock_id or self._default_mock_id, TEST_MOCK_RESPONSES["TEST-MOCK-01"])
+        if mock_id is not None:
+            response_data = TEST_MOCK_RESPONSES.get(mock_id, TEST_MOCK_RESPONSES[self._default_mock_id])
+        else:
+            response_data = self._generic_response(request)
         raw_output = json.dumps(response_data)
 
         prompt_tokens = sum(len(str(m)) for m in request.messages) // 4
@@ -190,6 +193,55 @@ class MockProvider(LLMProvider):
             finish_reason="stop",
             metadata={"mock_id": mock_id or self._default_mock_id},
         )
+
+
+    @staticmethod
+    def _generic_response(request: LLMRequest) -> dict[str, object]:
+        # Domain-agnostic default for demos/tests that don't pin a TEST-MOCK id.
+        content = " ".join(str(m.get("content", "")) for m in request.messages)
+        domain = "operational"
+        m = re.search(r"Domain:\s*([A-Za-z0-9_\- ]+)", content)
+        if m:
+            domain = m.group(1).strip()
+
+        urg = "MEDIUM"
+        for m2 in re.finditer(r"\burgency\b[^a-zA-Z0-9]{0,30}(CRITICAL|HIGH|MEDIUM|LOW)\b", content, re.IGNORECASE):
+            window = content[max(0, m2.start()-40):m2.end()+60]
+            # skip schema/examples embedded in prompt instructions
+            if "|" in window or '"confidence"' in window or "Output:" in window:
+                continue
+            urg = m2.group(1).upper()
+            break
+
+        if urg == "CRITICAL":
+            decision, confidence = "escalate", 0.72
+            reason = f"Critical {domain} case requires human escalation"
+            factors = ["Critical urgency", "Potential high impact", "Human escalation required"]
+            summary = f"Critical {domain} case escalated for human review"
+            rationale = "Step 1: Critical signals identified from report and evidence. Step 2: Evidence reviewed but impact/risk remains high. Step 3: Risk evaluated as critical. Step 4: Action determined - escalate for human governance."
+        elif urg == "HIGH":
+            decision, confidence = "hitl", 0.78
+            reason = f"High-urgency {domain} case requires human review"
+            factors = ["High urgency", "Governed review required", "Evidence reviewed"]
+            summary = f"High-urgency {domain} case routed to human review"
+            rationale = "Step 1: Key facts identified from report and evidence. Step 2: Evidence quality assessed as sufficient. Step 3: Risk evaluated as high. Step 4: Action determined - route to human review."
+        else:
+            decision, confidence = "approve", 0.85
+            reason = f"Standard {domain} case with sufficient evidence"
+            factors = ["Sufficient evidence provided", "Moderate urgency", "Standard governance path"]
+            summary = f"{domain} case approved with sufficient evidence for standard processing"
+            rationale = "Step 1: Key facts identified from report and evidence. Step 2: Evidence quality assessed as sufficient. Step 3: Risk evaluated as moderate with no critical blockers. Step 4: Action determined - approve with standard governance controls."
+
+        return {
+            "decision": decision,
+            "reason": reason,
+            "urgency": urg,
+            "confidence": confidence,
+            "evidence_summary": "Evidence reviewed; sufficient for a governed recommendation",
+            "decision_rationale": rationale,
+            "decision_factors": factors,
+            "summary": summary,
+        }
 
     async def health_check(self) -> bool:
         return True

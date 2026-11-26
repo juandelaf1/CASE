@@ -21,3 +21,27 @@ External products (Poolar, dashboards, etc.) consume CASE through versioned cont
 - Do: keep consumer adapters thin and tested.
 - Don't: import Poolar/domain-consumer logic into `case_core`.
 - Don't: bypass CASE decision governance for autonomous execution.
+
+## Supply Chain Disruption slice (synthetic demo)
+
+This slice shows how a Poolar-style consumer can send a disruption event to CASE without embedding Poolar logic in CASE core.
+
+- **Request example:** `docs/examples/supply_chain_disruption_evaluate.request.json`
+- **Runnable demo:** `python scripts/demo_supply_chain_disruption_slice.py`
+- **Domain:** `supply_chain_disruption` (registered CASE domain pack)
+- **Contract:** `case.evaluate` (`case-eval/v0.1-draft`)
+
+### Consumer mapping (Poolar adapter responsibility)
+
+| Poolar/source concept | CASE `case.evaluate` field |
+|---|---|
+| Operation/correlation id | `correlation_id` |
+| Idempotent consumer action | `idempotency_key` |
+| Disruption summary | `payload.summary` |
+| Normalized urgency | `payload.urgency` |
+| Signals/docs/metrics | `payload.evidence[]` |
+| Target domain | `payload.domain = "supply_chain_disruption"` |
+
+### Expected governed outcome
+
+CASE returns a contract response with decision/action, confidence, lifecycle hint, and audit-friendly fields. Poolar owns presentation and workflow; CASE owns decision governance.
