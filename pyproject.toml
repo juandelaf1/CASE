@@ -19,7 +19,7 @@ dev = [
     "pytest-cov>=6.0.0",
     "ruff>=0.17.6",
     "mypy>=2.4.1",
-    "jsonschema>=4.0.0",
+    "jsonschema>=4.26.0",
     "types-requests>=2.33.0.20261030",
 ]
 
