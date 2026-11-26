@@ -10,6 +10,20 @@ services:
         value: 8000
       - key: CASE_DB_PATH
         value: /data/case_audit.db
+      # Security: for non-local/public deployments set strict mode + credentials in Render dashboard (sync: false).
+      # shared/prod are fail-closed at startup without credentials; shared multi-consumer remains NOT demonstrated/blocked.
+      - key: CASE_SECURITY_MODE
+        value: dev
+      - key: CASE_API_KEY
+        sync: false
+      - key: CASE_CONSUMER_ID
+        value: default-consumer
+      - key: CASE_TENANT_ID
+        sync: false
+      - key: CASE_API_SCOPES
+        value: case:evaluate,case:read,case:triage,case:audit:read,case:hitl:read,case:hitl:write,case:decision:read,case:compare
+      - key: CASE_PROVIDER
+        value: mock
     disk:
       mountPath: /data
       sizeGB: 1

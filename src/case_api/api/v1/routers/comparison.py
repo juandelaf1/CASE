@@ -14,7 +14,7 @@ router = APIRouter()
 async def compare(request: ComparisonRequest, http_request: Request) -> dict[str, object]:
     require_scope_in_strict(http_request, ["case:compare", "case:triage", "case:evaluate", "case:admin"])
     deps = get_deps()
-    _ctx = getattr(http_request.state, "security_context", None)
+    ctx = getattr(http_request.state, "security_context", None)
     if not deps.registry.validate_domain(request.domain):
         raise HTTPException(status_code=400, detail=f"Unknown domain: {request.domain}")
 
@@ -43,7 +43,7 @@ async def compare(request: ComparisonRequest, http_request: Request) -> dict[str
             case_id=case_id, report_text=request.report_text, domain=request.domain,
             urgency=UrgencyLevel(request.urgency), evidence=list(evidence), metadata=dict(meta),
         )
-        res = await deps.engine.execute(case, provider_name=pname)
+        res = await deps.engine.execute(case, provider_name=pname, security_context=ctx)
         results.append({
             "provider": pname,
             "case_id": case_id,

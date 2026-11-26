@@ -112,7 +112,10 @@ class TestDecisionRoundTrip:
         await repo.save_decision(decision)
         loaded = await repo.get_decision("d-1")
         assert loaded is not None
-        assert loaded.metadata == {"source": "test", "version": 2}
+        assert loaded.metadata.get("source") == "test"
+        assert loaded.metadata.get("version") == 2
+        # Security context is stamped for traceability (additive, verified by storage layer)
+        assert "_security" in loaded.metadata
 
     async def test_preserves_lifecycle(self, tmp_db: str) -> None:
         repo = SQLiteDecisionRepository(db_path=tmp_db)

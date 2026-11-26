@@ -64,6 +64,7 @@ class TriageDecision(BaseModel):
     processing_time_ms: float = 0.0
     error: CASEError | None = None
     metadata: dict[str, Any] = {}
+    operation_id: str = ""
     original_ai_proposal: AIProposal | None = None
     human_override: HumanOverride | None = None
 
@@ -89,6 +90,7 @@ class TriageDecision(BaseModel):
             "processing_time_ms": self.processing_time_ms,
             "error": self.error.model_dump() if self.error else None,
             "metadata": self.metadata,
+            "operation_id": self.operation_id,
             "original_ai_proposal": self.original_ai_proposal.model_dump() if self.original_ai_proposal else None,
             "human_override": self.human_override.model_dump() if self.human_override else None,
         }
@@ -117,6 +119,7 @@ class TriageDecision(BaseModel):
             processing_time_ms=data.get("processing_time_ms", 0.0),
             error=CASEError.model_validate(data["error"]) if data.get("error") else None,
             metadata=data.get("metadata", {}),
+            operation_id=data.get("operation_id", "") or "",
             original_ai_proposal=original_ai,
             human_override=human_override,
         )
