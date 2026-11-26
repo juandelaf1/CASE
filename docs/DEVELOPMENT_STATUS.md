@@ -1,17 +1,17 @@
 # CASE Development Status
 
-> Detailed technical snapshot. Last verified: 2026-09-15.
-> Source of truth for current implementation state.
+> Detailed technical snapshot. Last verified: 2026-11-13 (local baseline + refactor session).
+> Source of truth for current implementation state. Update this file after verified changes.
 
 ---
 
 ## 1. Project Identity
 
-**CASE** — AI Decision Platform
-- Domain-agnostic
-- Provider-agnostic
-- Foundation v0.3 FROZEN
-- Blueprint v1.1 FROZEN
+**CASE** ? Case Assessment and Structured Evaluation
+- Domain-agnostic, provider-agnostic AI decision platform
+- Core must work for any scenario through contracts and domain packs
+- Logistics is the current reference vertical/demo slice, not the platform boundary
+- Foundation v0.3 FROZEN / Blueprint v1.1 FROZEN
 - Portfolio-grade research/engineering project
 
 ---
@@ -21,21 +21,21 @@
 | Field | Value |
 |-------|-------|
 | Path | `C:\Users\JUAN\Desktop\Proyectos\CASE` |
-| Branch | `master` |
-| HEAD | `43c7c29` |
-| Remote | `origin` (GitHub) |
-| Working tree | Clean |
+| Branch (session) | `juan/ciclo4-consolidacion-case` |
+| Remote | `origin` (GitHub, `juandelaf1/CASE`) |
+| Working tree | Dirty WIP remains (hardening/idempotency/evaluate docs/tests/scripts); session changes committed separately |
 
 ---
 
-## 3. Verified Quality
+## 3. Verified Quality (2026-11-13)
 
 | Check | Result |
 |-------|--------|
-| pytest | 671 passed, 14 skipped, 0 failures |
-| ruff | 0 errors (3 pre-existing unused imports in test_groq_live.py) |
-| mypy | 0 errors (92 source files) |
-| Integration tests | 11 pass, 7 skipped (Ollama/Groq) |
+| pytest | 871 collected, **871 passed, 0 failed** (`--ignore=tests/unit/test_streamlit_client.py`) |
+| ruff | 0 errors |
+| mypy | 0 errors (116 source files, `--ignore-missing-imports`) |
+| CI | GitHub Actions workflow added (`.github/workflows/ci.yml`) |
+| Dependabot | Config added (`.github/dependabot.yml`) |
 
 ---
 
@@ -46,13 +46,13 @@
 ```
 Streamlit (display only)
    ↓
-FastAPI (HTTP adapter, 11 endpoints)
+FastAPI (HTTP adapter, modular routers; includes triage/evaluate/hitl/audit/seismic/comparison/providers)
    ↓
 composition.py (dependency wiring)
    ↓
 TriageEngine (application layer orchestrator)
    ↓
-DomainRegistry → DomainPolicy (4 registered domains: urban, logistics, infrastructure, seismic_risk)
+DomainRegistry → DomainPolicy (5 registered domains: urban_operations, logistics, infrastructure, seismic_risk, real_estate)
    ↓
 PromptBuilder → LLMProvider (via port)
    ↓

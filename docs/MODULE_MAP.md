@@ -88,7 +88,7 @@ A new scenario should **not** require changes to core orchestration logic, provi
 |---|---|---|
 | `app.py` is monolithic | Hard to evolve capabilities independently | Split into routers by capability |
 | `evaluate` contract embedded in app.py | Poolar/consumer boundary should be versioned and isolated | Extract schema/router/service for evaluate contract |
-| Logistics duplication (`case_core/domain/logistics_*`, `case_logistics/`, `logistics_adapter/`) | Ambiguous ownership and drift risk | Define owner: domain pack vs data adapter vs extracted package |
+| Logistics duplication (`case_core/domain/logistics_*`, `case_logistics/`, `logistics_adapter/`) | Ambiguous ownership and drift risk | **Recommended:** `case_core/domain/logistics_*` = canonical domain pack; `logistics_adapter/` = external data ingestion/normalization; `case_logistics/` = legacy parallel package, absorb unique value if any then retire/deprecate (issue #9) |
 | Doc/state drift (AGENT_CONTEXT/README/ARCHITECTURE) | Creates wrong operational decisions | Make one canonical status source and update links |
 | Experimental modules not classified | Can create accidental coupling or dead weight | Maintain explicit integrate/keep-isolated/extract/retire decisions |
 
