@@ -5,6 +5,8 @@ and includes capability routers. Route handlers live in `case_api.api.v1.routers
 """
 from __future__ import annotations
 
+import inspect
+
 from fastapi import FastAPI
 
 from case_api.api.v1.auth import APIKeyAuthMiddleware
@@ -90,10 +92,8 @@ app = FastAPI(
 _security_config = load_security_config()
 app.state.security_config = _security_config
 
-import inspect as _inspect
-
-_auth_params = _inspect.signature(APIKeyAuthMiddleware.__init__).parameters
-if "config" in _auth_params or "kwargs" in _auth_params or any(p.kind == _inspect.Parameter.VAR_KEYWORD for p in _auth_params.values()):
+_auth_params = inspect.signature(APIKeyAuthMiddleware.__init__).parameters
+if "config" in _auth_params or "kwargs" in _auth_params or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in _auth_params.values()):
     app.add_middleware(APIKeyAuthMiddleware, config=_security_config)  # type: ignore[call-arg,unused-ignore]
 else:
     app.add_middleware(APIKeyAuthMiddleware)
