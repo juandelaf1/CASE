@@ -152,13 +152,14 @@ def render_audit_event(event: dict[str, Any]) -> None:
         detail_parts.append(f"Now: {_html_escape(str(details['new_action']))}")
     detail_str = " \u00b7 ".join(detail_parts)
 
+    detail_html = f'<div class="case-timeline-details">{detail_str}</div>' if detail_str else ""
     st.markdown(
         f'<div class="case-timeline-event">'
         f'<div class="case-timeline-dot" style="background:{color};"></div>'
         f'<div class="case-timeline-body">'
         f'<div class="case-timeline-type">{_html_escape(etype)}</div>'
         f'<div class="case-timeline-meta">{_html_escape(ts)} \u00b7 {_html_escape(actor)}</div>'
-        f'{f"<div class=\"case-timeline-details\">{detail_str}</div>" if detail_str else ""}'
+        f'{detail_html}'
         f'</div></div>',
         unsafe_allow_html=True,
     )
