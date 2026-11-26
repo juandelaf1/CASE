@@ -66,11 +66,13 @@ from case_api.api.v1.routers.triage import triage  # noqa: F401
 try:
     from case_api.api.v1.security import load_security_config
 except Exception:  # pragma: no cover - base compat when WIP module not committed
-    def load_security_config():  # type: ignore[misc]
+    from typing import Any
+
+    def load_security_config(env: dict[str, str] | None = None) -> Any:  # type: ignore[misc,unused-ignore]  # noqa: ARG001
         class _Cfg:
             mode = "dev"
             dev_open_access = True
-            consumers_by_key_hash: dict = {}
+            consumers_by_key_hash: dict[str, Any] = {}
             single_tenant_id = None
             is_strict = False
             has_credentials = False

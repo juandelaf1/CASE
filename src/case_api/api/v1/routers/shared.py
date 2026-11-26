@@ -23,16 +23,16 @@ except Exception:  # pragma: no cover - base compat when WIP module not committe
             self.db_path = db_path
 
         @staticmethod
-        def hash_request(payload: dict) -> str:
+        def hash_request(payload: dict[str, Any]) -> str:
             return hashlib.sha256(_json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
 
-        def begin(self, *args, **kwargs):
+        def begin(self, *args: Any, **kwargs: Any) -> tuple[bool, Any]:
             return True, None
 
-        def complete(self, *args, **kwargs):
+        def complete(self, *args: Any, **kwargs: Any) -> None:
             return None
 
-        def release(self, *args, **kwargs):
+        def release(self, *args: Any, **kwargs: Any) -> None:
             return None
 
 VALID_EVIDENCE_TYPES = {t.value for t in EvidenceType}
