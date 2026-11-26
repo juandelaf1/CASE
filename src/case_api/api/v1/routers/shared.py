@@ -11,6 +11,7 @@ from case_core.composition import AppDependencies, create_app_dependencies
 from case_core.contracts.evidence import EvidenceType
 from case_core.contracts.operational_case import UrgencyLevel as CaseUrgencyLevel
 from case_core.version import VERSION
+
 try:
     from case_infra.persistence.sqlite_idempotency import SQLiteIdempotencyStore
 except Exception:  # pragma: no cover - base compat when WIP module not committed
