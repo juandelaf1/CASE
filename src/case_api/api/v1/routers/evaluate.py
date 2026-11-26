@@ -349,9 +349,10 @@ async def evaluate_case(request: EvaluateEnvelopeRequest, http_request: Request)
         try:
             _fh_maybe_raise: Any = None
             try:
-                from case_core.fault_hooks import maybe_raise as _fh_maybe_raise
+                from case_core.fault_hooks import maybe_raise as _fh_maybe_raise_fn
+                _fh_maybe_raise = _fh_maybe_raise_fn
             except Exception:
-                _fh_maybe_raise = None
+                pass
             if _fh_maybe_raise:
                 _fh_maybe_raise("before_idempotency_complete")
             case_ref = None
@@ -383,9 +384,10 @@ async def evaluate_case(request: EvaluateEnvelopeRequest, http_request: Request)
             pass
     _fh_maybe_raise2: Any = None
     try:
-        from case_core.fault_hooks import maybe_raise as _fh_maybe_raise2
+        from case_core.fault_hooks import maybe_raise as _fh_maybe_raise2_fn
+        _fh_maybe_raise2 = _fh_maybe_raise2_fn
     except Exception:
-        _fh_maybe_raise2 = None
+        pass
     if _fh_maybe_raise2:
         _fh_maybe_raise2("before_response_return")
     return out

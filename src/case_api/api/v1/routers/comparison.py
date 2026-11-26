@@ -43,7 +43,7 @@ async def compare(request: ComparisonRequest, http_request: Request) -> dict[str
             case_id=case_id, report_text=request.report_text, domain=request.domain,
             urgency=UrgencyLevel(request.urgency), evidence=list(evidence), metadata=dict(meta),
         )
-        res = await deps.engine.execute(case, provider_name=pname, security_context=ctx)
+        res = await deps.engine.execute(case, provider_name=pname)
         results.append({
             "provider": pname,
             "case_id": case_id,

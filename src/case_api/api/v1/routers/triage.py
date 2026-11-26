@@ -54,7 +54,7 @@ async def triage(request: TriageRequest, http_request: Request) -> TriageDecisio
     if meta.get("correlation_id"):
         case.metadata["correlation_id"] = str(meta.get("correlation_id", ""))
 
-    result = await deps.engine.execute(case, provider_name=request.provider, security_context=ctx)
+    result = await deps.engine.execute(case, provider_name=request.provider)
 
     if result.error is not None:
         err = result.error

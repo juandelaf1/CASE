@@ -75,7 +75,10 @@ app = FastAPI(
 _security_config = load_security_config()
 app.state.security_config = _security_config
 
-app.add_middleware(APIKeyAuthMiddleware, config=_security_config)
+try:
+    app.add_middleware(APIKeyAuthMiddleware, config=_security_config)
+except TypeError:
+    app.add_middleware(APIKeyAuthMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
 _state = init_state()
