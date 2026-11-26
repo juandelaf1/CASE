@@ -12,3 +12,4 @@ class AuditEvent(BaseModel):
     details: dict[str, Any] = Field(default_factory=dict)
     actor: str = "system"
     correlation_id: str = ""
+    operation_id: str = ""

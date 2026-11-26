@@ -1,0 +1,32 @@
+﻿# Compose parametrizable para instancia aislada CASE (Ciclo 4, plantilla local)
+# Uso: docker compose -p <proyecto> --env-file .env.<consumer> -f deploy/templates/isolated-instance/compose.isolated.yml up -d
+#
+# Requiere ejecutar desde la raíz del repo CASE (build context = .)
+
+services:
+  case:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    container_name: ${CASE_INSTANCE_NAME:-case-isolated}
+    ports:
+      - "${CASE_API_PORT:-8000}:8000"
+      - "${CASE_UI_PORT:-8501}:8501"
+    environment:
+      CASE_SECURITY_MODE: ${CASE_SECURITY_MODE:-shared}
+      CASE_API_KEY: ${CASE_API_KEY}
+      CASE_CONSUMER_ID: ${CASE_CONSUMER_ID:-default-consumer}
+      CASE_TENANT_ID: ${CASE_TENANT_ID:-}
+      CASE_ORGANIZATION_ID: ${CASE_ORGANIZATION_ID:-}
+      CASE_API_SCOPES: ${CASE_API_SCOPES:-case:evaluate}
+      CASE_DB_PATH: ${CASE_DB_PATH:-/app/data/case.db}
+      CASE_PROVIDER: ${CASE_PROVIDER:-mock}
+      CASE_API_BASE_URL: ${CASE_API_BASE_URL:-http://localhost:8000}
+    volumes:
+      - case_data:/app/data
+    restart: unless-stopped
+    # NOTA: no exponer públicamente sin hardening (TLS/ingress, secretos gestionados, revisión).
+
+volumes:
+  case_data:
+    name: ${CASE_INSTANCE_NAME:-case-isolated}_data

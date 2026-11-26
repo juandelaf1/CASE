@@ -60,6 +60,7 @@ class ReliabilityPipeline:
         self._automation_evaluator = (
             AutomationEvaluator(automation_policy) if automation_policy else None
         )
+        self._security_context: Any = None
 
     async def _emit_audit(
         self,
@@ -67,18 +68,28 @@ class ReliabilityPipeline:
         event_type: str,
         details: dict[str, Any],
         decision_id: str | None = None,
+        security_context: Any = None,
     ) -> None:
         if self._audit_port is None:
             return
+        ctx = security_context if security_context is not None else self._security_context
+        op_id = str((case.metadata or {}).get("operation_id") or "")
+        corr = str((case.metadata or {}).get("correlation_id") or (getattr(ctx, "correlation_id", None) or "") or "")
+        det = dict(details or {})
+        if op_id:
+            det.setdefault("operation_id", op_id)
         event = AuditEvent(
             event_id=f"ae-{case.case_id}-{event_type}-{int(self._time_fn() * 1000)}",
             case_id=case.case_id,
             decision_id=decision_id,
             event_type=event_type,
             timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self._time_fn())),
-            details=details,
+            details=det,
+            correlation_id=corr,
+            operation_id=op_id,
+            actor=(getattr(ctx, "consumer_id", None) or "system") if ctx else "system",
         )
-        await self._audit_port.log_event(event)
+        await self._audit_port.log_event(event, security_context=ctx)
 
     def parse(self, raw_content: str) -> tuple[dict[str, Any] | None, CASEError | None]:
         try:
@@ -243,6 +254,12 @@ class ReliabilityPipeline:
         metadata: dict[str, Any] = {}
         if automation_assessment:
             metadata["automation_assessment"] = automation_assessment.model_dump_ext()
+        op_id = str((case.metadata or {}).get("operation_id") or "")
+        corr = str((case.metadata or {}).get("correlation_id") or "")
+        if op_id:
+            metadata["operation_id"] = op_id
+        if corr:
+            metadata["correlation_id"] = corr
 
         return TriageDecision(
             decision_id=f"dec-{case.case_id}",
@@ -259,6 +276,7 @@ class ReliabilityPipeline:
             lifecycle=DecisionLifecycle.AI_PROPOSED,
             processing_time_ms=processing_time_ms,
             metadata=metadata,
+            operation_id=op_id,
         )
 
     async def run(
@@ -267,12 +285,16 @@ class ReliabilityPipeline:
         case: OperationalCase,
         provider: Any = None,
         llm_request: Any = None,
+        security_context: Any = None,
+        emit_case_received: bool = True,
     ) -> tuple[TriageDecision | None, CASEError | None]:
+        self._security_context = security_context
         start = self._time_fn()
         validation_attempts = 0
         transient_attempts = 0
 
-        await self._emit_audit(case, "CASE_RECEIVED", {"domain": case.domain})
+        if emit_case_received:
+            await self._emit_audit(case, "CASE_RECEIVED", {"domain": case.domain})
 
         data, err = self.validate_all(raw_content, case)
         if err is None:

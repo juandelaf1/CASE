@@ -68,10 +68,10 @@ class TriageEngine:
         self._cost_model = cost_model
         self._time_fn = time_fn or time.time
 
-    async def execute(self, case: OperationalCase, provider_name: str | None = None) -> TriageResult:
+    async def execute(self, case: OperationalCase, provider_name: str | None = None, security_context: Any = None) -> TriageResult:
         result = TriageResult(processing_lifecycle=ProcessingLifecycle.RECEIVED)
 
-        await self._emit_audit(case, "CASE_RECEIVED", {"domain": case.domain})
+        await self._emit_audit(case, "CASE_RECEIVED", {"domain": case.domain}, security_context=security_context)
 
         domain_policy = self._domain_registry.get(case.domain)
         if domain_policy is None:
@@ -87,7 +87,7 @@ class TriageEngine:
         provider = self._resolve_provider(provider_name)
 
         try:
-            return await self._execute_triage(case, domain_policy, result, provider=provider)
+            return await self._execute_triage(case, domain_policy, result, provider=provider, security_context=security_context)
         except Exception as e:
             result.error = CASEError(
                 category=ErrorCategory.SYSTEM,
@@ -109,6 +109,7 @@ class TriageEngine:
         domain_policy: DomainPolicy,
         result: TriageResult,
         provider: LLMProvider | None = None,
+        security_context: Any = None,
     ) -> TriageResult:
         active_provider = provider or self._provider
         engine_start = self._time_fn()
@@ -146,7 +147,7 @@ class TriageEngine:
             case.status = ProcessingLifecycle.TERMINAL_FAILURE
             result.error = provider_err
             result.processing_lifecycle = ProcessingLifecycle.TERMINAL_FAILURE
-            await self._emit_audit(case, "PROVIDER_ERROR", {"finish_reason": llm_response.finish_reason, "detail": detail})
+            await self._emit_audit(case, "PROVIDER_ERROR", {"finish_reason": llm_response.finish_reason, "detail": detail}, security_context=security_context)
             return result
 
         case.status = ProcessingLifecycle.PARSING_RESPONSE
@@ -164,6 +165,8 @@ class TriageEngine:
             case,
             provider=active_provider,
             llm_request=llm_request,
+            security_context=security_context,
+            emit_case_received=False,
         )
 
         if err is not None:
@@ -199,6 +202,13 @@ class TriageEngine:
         )
 
         decision.processing_time_ms = (self._time_fn() - engine_start) * 1000
+        op_id = str((case.metadata or {}).get("operation_id") or "")
+        corr = str((case.metadata or {}).get("correlation_id") or "")
+        if op_id:
+            decision.operation_id = op_id
+            decision.metadata["operation_id"] = op_id
+        if corr:
+            decision.metadata["correlation_id"] = corr
 
         decision.metadata["provider_info"] = {
             "provider": llm_response.provider,
@@ -220,8 +230,19 @@ class TriageEngine:
             )
             decision.metadata["cost"] = cost_estimate.model_dump()
 
+        _fh_maybe_raise: Any = None
+        try:
+            from case_core.fault_hooks import maybe_raise as _fh_maybe_raise
+        except Exception:
+            _fh_maybe_raise = None
+        if _fh_maybe_raise:
+            _fh_maybe_raise("before_decision_persist")
+
         if self._decision_repository is not None:
-            await self._decision_repository.save_decision(decision)
+            await self._decision_repository.save_decision(decision, security_context=security_context)
+
+        if _fh_maybe_raise:
+            _fh_maybe_raise("after_decision_persist")
 
         result.decision = decision
         return result
@@ -232,15 +253,24 @@ class TriageEngine:
         event_type: str,
         details: dict[str, Any],
         decision_id: str | None = None,
+        security_context: Any = None,
     ) -> None:
         if self._audit_port is None:
             return
+        op_id = str((case.metadata or {}).get("operation_id") or "")
+        corr = str((case.metadata or {}).get("correlation_id") or (getattr(security_context, "correlation_id", None) or "") or "")
+        det = dict(details or {})
+        if op_id:
+            det.setdefault("operation_id", op_id)
         event = AuditEvent(
             event_id=f"ae-{case.case_id}-{event_type}-{int(self._time_fn() * 1000)}",
             case_id=case.case_id,
             decision_id=decision_id,
             event_type=event_type,
             timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self._time_fn())),
-            details=details,
+            details=det,
+            correlation_id=corr,
+            operation_id=op_id,
+            actor=(getattr(security_context, "consumer_id", None) or "system") if security_context else "system",
         )
-        await self._audit_port.log_event(event)
+        await self._audit_port.log_event(event, security_context=security_context)

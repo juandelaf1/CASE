@@ -38,7 +38,7 @@ A new scenario should **not** require changes to core orchestration logic, provi
 | API | Connected, monolithic | `case_api/api/v1/app.py` contains multiple capabilities; needs router modularization |
 | Poolar boundary | Connected, draft | `/api/v1/evaluate` implements `case-eval/v0.1-draft` boundary adapter |
 | External adapters | Present | `usgs_adapter`, `logistics_adapter` as top-level src packages |
-| Logistics parallel package | Present, duplicate risk | `case_logistics/` at repo root overlaps with core logistics concepts |
+| Logistics parallel package | Retired | `case_logistics/` removed (issue #9). Canonical: `case_core/domain/logistics_*`; adapter: `logistics_adapter/`. |
 | Experimental/isolated | Isolated | ML adaptation, specialist models, hybrid decision engine, governance/prod utilities, logistics intelligence pieces |
 
 ## Target module map
@@ -51,7 +51,7 @@ A new scenario should **not** require changes to core orchestration logic, provi
 | `case_infra/<backend>` | Persistence/audit/idempotency | Repository/audit adapters, migrations, storage-specific concerns | Decision logic, domain rules, HTTP | Implements persistence ports |
 | `case_api` | Transport layer | FastAPI routers, auth/rate-limit middleware, request/response schemas, error mapping | Decision business logic, domain logic, direct external side effects beyond adapter calls | Delegates to engine/services |
 | `case_adapters/<name>` | External data/capability adapters | Normalization, client wrappers, provenance, timeout/fallback mapping | CASE core ownership, HITL authority, hidden side effects | Input/output contract; no core coupling |
-| `case_integrations/<consumer>` | Consumer boundary adapters | Versioned contracts (e.g. Poolar `case.evaluate`), mapping, idempotency/correlation/authz integration | Consumer domain orchestration inside CASE core | Versioned, additive, auditable |
+| `case_integrations/<consumer>` | Consumer boundary adapters | Versioned contracts (e.g. `case.evaluate`, see `docs/CASE_EVALUATE_CONTRACT.md`), mapping, idempotency/correlation/authz integration | Consumer domain orchestration inside CASE core | Versioned, additive, auditable |
 | `case_evaluation` | Reproducible evaluation | Deterministic/security/bias/regression suites, datasets, reports, metrics | Fabricated claims, production claims without evidence | Evidence-linked reports only |
 | `case_experimental` | R&D modules | ML adaptation, hybrid/specialist models, advanced logistics intelligence, etc. | Implicit pipeline wiring, undocumented behavior | Explicit gate before integration |
 
@@ -88,7 +88,7 @@ A new scenario should **not** require changes to core orchestration logic, provi
 |---|---|---|
 | `app.py` is monolithic | Hard to evolve capabilities independently | Split into routers by capability |
 | `evaluate` contract embedded in app.py | Poolar/consumer boundary should be versioned and isolated | Extract schema/router/service for evaluate contract |
-| Logistics duplication (`case_core/domain/logistics_*`, `case_logistics/`, `logistics_adapter/`) | Ambiguous ownership and drift risk | **Recommended:** `case_core/domain/logistics_*` = canonical domain pack; `logistics_adapter/` = external data ingestion/normalization; `case_logistics/` = legacy parallel package, absorb unique value if any then retire/deprecate (issue #9) |
+| Logistics duplication (`case_core/domain/logistics_*`, `case_logistics/`, `logistics_adapter/`) | Resolved | `case_core/domain/logistics_*` = canonical domain pack; `logistics_adapter/` = data ingestion/normalization; legacy `case_logistics/` retired (issue #9). |
 | Doc/state drift (AGENT_CONTEXT/README/ARCHITECTURE) | Creates wrong operational decisions | Make one canonical status source and update links |
 | Experimental modules not classified | Can create accidental coupling or dead weight | Maintain explicit integrate/keep-isolated/extract/retire decisions |
 

@@ -13,6 +13,8 @@ import sys
 
 import pytest
 
+pytestmark = pytest.mark.live
+
 sys.path.insert(0, "src")
 
 GROQ_API_KEY = os.environ.get("CASE_GROQ_API_KEY", "")

@@ -22,8 +22,8 @@ router = APIRouter()
 async def list_pending_review(http_request: Request, limit: int = 100) -> dict[str, object]:
     require_scope_in_strict(http_request, ["case:hitl:read", "case:read", "case:admin"])
     deps = get_deps()
-    _ctx = getattr(http_request.state, "security_context", None)
-    decisions = await deps.decision_repo.list_pending_review(limit=limit)
+    ctx = getattr(http_request.state, "security_context", None)
+    decisions = await deps.decision_repo.list_pending_review(limit=limit, security_context=ctx)
     return {
         "decisions": [d.model_dump_ext() for d in decisions],
         "count": len(decisions),
@@ -34,8 +34,8 @@ async def list_pending_review(http_request: Request, limit: int = 100) -> dict[s
 async def get_decision(decision_id: str, http_request: Request) -> dict[str, object]:
     require_scope_in_strict(http_request, ["case:hitl:read", "case:decision:read", "case:read", "case:admin"])
     deps = get_deps()
-    _ctx = getattr(http_request.state, "security_context", None)
-    decision = await deps.decision_repo.get_decision(decision_id)
+    ctx = getattr(http_request.state, "security_context", None)
+    decision = await deps.decision_repo.get_decision(decision_id, security_context=ctx)
     if not decision:
         raise HTTPException(status_code=404, detail=f"Decision not found: {decision_id}")
     return decision.model_dump_ext()
@@ -46,13 +46,13 @@ async def start_review(decision_id: str, request: HITLActionRequest, http_reques
     require_scope_in_strict(http_request, ["case:hitl:write", "case:admin"])
     deps = get_deps()
     ctx = getattr(http_request.state, "security_context", None)
-    decision = await deps.decision_repo.get_decision(decision_id)
+    decision = await deps.decision_repo.get_decision(decision_id, security_context=ctx)
     if not decision:
         raise HTTPException(status_code=404, detail=f"Decision not found: {decision_id}")
     if decision.lifecycle != DecisionLifecycle.AI_PROPOSED:
         raise HTTPException(status_code=400, detail=f"Cannot transition from {decision.lifecycle.value}")
 
-    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.UNDER_REVIEW.value, request.actor, request.justification)  # type: ignore[func-returns-value,unused-ignore]
+    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.UNDER_REVIEW.value, request.actor, request.justification, security_context=ctx, expected_lifecycle="ai_proposed")  # type: ignore[func-returns-value,unused-ignore]
     if ok is False:
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; transition rejected")
 
@@ -65,7 +65,7 @@ async def start_review(decision_id: str, request: HITLActionRequest, http_reques
         details={"actor": request.actor, "justification": request.justification},
         actor=request.actor,
         correlation_id=(getattr(ctx, "correlation_id", None) or "") if ctx else "",
-    ))
+    ), security_context=ctx)
 
     return {"status": "under_review", "decision_id": decision_id}
 
@@ -75,13 +75,13 @@ async def approve_decision(decision_id: str, request: HITLActionRequest, http_re
     require_scope_in_strict(http_request, ["case:hitl:write", "case:admin"])
     deps = get_deps()
     ctx = getattr(http_request.state, "security_context", None)
-    decision = await deps.decision_repo.get_decision(decision_id)
+    decision = await deps.decision_repo.get_decision(decision_id, security_context=ctx)
     if not decision:
         raise HTTPException(status_code=404, detail=f"Decision not found: {decision_id}")
     if decision.lifecycle not in (DecisionLifecycle.AI_PROPOSED, DecisionLifecycle.UNDER_REVIEW):
         raise HTTPException(status_code=400, detail=f"Cannot approve from {decision.lifecycle.value}")
 
-    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.APPROVED.value, request.actor, request.justification)  # type: ignore[func-returns-value,unused-ignore]
+    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.APPROVED.value, request.actor, request.justification, security_context=ctx, expected_lifecycle=decision.lifecycle.value)  # type: ignore[func-returns-value,unused-ignore]
     if ok is False:
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; transition rejected")
 
@@ -94,7 +94,7 @@ async def approve_decision(decision_id: str, request: HITLActionRequest, http_re
         details={"actor": request.actor, "justification": request.justification},
         actor=request.actor,
         correlation_id=(getattr(ctx, "correlation_id", None) or "") if ctx else "",
-    ))
+    ), security_context=ctx)
 
     return {"status": "approved", "decision_id": decision_id}
 
@@ -104,13 +104,13 @@ async def reject_decision(decision_id: str, request: HITLActionRequest, http_req
     require_scope_in_strict(http_request, ["case:hitl:write", "case:admin"])
     deps = get_deps()
     ctx = getattr(http_request.state, "security_context", None)
-    decision = await deps.decision_repo.get_decision(decision_id)
+    decision = await deps.decision_repo.get_decision(decision_id, security_context=ctx)
     if not decision:
         raise HTTPException(status_code=404, detail=f"Decision not found: {decision_id}")
     if decision.lifecycle not in (DecisionLifecycle.AI_PROPOSED, DecisionLifecycle.UNDER_REVIEW):
         raise HTTPException(status_code=400, detail=f"Cannot reject from {decision.lifecycle.value}")
 
-    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.REJECTED.value, request.actor, request.justification)  # type: ignore[func-returns-value,unused-ignore]
+    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.REJECTED.value, request.actor, request.justification, security_context=ctx, expected_lifecycle=decision.lifecycle.value)  # type: ignore[func-returns-value,unused-ignore]
     if ok is False:
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; transition rejected")
 
@@ -123,7 +123,7 @@ async def reject_decision(decision_id: str, request: HITLActionRequest, http_req
         details={"actor": request.actor, "justification": request.justification},
         actor=request.actor,
         correlation_id=(getattr(ctx, "correlation_id", None) or "") if ctx else "",
-    ))
+    ), security_context=ctx)
 
     return {"status": "rejected", "decision_id": decision_id}
 
@@ -133,13 +133,13 @@ async def escalate_decision(decision_id: str, request: HITLEscalateRequest, http
     require_scope_in_strict(http_request, ["case:hitl:write", "case:admin"])
     deps = get_deps()
     ctx = getattr(http_request.state, "security_context", None)
-    decision = await deps.decision_repo.get_decision(decision_id)
+    decision = await deps.decision_repo.get_decision(decision_id, security_context=ctx)
     if not decision:
         raise HTTPException(status_code=404, detail=f"Decision not found: {decision_id}")
     if decision.lifecycle not in (DecisionLifecycle.AI_PROPOSED, DecisionLifecycle.UNDER_REVIEW):
         raise HTTPException(status_code=400, detail=f"Cannot escalate from {decision.lifecycle.value}")
 
-    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.ESCALATED.value, request.actor, request.justification)  # type: ignore[func-returns-value,unused-ignore]
+    ok = await deps.decision_repo.update_lifecycle(decision_id, DecisionLifecycle.ESCALATED.value, request.actor, request.justification, security_context=ctx, expected_lifecycle=decision.lifecycle.value)  # type: ignore[func-returns-value,unused-ignore]
     if ok is False:
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; transition rejected")
 
@@ -152,7 +152,7 @@ async def escalate_decision(decision_id: str, request: HITLEscalateRequest, http
         details={"actor": request.actor, "justification": request.justification, "escalate_to": request.escalate_to},
         actor=request.actor,
         correlation_id=(getattr(ctx, "correlation_id", None) or "") if ctx else "",
-    ))
+    ), security_context=ctx)
 
     return {"status": "escalated", "decision_id": decision_id, "escalate_to": request.escalate_to}
 
@@ -162,7 +162,7 @@ async def modify_decision(decision_id: str, request: HITLModifyRequest, http_req
     require_scope_in_strict(http_request, ["case:hitl:write", "case:admin"])
     deps = get_deps()
     ctx = getattr(http_request.state, "security_context", None)
-    decision = await deps.decision_repo.get_decision(decision_id)
+    decision = await deps.decision_repo.get_decision(decision_id, security_context=ctx)
     if not decision:
         raise HTTPException(status_code=404, detail=f"Decision not found: {decision_id}")
     # Prevent silent overwrite of final/concurrent states (single-consumer safety)
@@ -191,10 +191,10 @@ async def modify_decision(decision_id: str, request: HITLModifyRequest, http_req
     )
 
     # CAS-like: ensure state hasn't changed before persisting modification
-    current = await deps.decision_repo.get_decision(decision_id)
+    current = await deps.decision_repo.get_decision(decision_id, security_context=ctx)
     if not current or current.lifecycle not in (DecisionLifecycle.AI_PROPOSED, DecisionLifecycle.UNDER_REVIEW):
         raise HTTPException(status_code=409, detail="Concurrent HITL state change; modification rejected")
-    await deps.decision_repo.save_decision(decision)
+    await deps.decision_repo.save_decision(decision, security_context=ctx)
 
     await deps.audit_adapter.log_event(AuditEvent(
         event_id=f"ae-hitl-modify-{decision_id}-{uuid.uuid4().hex[:8]}",
@@ -213,6 +213,6 @@ async def modify_decision(decision_id: str, request: HITLModifyRequest, http_req
         },
         actor=request.actor,
         correlation_id=(getattr(ctx, "correlation_id", None) or "") if ctx else "",
-    ))
+    ), security_context=ctx)
 
     return {"status": "modified", "decision_id": decision_id, "decision": decision.model_dump_ext()}

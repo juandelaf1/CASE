@@ -1,6 +1,6 @@
 # CASE Architecture
 
-> Technical architecture documentation. Last verified: 2026-09-28 (V3).
+> Technical architecture documentation. Last verified: 2026-11-13 (V3+ router modularization, 5 domains, CI).
 
 ---
 
@@ -16,7 +16,7 @@ CASE is a layered AI decision platform with clear separation of concerns:
                           │ HTTP
 ┌─────────────────────────▼───────────────────────────────┐
 │                     API Layer                           │
-│           FastAPI (HTTP adapter, 15 endpoints)          │
+│           FastAPI (HTTP adapter, modular routers)          │
 │           Auth + Rate Limiting middleware                │
 │           Delegates to TriageEngine                     │
 └─────────────────────────┬───────────────────────────────┘
@@ -174,9 +174,9 @@ CASE is a layered AI decision platform with clear separation of concerns:
 
 **Purpose:** HTTP interface.
 
-**Endpoints:** 11 endpoints (health, domains, triage, audit, HITL lifecycle)
+**Endpoints:** Modular routers under `case_api/api/v1/routers/` (health, domains, providers, cases, triage, audit, hitl, comparison, evaluate, seismic).
 
-**Rule:** API delegates to TriageEngine. No business logic in API layer.
+**Rule:** API delegates to TriageEngine. No business logic in API layer. Router modules own HTTP concerns only; shared state/helpers in `routers/shared.py`.
 
 ---
 
