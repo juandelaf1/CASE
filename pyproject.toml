@@ -36,7 +36,7 @@ select = ["E", "F", "I", "W", "UP", "B", "C4", "T20"]
 ignore = ["E501", "B008", "UP042", "UP017"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["case_api", "case_core", "case_infra", "case_logistics", "logistics_adapter", "usgs_adapter"]
+known-first-party = ["case_api", "case_core", "case_infra", "logistics_adapter", "usgs_adapter"]
 
 [tool.mypy]
 python_version = "3.11"
