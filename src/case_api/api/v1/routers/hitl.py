@@ -22,7 +22,7 @@ router = APIRouter()
 async def list_pending_review(http_request: Request, limit: int = 100) -> dict[str, object]:
     require_scope_in_strict(http_request, ["case:hitl:read", "case:read", "case:admin"])
     deps = get_deps()
-    ctx = getattr(http_request.state, "security_context", None)
+    _ctx = getattr(http_request.state, "security_context", None)
     decisions = await deps.decision_repo.list_pending_review(limit=limit)
     return {
         "decisions": [d.model_dump_ext() for d in decisions],
@@ -34,7 +34,7 @@ async def list_pending_review(http_request: Request, limit: int = 100) -> dict[s
 async def get_decision(decision_id: str, http_request: Request) -> dict[str, object]:
     require_scope_in_strict(http_request, ["case:hitl:read", "case:decision:read", "case:read", "case:admin"])
     deps = get_deps()
-    ctx = getattr(http_request.state, "security_context", None)
+    _ctx = getattr(http_request.state, "security_context", None)
     decision = await deps.decision_repo.get_decision(decision_id)
     if not decision:
         raise HTTPException(status_code=404, detail=f"Decision not found: {decision_id}")

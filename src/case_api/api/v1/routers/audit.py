@@ -11,7 +11,7 @@ router = APIRouter()
 async def get_audit_events(case_id: str, http_request: Request) -> dict[str, object]:
     require_scope_in_strict(http_request, ["case:audit:read", "case:read", "case:admin"])
     deps = get_deps()
-    ctx = getattr(http_request.state, "security_context", None)
+    _ctx = getattr(http_request.state, "security_context", None)
     events = await deps.audit_adapter.get_events_by_case(case_id)
     return {
         "case_id": case_id,
