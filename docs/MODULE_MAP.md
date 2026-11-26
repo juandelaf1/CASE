@@ -51,7 +51,7 @@ A new scenario should **not** require changes to core orchestration logic, provi
 | `case_infra/<backend>` | Persistence/audit/idempotency | Repository/audit adapters, migrations, storage-specific concerns | Decision logic, domain rules, HTTP | Implements persistence ports |
 | `case_api` | Transport layer | FastAPI routers, auth/rate-limit middleware, request/response schemas, error mapping | Decision business logic, domain logic, direct external side effects beyond adapter calls | Delegates to engine/services |
 | `case_adapters/<name>` | External data/capability adapters | Normalization, client wrappers, provenance, timeout/fallback mapping | CASE core ownership, HITL authority, hidden side effects | Input/output contract; no core coupling |
-| `case_integrations/<consumer>` | Consumer boundary adapters | Versioned contracts (e.g. Poolar `case.evaluate`), mapping, idempotency/correlation/authz integration | Consumer domain orchestration inside CASE core | Versioned, additive, auditable |
+| `case_integrations/<consumer>` | Consumer boundary adapters | Versioned contracts (e.g. `case.evaluate`, see `docs/CASE_EVALUATE_CONTRACT.md`), mapping, idempotency/correlation/authz integration | Consumer domain orchestration inside CASE core | Versioned, additive, auditable |
 | `case_evaluation` | Reproducible evaluation | Deterministic/security/bias/regression suites, datasets, reports, metrics | Fabricated claims, production claims without evidence | Evidence-linked reports only |
 | `case_experimental` | R&D modules | ML adaptation, hybrid/specialist models, advanced logistics intelligence, etc. | Implicit pipeline wiring, undocumented behavior | Explicit gate before integration |
 
