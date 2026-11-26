@@ -17,6 +17,7 @@ from case_api.api.v1.routers.shared import (
     get_idempotency_store,
 )
 from case_api.api.v1.routers.triage import triage
+
 try:
     from case_infra.persistence.sqlite_idempotency import SQLiteIdempotencyStore
 except Exception:  # pragma: no cover
