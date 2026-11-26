@@ -1,0 +1,43 @@
+﻿# Catálogo orientativo de instancias aisladas (ejemplos, no despliegues reales)
+# Ajustar scopes, puertos, políticas y contratos al caso verificado.
+
+instances:
+  - name: case-poolar
+    consumer_id: poolar
+    tenant_id: poolar-tenant
+    purpose: "Evaluación L1 de propuestas sintéticas para POOLAR (instancia aislada)"
+    suggested_scopes: ["case:evaluate", "case:read", "case:triage", "case:audit:read"]
+    db: "/app/data/case_poolar.db"
+    ports: { api: 8001, ui: 8502 }
+    policies: "perfil poolar; sin acciones reales automáticas"
+    notes: "Integración L1 condicionada a contrato y datos sintéticos; endpoint case-eval/v0.1-draft"
+
+  - name: case-enruta
+    consumer_id: enruta
+    tenant_id: enruta-tenant
+    purpose: "Evaluación aislada para EnRuta/SkyCast (si aplica y se verifica contrato)"
+    suggested_scopes: ["case:evaluate", "case:read"]
+    db: "/app/data/case_enruta.db"
+    ports: { api: 8003, ui: 8504 }
+    policies: "preservar contratos/referencias existentes"
+    notes: "No forzar integración sin caso de uso y derechos verificados"
+
+  - name: case-anexo-risk
+    consumer_id: anexo-risk
+    tenant_id: anexo-risk-tenant
+    purpose: "Evaluación aislada para Anexo Risk"
+    suggested_scopes: ["case:evaluate", "case:read", "case:audit:read"]
+    db: "/app/data/case_anexo_risk.db"
+    ports: { api: 8004, ui: 8505 }
+    policies: "recuperación Git controlada; sin operaciones reales"
+    notes: "Mantener independencia de instancia"
+
+  - name: case-generic
+    consumer_id: <consumer>
+    tenant_id: <tenant>
+    purpose: "Plantilla genérica para nuevo producto"
+    suggested_scopes: ["case:evaluate", "case:read"]
+    db: "/app/data/case_<consumer>.db"
+    ports: { api: 8010, ui: 8511 }
+    policies: "definir por producto"
+    notes: "Duplicar .env.consumer.example y parametrizar"
