@@ -1,0 +1,35 @@
+{
+  "contract_version": "case-eval/v0.1-draft",
+  "capability_id": "case.evaluate",
+  "correlation_id": "corr-example-response-001",
+  "idempotency_key": "idem-example-response-001",
+  "status": "ok",
+  "data_status": "synthetic",
+  "provenance": {
+    "provider": "case",
+    "mapping": "case.evaluate adapter over /api/v1/triage",
+    "upstream_lifecycle": "escalated"
+  },
+  "result": {
+    "decision_type": "recommendation",
+    "case_ref": "CASE-4B3DBD81",
+    "action": "escalate",
+    "urgency": "CRITICAL",
+    "confidence": 0.72,
+    "risks": [],
+    "decision_factors": [
+      "Critical urgency",
+      "Potential high impact",
+      "Human escalation required"
+    ],
+    "evidence_summary": "Evidence reviewed; sufficient for a governed recommendation",
+    "requires_human_review": false,
+    "lifecycle_hint": "escalated",
+    "reason": "Critical supply_chain_disruption case requires human escalation",
+    "summary": "Critical supply_chain_disruption case escalated for human review for this case",
+    "decision_rationale": "Step 1: Critical signals identified from report and evidence. Step 2: Evidence reviewed but impact/risk remains high. Step 3: Risk evaluated as critical. Step 4: Action determined - escalate for human governance.",
+    "processing_time_ms": 24.137496948242188
+  },
+  "warnings": [],
+  "errors": []
+}

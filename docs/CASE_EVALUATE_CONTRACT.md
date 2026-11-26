@@ -98,6 +98,14 @@ On evaluation failure mapped by the adapter, `status="error"`, `errors` contains
 - Idempotency key and correlation id are consumer responsibilities; CASE enforces replay/conflict semantics in strict modes.
 - Poolar integration should live in Poolar as an adapter/client calling this contract.
 
+## Contract Artifacts
+
+- Request schema: `docs/contracts/case-evaluate.request.schema.json`
+- Response schema: `docs/contracts/case-evaluate.response.schema.json`
+- Example request: `docs/examples/supply_chain_disruption_evaluate.request.json`
+- Example response: `docs/examples/supply_chain_disruption_evaluate.response.json`
+- Synthetic slice demo: `scripts/demo_supply_chain_disruption_slice.py`
+
 ## Test Coverage
 
 - `tests/integration/test_evaluate_api.py`
@@ -105,4 +113,3 @@ On evaluation failure mapped by the adapter, `status="error"`, `errors` contains
 - `tests/integration/test_evaluate_security.py`
 - `tests/integration/test_idempotency_recovery.py`
 - `tests/integration/test_fault_injection_ag.py`
-- `scripts/demo_supply_chain_disruption_slice.py` (synthetic consumer slice)

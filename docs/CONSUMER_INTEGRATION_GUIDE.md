@@ -27,6 +27,9 @@ External products (Poolar, dashboards, etc.) consume CASE through versioned cont
 This slice shows how a Poolar-style consumer can send a disruption event to CASE without embedding Poolar logic in CASE core.
 
 - **Request example:** `docs/examples/supply_chain_disruption_evaluate.request.json`
+- **Response example:** `docs/examples/supply_chain_disruption_evaluate.response.json`
+- **Request schema:** `docs/contracts/case-evaluate.request.schema.json`
+- **Response schema:** `docs/contracts/case-evaluate.response.schema.json`
 - **Runnable demo:** `python scripts/demo_supply_chain_disruption_slice.py`
 - **Domain:** `supply_chain_disruption` (registered CASE domain pack)
 - **Contract:** `case.evaluate` (`case-eval/v0.1-draft`)

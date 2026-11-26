@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://case.local/contracts/case-evaluate.response.schema.json",
+  "title": "CASE Evaluate Response",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "contract_version",
+    "capability_id",
+    "correlation_id",
+    "status",
+    "result"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "case-eval/v0.1-draft"
+    },
+    "capability_id": {
+      "type": "string",
+      "const": "case.evaluate"
+    },
+    "correlation_id": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "pending_review",
+        "degraded",
+        "rejected",
+        "error"
+      ]
+    },
+    "data_status": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "operation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "decision_type",
+        "requires_human_review"
+      ],
+      "properties": {
+        "decision_type": {
+          "type": "string",
+          "const": "recommendation"
+        },
+        "case_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "decision_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "operation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "urgency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "risks": {
+          "type": "array"
+        },
+        "decision_factors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence_summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requires_human_review": {
+          "type": "boolean"
+        },
+        "lifecycle_hint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "decision_rationale": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "processing_time_ms": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}
