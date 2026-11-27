@@ -409,24 +409,36 @@ def _provider_metrics(decisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _validation_chart(decisions: list[dict[str, Any]]) -> go.Figure:
     stages = ["parse", "schema", "semantic", "domain"]
-    totals = dict.fromkeys(stages, 0)
+    statuses = ["pass", "fail", "not_reached", "not_evaluated"]
+    counts: dict[str, dict[str, int]] = {st: dict.fromkeys(stages, 0) for st in statuses}
     for d in decisions:
         rel = (d.get("metadata") or {}).get("reliability") or {}
-        sf = rel.get("stage_failures") or {}
+        outcomes = rel.get("stage_outcomes")
+        if not isinstance(outcomes, dict):
+            if rel and rel.get("terminal_failure") is False:
+                outcomes = dict.fromkeys(stages, "pass")
+            else:
+                outcomes = dict.fromkeys(stages, "not_evaluated")
         for s in stages:
-            totals[s] += int(sf.get(s, 0) or 0)
-    fig = go.Figure(
-        data=[
-            go.Bar(
-                x=[s.upper() for s in stages],
-                y=[totals[s] for s in stages],
-                marker_color=["#475569", "#b82e2e", "#a06800", "#1a7a7a"],
-                hovertemplate="%{x}: %{y}<extra></extra>",
-            )
-        ]
-    )
+            status = str(outcomes.get(s, "not_evaluated"))
+            if status not in counts:
+                status = "not_evaluated"
+            counts[status][s] += 1
+    colors = {"pass": "#1a7a4a", "fail": "#b82e2e", "not_reached": "#94a3b8", "not_evaluated": "#64748b"}
+    labels = {"pass": "Pass", "fail": "Fail", "not_reached": "Not reached", "not_evaluated": "N/A"}
+    fig = go.Figure()
+    for status_key in statuses:
+        fig.add_trace(go.Bar(
+            name=labels[status_key],
+            x=[s.upper() for s in stages],
+            y=[counts[status_key][s] for s in stages],
+            marker_color=colors[status_key],
+            hovertemplate=f"{labels[status_key]} %{{x}}: %{{y}}<extra></extra>",
+        ))
     layout = _plot_layout(t("room_chart_validation"))
+    layout["barmode"] = "stack"
     layout["yaxis"] = {"gridcolor": "rgba(148,163,184,0.15)", "dtick": 1}
+    layout["legend"] = {"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1}
     fig.update_layout(**layout)
     return fig
 

@@ -292,12 +292,8 @@ class ReliabilityPipeline:
         start = self._time_fn()
         validation_attempts = 0
         transient_attempts = 0
-        stage_failures: dict[str, int] = {
-            "parse": 0,
-            "schema": 0,
-            "semantic": 0,
-            "domain": 0,
-        }
+        stage_order = ["parse", "schema", "semantic", "domain"]
+        stage_failures: dict[str, int] = dict.fromkeys(stage_order, 0)
 
         def _record_stage(err_obj: CASEError | None) -> None:
             if err_obj is None:
@@ -311,6 +307,30 @@ class ReliabilityPipeline:
             key = mapping.get(err_obj.category)
             if key:
                 stage_failures[key] += 1
+
+        def _stage_outcomes(err_obj: CASEError | None) -> dict[str, str]:
+            if err_obj is None:
+                return dict.fromkeys(stage_order, "pass")
+            mapping = {
+                ErrorCategory.PARSING: "parse",
+                ErrorCategory.SCHEMA_VALIDATION: "schema",
+                ErrorCategory.SEMANTIC_VALIDATION: "semantic",
+                ErrorCategory.DOMAIN_VALIDATION: "domain",
+            }
+            failed = mapping.get(err_obj.category)
+            if failed is None:
+                return dict.fromkeys(stage_order, "not_evaluated")
+            outcomes: dict[str, str] = {}
+            seen_fail = False
+            for s in stage_order:
+                if s == failed:
+                    outcomes[s] = "fail"
+                    seen_fail = True
+                elif seen_fail:
+                    outcomes[s] = "not_reached"
+                else:
+                    outcomes[s] = "pass"
+            return outcomes
 
         if emit_case_received:
             await self._emit_audit(case, "CASE_RECEIVED", {"domain": case.domain})
@@ -369,6 +389,7 @@ class ReliabilityPipeline:
                 "validation_attempts": validation_attempts,
                 "transient_attempts": transient_attempts,
                 "stage_failures": dict(stage_failures),
+                "stage_outcomes": _stage_outcomes(None),
                 "terminal_failure": False,
             }
             await self._emit_audit(
@@ -444,6 +465,7 @@ class ReliabilityPipeline:
                 "validation_attempts": validation_attempts,
                 "transient_attempts": transient_attempts,
                 "stage_failures": dict(stage_failures),
+                "stage_outcomes": _stage_outcomes(err),
             }
             return None, err
 
@@ -498,6 +520,7 @@ class ReliabilityPipeline:
             "validation_attempts": validation_attempts,
             "transient_attempts": transient_attempts,
             "stage_failures": dict(stage_failures),
+            "stage_outcomes": _stage_outcomes(None),
             "terminal_failure": False,
         }
         await self._emit_audit(
