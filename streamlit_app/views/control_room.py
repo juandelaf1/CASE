@@ -392,7 +392,7 @@ def _provider_metrics(decisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _validation_chart(decisions: list[dict[str, Any]]) -> go.Figure:
     stages = ["parse", "schema", "semantic", "domain"]
-    totals = {s: 0 for s in stages}
+    totals = dict.fromkeys(stages, 0)
     for d in decisions:
         rel = (d.get("metadata") or {}).get("reliability") or {}
         sf = rel.get("stage_failures") or {}
@@ -645,3 +645,42 @@ def render() -> None:
             use_container_width=False,
         )
     st.markdown("</div>", unsafe_allow_html=True)
+
+    case_ids = [str(d.get("case_id")) for d in filtered if d.get("case_id")]
+    if case_ids:
+        st.markdown(
+            '<div class="case-panel"><div class="case-panel-title">Case drill-down</div>',
+            unsafe_allow_html=True,
+        )
+        selected_case = st.selectbox("Case", case_ids, key="room_case_drilldown")
+        if selected_case:
+            try:
+                case_data = client.get_case_sync(selected_case)
+            except Exception:
+                case_data = {"error": True}
+            if case_data.get("error"):
+                st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
+            else:
+                decision = case_data.get("decision", {})
+                d1, d2, d3, d4 = st.columns(4)
+                d1.metric("Lifecycle", str(decision.get("lifecycle", "?")))
+                d2.metric("Confidence", f"{float(decision.get('confidence', 0) or 0):.0%}")
+                d3.metric("Action", str(decision.get("action", "?")))
+                d4.metric("Latency ms", f"{float(decision.get('processing_time_ms', 0) or 0):.0f}")
+                st.write(str(decision.get("reason", "")))
+                events = case_data.get("audit_events", [])
+                if events:
+                    st.dataframe(
+                        [
+                            {
+                                "timestamp": e.get("timestamp"),
+                                "event_type": e.get("event_type"),
+                                "actor": e.get("actor"),
+                                "details": str(e.get("details", ""))[:120],
+                            }
+                            for e in events
+                        ],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+        st.markdown("</div>", unsafe_allow_html=True)
