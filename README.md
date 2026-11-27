@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-874%20passed-16a34a?style=flat-square&logo=pytest&logoColor=white" alt="874 tests passed">
+  <img src="https://img.shields.io/badge/tests-868%20passed%2C%207%20skipped-16a34a?style=flat-square&logo=pytest&logoColor=white" alt="868 tests passed, 7 skipped">
   <img src="https://img.shields.io/badge/ruff-0%20errors-16a34a?style=flat-square" alt="Ruff 0 errors">
   <img src="https://img.shields.io/badge/mypy-0%20errors-16a34a?style=flat-square" alt="Mypy 0 errors">
   <img src="https://img.shields.io/badge/source%20files-118-64748b?style=flat-square" alt="118 source files">

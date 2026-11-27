@@ -2,7 +2,7 @@
 
 READ THIS FILE BEFORE MODIFYING CASE.
 
-> Last verified: 2026-11-26 (domain packs + case.evaluate hardening + quality gates). Verify again before major changes.
+> Last verified: 2026-11-27 (Control Room UI, observability, validation funnel, docs drift review). Verify again before major changes.
 
 ---
 
@@ -30,13 +30,13 @@ CASE (Case Assessment and Structured Evaluation) is a domain-agnostic, provider-
 | Python | 3.13.12 via `C:\Users\JUAN\miniconda3\python.exe` (conda); `.venv` may also exist locally |
 | Working tree | Clean after recent commits (verify with `git status`) |
 
-## Verified Baseline (2026-11-13)
+## Verified Baseline (2026-11-27)
 
 | Gate | Result |
 |---|---|
 | `ruff check src tests` | PASS |
 | `mypy src --ignore-missing-imports` | PASS (118 source files) |
-| `pytest tests/ -q --ignore=tests/unit/test_streamlit_client.py` | 875 passed, 0 failed |
+| `pytest tests/ -q --ignore=tests/unit/test_streamlit_client.py` | 868 passed, 7 skipped, 0 failed |
 | Platform | Windows (PowerShell) |
 
 ---
@@ -45,10 +45,10 @@ CASE (Case Assessment and Structured Evaluation) is a domain-agnostic, provider-
 
 | Check | Result |
 |-------|--------|
-| pytest | 875 passed, 0 failed (verified 2026-11-26) |
+| pytest | 868 passed, 7 skipped, 0 failed (verified 2026-11-27) |
 | ruff | 0 errors |
 | mypy | 0 errors (118 source files) |
-| Integration tests | 11 pass, 7 skipped (Ollama) |
+| Integration tests | Includes 7 skipped Ollama integration tests when Ollama is not running |
 
 ---
 
@@ -71,7 +71,7 @@ These components are wired into the running system via `composition.py` and `Tri
 | OllamaProvider | CONNECTED | Available via provider swap |
 | CloudProvider | CONNECTED | Available via provider swap |
 | SQLite persistence | CONNECTED | Decision repo, audit adapter |
-| FastAPI API | CONNECTED | 11 endpoints, delegates to TriageEngine |
+| FastAPI API | CONNECTED | Modular routers in `case_api/api/v1/routers/`; delegates to TriageEngine/services; includes evaluate/seismic/hitl/triage |
 | Streamlit UI | CONNECTED | Display only, reads from API |
 
 ### What Is ISOLATED (Not Connected to Pipeline)
@@ -107,7 +107,7 @@ These modules exist as standalone implementations. They are tested in isolation 
 
 - Contracts (9 files, Pydantic v2)
 - Ports (6 interfaces)
-- DomainRegistry (3 registered domains)
+- DomainRegistry (7 registered domains)
 - ReliabilityPipeline (parse, schema, semantic, domain, retry, repair)
 - PromptBuilder (TIER1 + TIER3 security)
 - TriageEngine (application layer orchestrator, 179 lines)

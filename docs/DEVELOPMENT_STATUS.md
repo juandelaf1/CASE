@@ -1,6 +1,6 @@
 # CASE Development Status
 
-> Detailed technical snapshot. Last verified: 2026-11-26 (domain packs, case.evaluate hardening, quality gates).
+> Detailed technical snapshot. Last verified: 2026-11-27 (Control Room UI, observability, validation funnel, docs drift review).
 > Source of truth for current implementation state. Update this file after verified changes.
 
 ---
@@ -27,15 +27,15 @@
 
 ---
 
-## 3. Verified Quality (2026-11-13)
+## 3. Verified Quality (2026-11-27)
 
 | Check | Result |
 |-------|--------|
-| pytest | **875 passed, 0 failed** (`--ignore=tests/unit/test_streamlit_client.py`) |
+| pytest | **868 passed, 7 skipped, 0 failed** (`--ignore=tests/unit/test_streamlit_client.py`) |
 | ruff | 0 errors |
 | mypy | 0 errors (118 source files, `--ignore-missing-imports`) |
-| CI | GitHub Actions workflow added (`.github/workflows/ci.yml`) |
-| Dependabot | Config added (`.github/dependabot.yml`) |
+| CI | GitHub Actions workflow (`.github/workflows/ci.yml`) |
+| Dependabot | Config (`.github/dependabot.yml`) |
 
 ---
 

@@ -32,10 +32,10 @@ A new scenario should **not** require changes to core orchestration logic, provi
 | Area | Current state | Notes |
 |---|---|---|
 | Core | Connected | `case_core/application`, `contracts`, `ports`, `reliability`, `prompts`, `react` |
-| Domains | Connected | 5 registered in `composition.py`: `urban_operations`, `logistics`, `infrastructure`, `seismic_risk`, `real_estate` |
+| Domains | Connected | 7 registered in `composition.py`: `urban_operations`, `logistics`, `infrastructure`, `seismic_risk`, `real_estate`, `customer_support`, `supply_chain_disruption` |
 | Providers | Connected | Mock/Groq/Ollama/Cloud behind `LLMProvider`, circuit breaker wrapping |
 | Persistence | Connected | SQLite decision/audit/idempotency/migrations |
-| API | Connected, monolithic | `case_api/api/v1/app.py` contains multiple capabilities; needs router modularization |
+| API | Connected, modularized | `case_api/api/v1/app.py` is thin assembly; capability routers in `case_api/api/v1/routers/` (triage, hitl, cases, audit, evaluate, seismic, comparison, providers, domains, health) |
 | Poolar boundary | Connected, draft | `/api/v1/evaluate` implements `case-eval/v0.1-draft` boundary adapter |
 | External adapters | Present | `usgs_adapter`, `logistics_adapter` as top-level src packages |
 | Logistics parallel package | Retired | `case_logistics/` removed (issue #9). Canonical: `case_core/domain/logistics_*`; adapter: `logistics_adapter/`. |
