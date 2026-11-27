@@ -479,6 +479,19 @@ def render() -> None:
             unsafe_allow_html=True,
         )
 
+        db_status = str(health.get("database", health.get("db_status", "unknown")))
+        provider_name = str(health.get("provider", health.get("default_provider", active_provider)))
+        mode = "MOCK" if "mock" in provider_name.lower() else "REAL"
+        h1, h2, h3, h4 = st.columns(4)
+        with h1:
+            st.markdown(f'<div class="case-cr-chip">API · {"online" if api_ok else "offline"}</div>', unsafe_allow_html=True)
+        with h2:
+            st.markdown(f'<div class="case-cr-chip">DB · {db_status}</div>', unsafe_allow_html=True)
+        with h3:
+            st.markdown(f'<div class="case-cr-chip">Provider · {provider_name} · {mode}</div>', unsafe_allow_html=True)
+        with h4:
+            st.markdown(f'<div class="case-cr-chip">Version · {health.get("version", "n/a")}</div>', unsafe_allow_html=True)
+
         domains = sorted({str(d.get("domain", "")) for d in decisions if d.get("domain")})
         providers = sorted(
             {str((d.get("metadata") or {}).get("provider", "mock")).lower() for d in decisions}
@@ -639,18 +652,24 @@ def render() -> None:
                 else:
                     age_label = f"{age_h:.1f}h"
                     border = "#a06800"
-                c_q1, c_q2 = st.columns([5, 1])
+                urgency = str(d.get("urgency") or (d.get("metadata") or {}).get("urgency") or "—")
+                c_q1, c_q2, c_q3 = st.columns([4.2, 1, 1])
                 with c_q1:
                     st.markdown(
                         f'<div class="case-queue-item" style="border-left-color:{border};">'
-                        f'<div class="case-queue-title">{case_id} · {action}</div>'
+                        f'<div class="case-queue-title">{case_id} · {action} · {urgency}</div>'
                         f'<div class="case-queue-meta">{domain} · {lifecycle} · confidence {confidence:.0%} · {t("room_queue_age")}: {age_label}</div>'
                         "</div>",
                         unsafe_allow_html=True,
                     )
                 with c_q2:
+                    if st.button(t("room_open_cases"), key=f"room_q_cases_{case_id}_{idx}", use_container_width=True):
+                        st.session_state["selected_case_id"] = case_id
+                        st.session_state["current_page"] = "cases"
+                        st.rerun()
+                with c_q3:
                     if st.button(t("room_open_review"), key=f"room_open_{case_id}_{idx}", use_container_width=True):
-                        st.session_state["current_page"] = "review"
+                        st.session_state["current_page"] = "human_review"
                         st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -720,6 +739,21 @@ def render() -> None:
                     d3.metric("Action", str(decision.get("action", "?")))
                     d4.metric("Latency ms", f"{float(decision.get('processing_time_ms', 0) or 0):.0f}")
                     st.write(str(decision.get("reason", "")))
+                    meta = decision.get("metadata") or {}
+                    provider = str(meta.get("provider", "mock"))
+                    model = str(meta.get("model", meta.get("model_id", "n/a")))
+                    mode = "MOCK" if "mock" in provider.lower() else "REAL"
+                    tokens = meta.get("total_tokens", meta.get("tokens"))
+                    cost = meta.get("cost_usd", meta.get("estimated_cost_usd"))
+                    info_parts = [f"Provider: {provider} ({mode})", f"Model: {model}"]
+                    if tokens is not None:
+                        info_parts.append(f"Tokens: {tokens}")
+                    if cost is not None:
+                        try:
+                            info_parts.append(f"Cost: ${float(cost):.5f}")
+                        except Exception:
+                            info_parts.append(f"Cost: {cost}")
+                    st.caption(" · ".join(info_parts))
                     events = case_data.get("audit_events", [])
                     if events:
                         st.dataframe(
