@@ -446,271 +446,298 @@ def render() -> None:
         render_backend_offline()
         return
 
-    decisions_resp: dict[str, Any] = {}
-    try:
-        decisions_resp = client.list_cases_sync(limit=200, offset=0)
-    except Exception:
-        decisions_resp = {}
-    decisions = decisions_resp.get("decisions", []) if isinstance(decisions_resp, dict) else []
+    refresh_options = ["Off", "30s", "60s"]
+    st.session_state.setdefault("room_auto_refresh", "Off")
+    if st.session_state["room_auto_refresh"] not in refresh_options:
+        st.session_state["room_auto_refresh"] = "Off"
+    refresh_map = {"Off": None, "30s": 30, "60s": 60}
+    run_every = refresh_map.get(st.session_state.get("room_auto_refresh", "Off"))
 
-    provider_data: dict[str, Any] = {}
-    try:
-        provider_data = client.list_providers_sync()
-    except Exception:
-        provider_data = {}
-    active_provider = str(provider_data.get("active_provider", "mock"))
+    def _body() -> None:
 
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    st.markdown(
-        '<div class="case-cr-header">'
-        f'<div><div class="case-cr-title">{t("room_title")}</div>'
-        f'<div class="case-cr-subtitle">{t("room_subtitle")}</div></div>'
-        f"{_status_badge(api_ok)}"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+        decisions_resp: dict[str, Any] = {}
+        try:
+            decisions_resp = client.list_cases_sync(limit=200, offset=0)
+        except Exception:
+            decisions_resp = {}
+        decisions = decisions_resp.get("decisions", []) if isinstance(decisions_resp, dict) else []
 
-    domains = sorted({str(d.get("domain", "")) for d in decisions if d.get("domain")})
-    providers = sorted(
-        {str((d.get("metadata") or {}).get("provider", "mock")).lower() for d in decisions}
-        or {active_provider.lower()}
-    )
-    lifecycles = sorted({str(d.get("lifecycle", "")) for d in decisions if d.get("lifecycle")})
+        provider_data: dict[str, Any] = {}
+        try:
+            provider_data = client.list_providers_sync()
+        except Exception:
+            provider_data = {}
+        active_provider = str(provider_data.get("active_provider", "mock"))
 
-    domain_options = [t("room_filter_all"), *domains]
-    provider_options = [t("room_filter_all"), *providers]
-    lifecycle_options = [t("room_filter_all"), *lifecycles]
-    range_options = [t("room_filter_all"), t("room_range_24h"), t("room_range_7d"), t("room_range_30d")]
-    for key, options in (
-        ("room_domain_filter", domain_options),
-        ("room_provider_filter", provider_options),
-        ("room_lifecycle_filter", lifecycle_options),
-        ("room_time_range", range_options),
-    ):
-        st.session_state.setdefault(key, options[0])
-        if st.session_state[key] not in options:
-            st.session_state[key] = options[0]
-
-    f1, f2, f3, f4, f5, f6 = st.columns([1, 1, 1, 1, 1.2, 0.7])
-    with f1:
-        time_range = st.selectbox(t("room_filter_range"), range_options, key="room_time_range")
-    with f2:
-        domain_filter = st.selectbox(t("room_filter_domain"), domain_options, key="room_domain_filter")
-    with f3:
-        provider_filter = st.selectbox(t("room_filter_provider"), provider_options, key="room_provider_filter")
-    with f4:
-        lifecycle_filter = st.selectbox(t("room_filter_lifecycle"), lifecycle_options, key="room_lifecycle_filter")
-    with f5:
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         st.markdown(
-            f'<div class="case-cr-chip" style="margin-top:1.95rem;">{t("room_last_refresh")}: {now}</div>',
+            '<div class="case-cr-header">'
+            f'<div><div class="case-cr-title">{t("room_title")}</div>'
+            f'<div class="case-cr-subtitle">{t("room_subtitle")}</div></div>'
+            f"{_status_badge(api_ok)}"
+            "</div>",
             unsafe_allow_html=True,
         )
-    with f6:
-        if st.button(t("room_refresh"), use_container_width=True):
-            st.rerun()
 
-    filtered = _apply_filters(decisions, domain_filter, provider_filter, lifecycle_filter, time_range)
-
-    total = len(filtered)
-    route_counts = {"auto": 0, "human": 0, "escalated": 0}
-    errors = 0
-    latencies: list[float] = []
-    for d in filtered:
-        route = _decision_route(d)
-        if route in route_counts:
-            route_counts[route] += 1
-        if d.get("error"):
-            errors += 1
-        ms = float(d.get("processing_time_ms", 0) or 0)
-        if ms > 0:
-            latencies.append(ms)
-    avg_latency = f"{sum(latencies) / len(latencies):.0f} ms" if latencies else "—"
-    def _rate(n: int) -> str:
-        return f"{(n / total * 100):.0f}%" if total else "—"
-
-    k1, k2, k3, k4, k5, k6 = st.columns(6)
-    with k1:
-        st.markdown(_kpi(t("room_kpi_total"), str(total)), unsafe_allow_html=True)
-    with k2:
-        st.markdown(_kpi(t("room_kpi_auto_rate"), _rate(route_counts["auto"]), f"{route_counts['auto']}"), unsafe_allow_html=True)
-    with k3:
-        st.markdown(_kpi(t("room_kpi_hitl_rate"), _rate(route_counts["human"]), f"{route_counts['human']}"), unsafe_allow_html=True)
-    with k4:
-        st.markdown(_kpi(t("room_kpi_escalated_rate"), _rate(route_counts["escalated"]), f"{route_counts['escalated']}"), unsafe_allow_html=True)
-    with k5:
-        st.markdown(_kpi(t("room_kpi_error_rate"), _rate(errors), f"{errors}"), unsafe_allow_html=True)
-    with k6:
-        st.markdown(_kpi(t("room_kpi_latency"), avg_latency), unsafe_allow_html=True)
-
-    if not filtered:
-        st.markdown(
-            f'<div class="case-panel"><div class="case-empty">{t("room_no_data")}</div></div>',
-            unsafe_allow_html=True,
+        domains = sorted({str(d.get("domain", "")) for d in decisions if d.get("domain")})
+        providers = sorted(
+            {str((d.get("metadata") or {}).get("provider", "mock")).lower() for d in decisions}
+            or {active_provider.lower()}
         )
-        return
+        lifecycles = sorted({str(d.get("lifecycle", "")) for d in decisions if d.get("lifecycle")})
 
-    c1, c2 = st.columns([1, 1.2])
-    with c1:
-        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
-        st.plotly_chart(_routing_chart(filtered), use_container_width=True, config={"displayModeBar": False})
-        st.markdown("</div>", unsafe_allow_html=True)
-    with c2:
-        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
-        st.plotly_chart(_domain_chart(filtered), use_container_width=True, config={"displayModeBar": False})
-        st.markdown("</div>", unsafe_allow_html=True)
+        domain_options = [t("room_filter_all"), *domains]
+        provider_options = [t("room_filter_all"), *providers]
+        lifecycle_options = [t("room_filter_all"), *lifecycles]
+        range_options = [t("room_filter_all"), t("room_range_24h"), t("room_range_7d"), t("room_range_30d")]
+        for key, options in (
+            ("room_domain_filter", domain_options),
+            ("room_provider_filter", provider_options),
+            ("room_lifecycle_filter", lifecycle_options),
+            ("room_time_range", range_options),
+        ):
+            st.session_state.setdefault(key, options[0])
+            if st.session_state[key] not in options:
+                st.session_state[key] = options[0]
 
-    c3, c4 = st.columns([1.2, 1])
-    with c3:
-        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
-        st.plotly_chart(_outcome_chart(filtered), use_container_width=True, config={"displayModeBar": False})
-        st.markdown("</div>", unsafe_allow_html=True)
-    with c4:
-        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
-        if latencies:
-            st.plotly_chart(
-                _latency_chart(filtered), use_container_width=True, config={"displayModeBar": False}
+        f1, f2, f3, f4, f5, f6 = st.columns([1, 1, 1, 1, 1.2, 0.7])
+        with f1:
+            time_range = st.selectbox(t("room_filter_range"), range_options, key="room_time_range")
+        with f2:
+            domain_filter = st.selectbox(t("room_filter_domain"), domain_options, key="room_domain_filter")
+        with f3:
+            provider_filter = st.selectbox(t("room_filter_provider"), provider_options, key="room_provider_filter")
+        with f4:
+            lifecycle_filter = st.selectbox(t("room_filter_lifecycle"), lifecycle_options, key="room_lifecycle_filter")
+        with f5:
+            st.selectbox(
+                t("room_auto_refresh"),
+                ["Off", "30s", "60s"],
+                key="room_auto_refresh",
             )
-        else:
-            st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.caption(f"{t('room_last_refresh')}: {now}")
+        with f6:
+            if st.button(t("room_refresh"), use_container_width=True):
+                st.rerun()
 
-    timeline_has_data = any(_parse_created_at(str(d.get("created_at", ""))) for d in filtered)
-    if timeline_has_data:
-        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
-        st.plotly_chart(_timeline_chart(filtered), use_container_width=True, config={"displayModeBar": False})
-        st.markdown("</div>", unsafe_allow_html=True)
+        filtered = _apply_filters(decisions, domain_filter, provider_filter, lifecycle_filter, time_range)
 
-    provider_rows = _provider_metrics(filtered)
-    pcol, vcol = st.columns([1.3, 1])
-    with pcol:
-        st.markdown(
-            f'<div class="case-panel"><div class="case-panel-title">{t("room_section_providers")}</div>',
-            unsafe_allow_html=True,
-        )
-        if provider_rows:
-            st.dataframe(provider_rows, use_container_width=True, hide_index=True)
-        else:
-            st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-    with vcol:
-        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
-        st.plotly_chart(_validation_chart(filtered), use_container_width=True, config={"displayModeBar": False})
-        st.markdown("</div>", unsafe_allow_html=True)
+        total = len(filtered)
+        route_counts = {"auto": 0, "human": 0, "escalated": 0}
+        errors = 0
+        latencies: list[float] = []
+        for d in filtered:
+            route = _decision_route(d)
+            if route in route_counts:
+                route_counts[route] += 1
+            if d.get("error"):
+                errors += 1
+            ms = float(d.get("processing_time_ms", 0) or 0)
+            if ms > 0:
+                latencies.append(ms)
+        avg_latency = f"{sum(latencies) / len(latencies):.0f} ms" if latencies else "—"
+        def _rate(n: int) -> str:
+            return f"{(n / total * 100):.0f}%" if total else "—"
 
-    st.markdown(
-        f'<div class="case-panel"><div class="case-panel-title">{t("room_queue_title")}</div>',
-        unsafe_allow_html=True,
-    )
-    queue = [d for d in filtered if d.get("lifecycle") in {"under_review", "escalated", "pending"}]
-    if not queue:
-        st.markdown(f'<div class="case-empty">{t("room_queue_empty")}</div>', unsafe_allow_html=True)
-    else:
-        def _age_hours(decision: dict[str, Any]) -> float | None:
-            dt = _parse_created_at(str(decision.get("created_at", "")))
-            if dt is None:
-                return None
-            return max((datetime.now(timezone.utc) - dt).total_seconds() / 3600, 0.0)
+        k1, k2, k3, k4, k5, k6 = st.columns(6)
+        with k1:
+            st.markdown(_kpi(t("room_kpi_total"), str(total)), unsafe_allow_html=True)
+        with k2:
+            st.markdown(_kpi(t("room_kpi_auto_rate"), _rate(route_counts["auto"]), f"{route_counts['auto']}"), unsafe_allow_html=True)
+        with k3:
+            st.markdown(_kpi(t("room_kpi_hitl_rate"), _rate(route_counts["human"]), f"{route_counts['human']}"), unsafe_allow_html=True)
+        with k4:
+            st.markdown(_kpi(t("room_kpi_escalated_rate"), _rate(route_counts["escalated"]), f"{route_counts['escalated']}"), unsafe_allow_html=True)
+        with k5:
+            st.markdown(_kpi(t("room_kpi_error_rate"), _rate(errors), f"{errors}"), unsafe_allow_html=True)
+        with k6:
+            st.markdown(_kpi(t("room_kpi_latency"), avg_latency), unsafe_allow_html=True)
 
-        queue = sorted(queue, key=lambda d: (_age_hours(d) is None, -(_age_hours(d) or 0)))
-        for idx, d in enumerate(queue[:8]):
-            case_id = str(d.get("case_id", "?"))
-            domain = str(d.get("domain", "?"))
-            lifecycle = str(d.get("lifecycle", "?"))
-            action = str(d.get("action", "?"))
-            confidence = float(d.get("confidence", 0) or 0)
-            age_h = _age_hours(d)
-            if age_h is None:
-                age_label = "—"
-                border = "#a06800"
-            elif age_h >= 24:
-                age_label = f"{age_h / 24:.1f}d"
-                border = "#b82e2e"
-            else:
-                age_label = f"{age_h:.1f}h"
-                border = "#a06800"
-            c_q1, c_q2 = st.columns([5, 1])
-            with c_q1:
-                st.markdown(
-                    f'<div class="case-queue-item" style="border-left-color:{border};">'
-                    f'<div class="case-queue-title">{case_id} · {action}</div>'
-                    f'<div class="case-queue-meta">{domain} · {lifecycle} · confidence {confidence:.0%} · {t("room_queue_age")}: {age_label}</div>'
-                    "</div>",
-                    unsafe_allow_html=True,
+        if not filtered:
+            st.markdown(
+                f'<div class="case-panel"><div class="case-empty">{t("room_no_data")}</div></div>',
+                unsafe_allow_html=True,
+            )
+            return
+
+        c1, c2 = st.columns([1, 1.2])
+        with c1:
+            st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+            st.plotly_chart(_routing_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+            st.markdown("</div>", unsafe_allow_html=True)
+        with c2:
+            st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+            st.plotly_chart(_domain_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        c3, c4 = st.columns([1.2, 1])
+        with c3:
+            st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+            st.plotly_chart(_outcome_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+            st.markdown("</div>", unsafe_allow_html=True)
+        with c4:
+            st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+            if latencies:
+                st.plotly_chart(
+                    _latency_chart(filtered), use_container_width=True, config={"displayModeBar": False}
                 )
-            with c_q2:
-                if st.button(t("room_open_review"), key=f"room_open_{case_id}_{idx}", use_container_width=True):
-                    st.session_state["current_page"] = "review"
-                    st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown(
-        f'<div class="case-panel"><div class="case-panel-title">{t("room_section_recent")}</div>',
-        unsafe_allow_html=True,
-    )
-    table_rows = []
-    for d in filtered[:20]:
-        table_rows.append(
-            {
-                "case_id": d.get("case_id"),
-                "domain": d.get("domain"),
-                "lifecycle": d.get("lifecycle"),
-                "action": d.get("action"),
-                "confidence": round(float(d.get("confidence", 0) or 0), 3),
-                "processing_time_ms": round(float(d.get("processing_time_ms", 0) or 0), 1),
-                "provider": str((d.get("metadata") or {}).get("provider", "mock")),
-                "created_at": d.get("created_at", ""),
-            }
-        )
-    st.dataframe(table_rows, use_container_width=True, hide_index=True)
-    if table_rows:
-        buf = io.StringIO()
-        writer = csv.DictWriter(buf, fieldnames=list(table_rows[0].keys()))
-        writer.writeheader()
-        writer.writerows(table_rows)
-        st.download_button(
-            "CSV",
-            data=buf.getvalue(),
-            file_name="case_control_room.csv",
-            mime="text/csv",
-            use_container_width=False,
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
+        timeline_has_data = any(_parse_created_at(str(d.get("created_at", ""))) for d in filtered)
+        if timeline_has_data:
+            st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+            st.plotly_chart(_timeline_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    case_ids = [str(d.get("case_id")) for d in filtered if d.get("case_id")]
-    if case_ids:
+        provider_rows = _provider_metrics(filtered)
+        pcol, vcol = st.columns([1.3, 1])
+        with pcol:
+            st.markdown(
+                f'<div class="case-panel"><div class="case-panel-title">{t("room_section_providers")}</div>',
+                unsafe_allow_html=True,
+            )
+            if provider_rows:
+                st.dataframe(provider_rows, use_container_width=True, hide_index=True)
+            else:
+                st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+        with vcol:
+            st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+            st.plotly_chart(_validation_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+            st.markdown("</div>", unsafe_allow_html=True)
+
         st.markdown(
-            '<div class="case-panel"><div class="case-panel-title">Case drill-down</div>',
+            f'<div class="case-panel"><div class="case-panel-title">{t("room_queue_title")}</div>',
             unsafe_allow_html=True,
         )
-        selected_case = st.selectbox("Case", case_ids, key="room_case_drilldown")
-        if selected_case:
-            try:
-                case_data = client.get_case_sync(selected_case)
-            except Exception:
-                case_data = {"error": True}
-            if case_data.get("error"):
-                st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
-            else:
-                decision = case_data.get("decision", {})
-                d1, d2, d3, d4 = st.columns(4)
-                d1.metric("Lifecycle", str(decision.get("lifecycle", "?")))
-                d2.metric("Confidence", f"{float(decision.get('confidence', 0) or 0):.0%}")
-                d3.metric("Action", str(decision.get("action", "?")))
-                d4.metric("Latency ms", f"{float(decision.get('processing_time_ms', 0) or 0):.0f}")
-                st.write(str(decision.get("reason", "")))
-                events = case_data.get("audit_events", [])
-                if events:
-                    st.dataframe(
-                        [
-                            {
-                                "timestamp": e.get("timestamp"),
-                                "event_type": e.get("event_type"),
-                                "actor": e.get("actor"),
-                                "details": str(e.get("details", ""))[:120],
-                            }
-                            for e in events
-                        ],
-                        use_container_width=True,
-                        hide_index=True,
+        queue = [d for d in filtered if d.get("lifecycle") in {"under_review", "escalated", "pending"}]
+        if not queue:
+            st.markdown(f'<div class="case-empty">{t("room_queue_empty")}</div>', unsafe_allow_html=True)
+        else:
+            def _age_hours(decision: dict[str, Any]) -> float | None:
+                dt = _parse_created_at(str(decision.get("created_at", "")))
+                if dt is None:
+                    return None
+                return max((datetime.now(timezone.utc) - dt).total_seconds() / 3600, 0.0)
+
+            queue = sorted(queue, key=lambda d: (_age_hours(d) is None, -(_age_hours(d) or 0)))
+            for idx, d in enumerate(queue[:8]):
+                case_id = str(d.get("case_id", "?"))
+                domain = str(d.get("domain", "?"))
+                lifecycle = str(d.get("lifecycle", "?"))
+                action = str(d.get("action", "?"))
+                confidence = float(d.get("confidence", 0) or 0)
+                age_h = _age_hours(d)
+                if age_h is None:
+                    age_label = "—"
+                    border = "#a06800"
+                elif age_h >= 24:
+                    age_label = f"{age_h / 24:.1f}d"
+                    border = "#b82e2e"
+                else:
+                    age_label = f"{age_h:.1f}h"
+                    border = "#a06800"
+                c_q1, c_q2 = st.columns([5, 1])
+                with c_q1:
+                    st.markdown(
+                        f'<div class="case-queue-item" style="border-left-color:{border};">'
+                        f'<div class="case-queue-title">{case_id} · {action}</div>'
+                        f'<div class="case-queue-meta">{domain} · {lifecycle} · confidence {confidence:.0%} · {t("room_queue_age")}: {age_label}</div>'
+                        "</div>",
+                        unsafe_allow_html=True,
                     )
+                with c_q2:
+                    if st.button(t("room_open_review"), key=f"room_open_{case_id}_{idx}", use_container_width=True):
+                        st.session_state["current_page"] = "review"
+                        st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown(
+            f'<div class="case-panel"><div class="case-panel-title">{t("room_section_recent")}</div>',
+            unsafe_allow_html=True,
+        )
+        table_rows = []
+        for d in filtered[:20]:
+            table_rows.append(
+                {
+                    "case_id": d.get("case_id"),
+                    "domain": d.get("domain"),
+                    "lifecycle": d.get("lifecycle"),
+                    "action": d.get("action"),
+                    "confidence": round(float(d.get("confidence", 0) or 0), 3),
+                    "processing_time_ms": round(float(d.get("processing_time_ms", 0) or 0), 1),
+                    "provider": str((d.get("metadata") or {}).get("provider", "mock")),
+                    "created_at": d.get("created_at", ""),
+                }
+            )
+        st.dataframe(table_rows, use_container_width=True, hide_index=True)
+        if table_rows:
+            buf = io.StringIO()
+            writer = csv.DictWriter(buf, fieldnames=list(table_rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(table_rows)
+            st.download_button(
+                "CSV",
+                data=buf.getvalue(),
+                file_name="case_control_room.csv",
+                mime="text/csv",
+                use_container_width=False,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        case_ids = [str(d.get("case_id")) for d in filtered if d.get("case_id")]
+        if case_ids:
+            st.markdown(
+                '<div class="case-panel"><div class="case-panel-title">Case drill-down</div>',
+                unsafe_allow_html=True,
+            )
+            sc1, sc2, sc3 = st.columns([3, 1, 1])
+            with sc1:
+                selected_case = st.selectbox("Case", case_ids, key="room_case_drilldown")
+            with sc2:
+                if st.button(t("room_open_cases"), key="room_nav_cases", use_container_width=True):
+                    st.session_state["selected_case_id"] = st.session_state.get("room_case_drilldown")
+                    st.session_state["current_page"] = "cases"
+                    st.rerun()
+            with sc3:
+                if st.button(t("room_open_review"), key="room_nav_review", use_container_width=True):
+                    st.session_state["current_page"] = "human_review"
+                    st.rerun()
+            if selected_case:
+                try:
+                    case_data = client.get_case_sync(selected_case)
+                except Exception:
+                    case_data = {"error": True}
+                if case_data.get("error"):
+                    st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
+                else:
+                    decision = case_data.get("decision", {})
+                    d1, d2, d3, d4 = st.columns(4)
+                    d1.metric("Lifecycle", str(decision.get("lifecycle", "?")))
+                    d2.metric("Confidence", f"{float(decision.get('confidence', 0) or 0):.0%}")
+                    d3.metric("Action", str(decision.get("action", "?")))
+                    d4.metric("Latency ms", f"{float(decision.get('processing_time_ms', 0) or 0):.0f}")
+                    st.write(str(decision.get("reason", "")))
+                    events = case_data.get("audit_events", [])
+                    if events:
+                        st.dataframe(
+                            [
+                                {
+                                    "timestamp": e.get("timestamp"),
+                                    "event_type": e.get("event_type"),
+                                    "actor": e.get("actor"),
+                                    "details": str(e.get("details", ""))[:120],
+                                }
+                                for e in events
+                            ],
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    if run_every:
+        st.fragment(_body, run_every=run_every)()
+    else:
+        _body()

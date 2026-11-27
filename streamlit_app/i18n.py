@@ -238,6 +238,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "room_active_provider": "Active Provider",
         "room_model": "Model",
         "room_open_review": "Open Human Review",
+        "room_open_cases": "Open in Cases",
         "room_go_cases": "Go to Cases",
 
         # Control Room v4
@@ -281,6 +282,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "room_queue_age": "Age",
         "room_refresh": "Refresh",
         "room_last_refresh": "Last refresh",
+        "room_auto_refresh": "Auto-refresh",
         "room_chart_routing": "Governance routing",
         "room_chart_timeline": "Decision volume",
         "room_chart_domains": "Domain distribution",
@@ -797,6 +799,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "room_active_provider": "Proveedor Activo",
         "room_model": "Modelo",
         "room_open_review": "Abrir Revisión Humana",
+        "room_open_cases": "Abrir en Casos",
         "room_go_cases": "Ir a Casos",
 
         # Control Room v4
@@ -840,6 +843,7 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "room_queue_age": "Antigüedad",
         "room_refresh": "Actualizar",
         "room_last_refresh": "Última actualización",
+        "room_auto_refresh": "Auto-actualizar",
         "room_chart_routing": "Enrutamiento de gobernanza",
         "room_chart_timeline": "Volumen de decisiones",
         "room_chart_domains": "Distribución por dominio",
