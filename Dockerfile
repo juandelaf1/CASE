@@ -15,7 +15,7 @@ COPY src/ ./src/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -e "." && \
-    pip install --no-cache-dir streamlit httpx
+    pip install --no-cache-dir streamlit httpx plotly
 
 # Copy Streamlit app
 COPY streamlit_app/ ./streamlit_app/

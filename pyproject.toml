@@ -22,6 +22,10 @@ dev = [
     "jsonschema>=4.26.0",
     "types-requests>=2.33.0.20261030",
 ]
+ui = [
+    "streamlit>=1.40.0",
+    "plotly>=5.24.0",
+]
 
 [build-system]
 requires = ["setuptools>=75.0.0", "wheel"]

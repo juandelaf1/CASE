@@ -1,167 +1,132 @@
 from __future__ import annotations
 
-import os
+import csv
+import io
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
+import plotly.graph_objects as go
 import streamlit as st
 
 from streamlit_app.components.state import get_client
 from streamlit_app.i18n import t
-from streamlit_app.ui.components import (
-    render_backend_offline,
-    render_metric_cards,
-)
+from streamlit_app.ui.components import render_backend_offline
 
-_SYSTEM_CSS = """
+_STATUS_CSS = """
 <style>
-.case-hero {
-    text-align: center;
-    padding: 2rem 1rem 1.5rem;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-alt, var(--bg-surface)) 100%);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+.case-cr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
-.case-hero-title {
-    font-size: 2.2rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    color: var(--text-primary);
-    margin-bottom: 0.3rem;
+.case-cr-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.1;
 }
-.case-hero-subtitle {
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-    margin-bottom: 0.6rem;
+.case-cr-subtitle {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
 }
-.case-hero-desc {
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-    max-width: 600px;
-    margin: 0 auto;
-    line-height: 1.5;
+.case-cr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
-.case-section-title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-secondary);
-    margin: 1.5rem 0 0.6rem;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px solid var(--border);
+.case-cr-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a7a4a;
 }
-.case-flow-row {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    flex-wrap: wrap;
-    margin: 0.5rem 0;
+.case-kpi {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  min-height: 104px;
 }
-.case-flow-step {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.35rem 0.7rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    white-space: nowrap;
+.case-kpi-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 0.45rem;
 }
-.case-flow-arrow {
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    font-weight: 600;
+.case-kpi-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
 }
-.case-domain-badge {
-    display: inline-block;
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.3rem 0.6rem;
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin: 0.2rem;
+.case-kpi-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
 }
-.case-pending-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid #a06800;
-    border-radius: 6px;
-    padding: 0.8rem 1rem;
-    margin-bottom: 0.5rem;
+.case-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1rem 0.5rem;
+  margin-bottom: 1rem;
 }
-.case-pending-title {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-primary);
+.case-panel-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
 }
-.case-pending-meta {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    margin-top: 0.2rem;
+.case-empty {
+  padding: 1rem 0.2rem 1.2rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
-.case-status-panel {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.2rem 1.4rem;
-    margin-bottom: 1rem;
+.case-queue-item {
+  border: 1px solid var(--border);
+  border-left: 3px solid #a06800;
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.6rem;
+  background: var(--bg-surface);
 }
-.case-status-title {
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-secondary);
-    margin-bottom: 0.8rem;
+.case-queue-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
-.case-status-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.45rem 0;
-    border-bottom: 1px solid var(--border);
+.case-queue-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
 }
-.case-status-row:last-child { border-bottom: none; }
-.case-status-label {
-    font-size: 0.92rem;
-    color: var(--text-primary);
-    font-weight: 500;
-}
-.case-status-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.82rem;
-    font-weight: 600;
-}
-.case-status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-.case-status-dot--online { background: #1a7a4a; }
-.case-status-dot--offline { background: #b82e2e; }
-.case-status-text--online { color: #1a7a4a; }
-.case-status-text--offline { color: #b82e2e; }
-.case-evidence-badge {
-    display: inline-block;
-    border-radius: 4px;
-    padding: 0.15rem 0.5rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-.case-evidence-badge--real { background: #d4edda; color: #155724; }
-.case-evidence-badge--deterministic { background: #fff3cd; color: #856404; }
-.case-evidence-badge--synthetic { background: #e2e3e5; color: #383d41; }
 </style>
 """
+
+_COLORS = {
+    "auto": "#1a7a4a",
+    "human": "#a06800",
+    "escalated": "#b82e2e",
+    "rejected": "#6b7280",
+    "modified": "#6a3fb5",
+    "neutral": "#1a7a7a",
+}
 
 
 def _check_url(url: str, timeout: float = 3.0, headers: dict[str, str] | None = None) -> bool:
@@ -173,251 +138,371 @@ def _check_url(url: str, timeout: float = 3.0, headers: dict[str, str] | None = 
         return False
 
 
-def _render_status_row(label: str, is_online: bool) -> None:
-    status_cls = "online" if is_online else "offline"
-    status_text = t("room_online") if is_online else t("room_offline_status")
-    st.markdown(
-        f'<div class="case-status-row">'
-        f'<span class="case-status-label">{label}</span>'
-        f'<span class="case-status-indicator">'
-        f'<span class="case-status-dot case-status-dot--{status_cls}"></span>'
-        f'<span class="case-status-text--{status_cls}">{status_text}</span>'
-        f'</span>'
-        f'</div>',
-        unsafe_allow_html=True,
+def _status_badge(is_online: bool) -> str:
+    color = "#1a7a4a" if is_online else "#b82e2e"
+    label = t("room_online") if is_online else t("room_offline_status")
+    return (
+        f'<span class="case-cr-chip"><span class="case-cr-dot" style="background:{color}"></span>'
+        f"{label}</span>"
     )
 
 
-def render() -> None:
-    st.markdown(_SYSTEM_CSS, unsafe_allow_html=True)
+def _kpi(label: str, value: str, note: str = "") -> str:
+    note_html = f'<div class="case-kpi-note">{note}</div>' if note else ""
+    return (
+        '<div class="case-kpi">'
+        f'<div class="case-kpi-label">{label}</div>'
+        f'<div class="case-kpi-value">{value}</div>'
+        f"{note_html}"
+        "</div>"
+    )
 
+
+def _decision_route(decision: dict[str, Any]) -> str:
+    lifecycle = str(decision.get("lifecycle", "")).lower()
+    has_override = decision.get("human_override") is not None
+    if lifecycle == "approved" and not has_override:
+        return "auto"
+    if lifecycle in {"under_review", "pending"}:
+        return "human"
+    if lifecycle == "escalated":
+        return "escalated"
+    if lifecycle == "rejected":
+        return "rejected"
+    if lifecycle == "modified":
+        return "modified"
+    return "human"
+
+
+def _route_label(route: str) -> str:
+    mapping = {
+        "auto": t("room_kpi_auto"),
+        "human": t("room_kpi_hitl"),
+        "escalated": t("room_kpi_escalated"),
+        "rejected": t("room_rejected"),
+        "modified": t("room_modified"),
+    }
+    return mapping.get(route, route)
+
+
+def _apply_filters(
+    decisions: list[dict[str, Any]],
+    domain: str,
+    provider: str,
+    lifecycle: str,
+) -> list[dict[str, Any]]:
+    filtered: list[dict[str, Any]] = []
+    for d in decisions:
+        if domain != t("room_filter_all") and d.get("domain") != domain:
+            continue
+        d_provider = str((d.get("metadata") or {}).get("provider", "mock")).lower()
+        if provider != t("room_filter_all") and d_provider != provider.lower():
+            continue
+        if lifecycle != t("room_filter_all") and d.get("lifecycle") != lifecycle:
+            continue
+        filtered.append(d)
+    return filtered
+
+
+def _plot_layout(title: str) -> dict[str, Any]:
+    return {
+        "title": {"text": title, "font": {"size": 13, "color": "#334155"}},
+        "paper_bgcolor": "rgba(0,0,0,0)",
+        "plot_bgcolor": "rgba(0,0,0,0)",
+        "margin": {"l": 24, "r": 16, "t": 44, "b": 24},
+        "legend": {"orientation": "h", "y": -0.15},
+        "font": {"family": "Inter, sans-serif", "color": "#475569"},
+    }
+
+
+def _routing_chart(decisions: list[dict[str, Any]]) -> go.Figure:
+    counts: dict[str, int] = {"auto": 0, "human": 0, "escalated": 0, "rejected": 0, "modified": 0}
+    for d in decisions:
+        counts[_decision_route(d)] += 1
+    labels = [_route_label(k) for k, v in counts.items() if v > 0]
+    values = [v for v in counts.values() if v > 0]
+    colors = [_COLORS[k] for k, v in counts.items() if v > 0]
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=labels,
+                values=values,
+                hole=0.62,
+                marker={"colors": colors, "line": {"color": "#ffffff", "width": 2}},
+                textinfo="label+percent",
+                hovertemplate="%{label}: %{value}<extra></extra>",
+            )
+        ]
+    )
+    fig.update_layout(**_plot_layout(t("room_chart_routing")), showlegend=False)
+    return fig
+
+
+def _domain_chart(decisions: list[dict[str, Any]]) -> go.Figure:
+    by_domain: dict[str, int] = {}
+    for d in decisions:
+        domain = str(d.get("domain", "unknown"))
+        by_domain[domain] = by_domain.get(domain, 0) + 1
+    domains = sorted(by_domain.keys())
+    values = [by_domain[d] for d in domains]
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=domains,
+                y=values,
+                marker_color="#1a7a7a",
+                hovertemplate="%{x}: %{y}<extra></extra>",
+            )
+        ]
+    )
+    layout = _plot_layout(t("room_chart_domains"))
+    layout["xaxis"] = {"tickangle": -20, "gridcolor": "rgba(148,163,184,0.15)"}
+    layout["yaxis"] = {"gridcolor": "rgba(148,163,184,0.15)", "dtick": 1}
+    fig.update_layout(**layout)
+    return fig
+
+
+def _outcome_chart(decisions: list[dict[str, Any]]) -> go.Figure:
+    by_route: dict[str, int] = {}
+    for d in decisions:
+        route = _decision_route(d)
+        by_route[route] = by_route.get(route, 0) + 1
+    order = ["auto", "human", "escalated", "rejected", "modified"]
+    labels = [_route_label(r) for r in order if by_route.get(r, 0) > 0]
+    values = [by_route[r] for r in order if by_route.get(r, 0) > 0]
+    colors = [_COLORS[r] for r in order if by_route.get(r, 0) > 0]
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=labels,
+                y=values,
+                marker_color=colors,
+                hovertemplate="%{x}: %{y}<extra></extra>",
+            )
+        ]
+    )
+    layout = _plot_layout(t("room_chart_reliability"))
+    layout["yaxis"] = {"gridcolor": "rgba(148,163,184,0.15)", "dtick": 1}
+    layout["xaxis"] = {"gridcolor": "rgba(148,163,184,0.08)"}
+    fig.update_layout(**layout)
+    return fig
+
+
+def _latency_chart(decisions: list[dict[str, Any]]) -> go.Figure:
+    latencies = [float(d.get("processing_time_ms", 0) or 0) for d in decisions]
+    latencies = [v for v in latencies if v > 0]
+    fig = go.Figure(data=[go.Histogram(x=latencies, nbinsx=12, marker_color="#475569")])
+    layout = _plot_layout(t("room_kpi_latency"))
+    layout["xaxis"] = {"title": "ms", "gridcolor": "rgba(148,163,184,0.15)"}
+    layout["yaxis"] = {"title": "count", "gridcolor": "rgba(148,163,184,0.15)", "dtick": 1}
+    fig.update_layout(**layout)
+    return fig
+
+
+def render() -> None:
+    st.markdown(_STATUS_CSS, unsafe_allow_html=True)
     client = get_client()
 
-    # ── Gate: backend must be reachable ──
     try:
         health = client.health_sync()
         api_ok = health.get("status") in ("ok", "degraded")
     except Exception:
         api_ok = False
+        health = {}
 
     if not api_ok:
         render_backend_offline()
         return
 
-    # ── 1. HERO: What is CASE? ──
-    version = health.get("version", "?")
-    st.markdown(
-        f'<div class="case-hero">'
-        f'<div class="case-hero-title">{t("room_hero_title")}</div>'
-        f'<div class="case-hero-subtitle">{t("room_hero_subtitle")} — v{version}</div>'
-        f'<div class="case-hero-desc">{t("room_hero_desc")}</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # ── 2. SYSTEM OVERVIEW ──
-    st.markdown(f'<div class="case-section-title">{t("room_section_overview")}</div>', unsafe_allow_html=True)
-
-    db_ok = health.get("database") == "ok"
-    status_text = t("room_healthy") if health.get("status") == "ok" else t("room_degraded")
-
-    st.markdown(
-        f'<div class="case-status-panel">'
-        f'<div class="case-status-row">'
-        f'<span class="case-status-label">{t("room_uptime")}</span>'
-        f'<span class="case-status-indicator">'
-        f'<span class="case-status-dot case-status-dot--{"online" if api_ok else "offline"}"></span>'
-        f'<span class="case-status-text--{"online" if api_ok else "offline"}">{status_text}</span>'
-        f'</span>'
-        f'</div>'
-        f'<div class="case-status-row">'
-        f'<span class="case-status-label">{t("room_version")}</span>'
-        f'<span class="case-status-label" style="font-weight:600;">{version}</span>'
-        f'</div>'
-        f'<div class="case-status-row">'
-        f'<span class="case-status-label">{t("room_database")}</span>'
-        f'<span class="case-status-indicator">'
-        f'<span class="case-status-dot case-status-dot--{"online" if db_ok else "offline"}"></span>'
-        f'<span class="case-status-text--{"online" if db_ok else "offline"}">{"OK" if db_ok else t("room_offline_status")}</span>'
-        f'</span>'
-        f'</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # ── 3. ACTIVE DOMAINS ──
-    st.markdown(f'<div class="case-section-title">{t("room_section_domains")}</div>', unsafe_allow_html=True)
-
-    domains = health.get("domains", [])
-    domain_count = health.get("domain_count", len(domains))
-    st.markdown(f'<div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">{t("room_domain_count").format(count=domain_count)}</div>', unsafe_allow_html=True)
-
-    domain_html = ""
-    for d in domains:
-        domain_html += f'<span class="case-domain-badge">{d}</span>'
-    if domain_html:
-        st.markdown(domain_html, unsafe_allow_html=True)
-
-    # ── 4. DECISION FLOW ──
-    st.markdown(f'<div class="case-section-title">{t("room_section_flow")}</div>', unsafe_allow_html=True)
-
-    st.markdown(
-        f'<div class="case-flow-row">'
-        f'<span class="case-flow-step">{t("room_flow_model")}</span>'
-        f'<span class="case-flow-arrow">\u2192</span>'
-        f'<span class="case-flow-step">{t("room_flow_validation")}</span>'
-        f'<span class="case-flow-arrow">\u2192</span>'
-        f'<span class="case-flow-step">{t("room_flow_risk")}</span>'
-        f'<span class="case-flow-arrow">\u2192</span>'
-        f'<span class="case-flow-step">{t("room_flow_decision")}</span>'
-        f'<span class="case-flow-arrow">\u2192</span>'
-        f'<span class="case-flow-step">{t("room_flow_audit")}</span>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # ── 5. DECISION METRICS ──
-    st.markdown(f'<div class="case-section-title">{t("room_section_metrics")}</div>', unsafe_allow_html=True)
-
-    decisions: list[dict[str, Any]] = []
+    decisions_resp: dict[str, Any] = {}
     try:
-        cases_data = client.list_cases_sync(limit=500, offset=0)
-        decisions = cases_data.get("decisions", [])
+        decisions_resp = client.list_cases_sync(limit=200, offset=0)
     except Exception:
-        decisions = []
+        decisions_resp = {}
+    decisions = decisions_resp.get("decisions", []) if isinstance(decisions_resp, dict) else []
 
-    total = len(decisions)
-    auto_approve = 0
-    human_review = 0
-    escalated = 0
-    rejected = 0
-    modified = 0
+    provider_data: dict[str, Any] = {}
+    try:
+        provider_data = client.list_providers_sync()
+    except Exception:
+        provider_data = {}
+    active_provider = str(provider_data.get("active_provider", "mock"))
 
-    for d in decisions:
-        lifecycle = d.get("lifecycle", "")
-        has_override = d.get("human_override") is not None
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    st.markdown(
+        '<div class="case-cr-header">'
+        f'<div><div class="case-cr-title">{t("room_title")}</div>'
+        f'<div class="case-cr-subtitle">{t("room_subtitle")}</div></div>'
+        f"{_status_badge(api_ok)}"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-        if lifecycle == "approved" and not has_override:
-            auto_approve += 1
-        elif lifecycle == "under_review":
-            human_review += 1
-        elif lifecycle == "escalated":
-            escalated += 1
-        elif lifecycle == "rejected":
-            rejected += 1
-        elif lifecycle == "modified":
-            modified += 1
+    domains = sorted({str(d.get("domain", "")) for d in decisions if d.get("domain")})
+    providers = sorted(
+        {str((d.get("metadata") or {}).get("provider", "mock")).lower() for d in decisions}
+        or {active_provider.lower()}
+    )
+    lifecycles = sorted({str(d.get("lifecycle", "")) for d in decisions if d.get("lifecycle")})
 
-    render_metric_cards([
-        {"label": t("room_total_cases"), "value": str(total), "icon": "\u2139", "color": "#1a7a7a"},
-        {"label": t("room_auto_approve"), "value": str(auto_approve), "icon": "\u2714", "color": "#1a7a4a"},
-        {"label": t("room_human_review"), "value": str(human_review), "icon": "\u2611", "color": "#a06800"},
-        {"label": t("room_escalated"), "value": str(escalated), "icon": "\u26a0", "color": "#b82e2e"},
-        {"label": t("room_rejected"), "value": str(rejected), "icon": "\u2718", "color": "#b82e2e"},
-        {"label": t("room_modified"), "value": str(modified), "icon": "\u270e", "color": "#6a3fb5"},
-    ])
+    domain_options = [t("room_filter_all"), *domains]
+    provider_options = [t("room_filter_all"), *providers]
+    lifecycle_options = [t("room_filter_all"), *lifecycles]
+    st.session_state.setdefault("room_domain_filter", domain_options[0])
+    st.session_state.setdefault("room_provider_filter", provider_options[0])
+    st.session_state.setdefault("room_lifecycle_filter", lifecycle_options[0])
+    for key, options in (
+        ("room_domain_filter", domain_options),
+        ("room_provider_filter", provider_options),
+        ("room_lifecycle_filter", lifecycle_options),
+    ):
+        if st.session_state[key] not in options:
+            st.session_state[key] = options[0]
 
-    # ── 6. REQUIRES ATTENTION ──
-    st.markdown(f'<div class="case-section-title">{t("room_section_pending")}</div>', unsafe_allow_html=True)
-
-    pending = [d for d in decisions if d.get("lifecycle") in ("under_review", "escalated")]
-
-    if not pending:
+    f1, f2, f3, f4, f5 = st.columns([1.2, 1.2, 1.2, 1.2, 0.8])
+    with f1:
+        domain_filter = st.selectbox(
+            t("room_filter_domain"), domain_options, key="room_domain_filter"
+        )
+    with f2:
+        provider_filter = st.selectbox(
+            t("room_filter_provider"), provider_options, key="room_provider_filter"
+        )
+    with f3:
+        lifecycle_filter = st.selectbox(
+            t("room_filter_lifecycle"), lifecycle_options, key="room_lifecycle_filter"
+        )
+    with f4:
         st.markdown(
-            f'<div style="font-size:0.85rem;color:var(--text-secondary);padding:0.5rem 0;">'
-            f'{t("room_no_pending_attention")}'
-            f'</div>',
+            f'<div class="case-cr-chip" style="margin-top:1.95rem;">{t("room_last_refresh")}: {now}</div>',
             unsafe_allow_html=True,
         )
-    else:
+    with f5:
+        if st.button(t("room_refresh"), use_container_width=True):
+            st.rerun()
+
+    filtered = _apply_filters(decisions, domain_filter, provider_filter, lifecycle_filter)
+
+    total = len(filtered)
+    route_counts = {"auto": 0, "human": 0, "escalated": 0}
+    errors = 0
+    latencies: list[float] = []
+    for d in filtered:
+        route = _decision_route(d)
+        if route in route_counts:
+            route_counts[route] += 1
+        if d.get("error"):
+            errors += 1
+        ms = float(d.get("processing_time_ms", 0) or 0)
+        if ms > 0:
+            latencies.append(ms)
+    avg_latency = f"{sum(latencies) / len(latencies):.0f} ms" if latencies else "—"
+
+    k1, k2, k3, k4, k5, k6 = st.columns(6)
+    with k1:
+        st.markdown(_kpi(t("room_kpi_total"), str(total)), unsafe_allow_html=True)
+    with k2:
+        st.markdown(_kpi(t("room_kpi_auto"), str(route_counts["auto"])), unsafe_allow_html=True)
+    with k3:
+        st.markdown(_kpi(t("room_kpi_hitl"), str(route_counts["human"])), unsafe_allow_html=True)
+    with k4:
         st.markdown(
-            f'<div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">'
-            f'{t("room_pending_count").format(count=len(pending))}'
-            f'</div>',
+            _kpi(t("room_kpi_escalated"), str(route_counts["escalated"])), unsafe_allow_html=True
+        )
+    with k5:
+        st.markdown(_kpi(t("room_kpi_validation"), str(errors)), unsafe_allow_html=True)
+    with k6:
+        st.markdown(_kpi(t("room_kpi_latency"), avg_latency), unsafe_allow_html=True)
+
+    if not filtered:
+        st.markdown(
+            f'<div class="case-panel"><div class="case-empty">{t("room_no_data")}</div></div>',
             unsafe_allow_html=True,
         )
-        for d in pending[:5]:
-            st.markdown(
-                f'<div class="case-pending-card">'
-                f'<div class="case-pending-title">{d.get("case_id", "?")} \u2014 {d.get("action", "?")}</div>'
-                f'<div class="case-pending-meta">{d.get("domain", "?")} | {d.get("lifecycle", "?")} | confidence {d.get("confidence", 0):.0%}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
+        return
 
-    # ── 7. PROVIDER STATUS ──
-    st.markdown(f'<div class="case-section-title">{t("room_section_providers")}</div>', unsafe_allow_html=True)
-
-    active_name = "mock"
-    active_model = "mock"
-    providers_list: list[dict[str, Any]] = []
-    try:
-        providers_data = client.list_providers_sync()
-        active_name = providers_data.get("active_provider", "mock")
-        providers_list = providers_data.get("providers", [])
-        for p in providers_list:
-            if p.get("name") == active_name:
-                active_model = p.get("model", "mock")
-                break
-    except Exception:
-        pass
-
-    groq_api_key = os.environ.get("CASE_GROQ_API_KEY", "")
-    if groq_api_key:
-        groq_online = _check_url("https://api.groq.com/openai/v1/models", timeout=4.0, headers={"Authorization": f"Bearer {groq_api_key}"})
-    else:
-        groq_online = False
-    ollama_online = _check_url("http://127.0.0.1:11434/api/tags", timeout=3.0)
-
-    st.markdown(
-        f'<div class="case-status-panel">'
-        f'<div class="case-status-row">'
-        f'<span class="case-status-label">{t("room_active_provider")}</span>'
-        f'<span class="case-status-label" style="font-weight:600;">{active_name} ({active_model})</span>'
-        f'</div>'
-        f'<div class="case-status-row">'
-        f'<span class="case-status-label">Groq</span>'
-        f'<span class="case-status-indicator">'
-        f'<span class="case-status-dot case-status-dot--{"online" if groq_online else "offline"}"></span>'
-        f'<span class="case-status-text--{"online" if groq_online else "offline"}">{"ONLINE" if groq_online else "NOT CONFIGURED" if not groq_api_key else "OFFLINE"}</span>'
-        f'</span>'
-        f'</div>'
-        f'<div class="case-status-row">'
-        f'<span class="case-status-label">Ollama</span>'
-        f'<span class="case-status-indicator">'
-        f'<span class="case-status-dot case-status-dot--{"online" if ollama_online else "offline"}"></span>'
-        f'<span class="case-status-text--{"online" if ollama_online else "offline"}">{"ONLINE" if ollama_online else "UNAVAILABLE"}</span>'
-        f'</span>'
-        f'</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # ── 8. EVIDENCE TYPE ──
-    is_mock = active_name == "mock"
-    st.markdown(
-        f'<div style="margin-top:0.8rem;">'
-        f'<span style="font-size:0.82rem;color:var(--text-secondary);font-weight:600;">{t("room_evidence_type")}: </span>'
-        f'<span class="case-evidence-badge case-evidence-badge--{"deterministic" if is_mock else "real"}">'
-        f'{t("room_evidence_deterministic") if is_mock else t("room_evidence_real")}'
-        f'</span>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # ── 9. QUICK ACTIONS ──
-    st.markdown(f'<div class="case-section-title">{t("room_quick_actions")}</div>', unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns(3)
+    c1, c2 = st.columns([1, 1.2])
     with c1:
-        if st.button(t("room_open_dc"), use_container_width=True):
-            st.session_state["current_page"] = "decision_center"
-            st.rerun()
+        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+        st.plotly_chart(_routing_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+        st.markdown("</div>", unsafe_allow_html=True)
     with c2:
-        if st.button(t("room_go_cases"), use_container_width=True):
-            st.session_state["current_page"] = "cases"
-            st.rerun()
+        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+        st.plotly_chart(_domain_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    c3, c4 = st.columns([1.2, 1])
     with c3:
-        if st.button(t("room_open_review"), use_container_width=True):
-            st.session_state["current_page"] = "review"
-            st.rerun()
+        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+        st.plotly_chart(_outcome_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+        st.markdown("</div>", unsafe_allow_html=True)
+    with c4:
+        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+        if latencies:
+            st.plotly_chart(
+                _latency_chart(filtered), use_container_width=True, config={"displayModeBar": False}
+            )
+        else:
+            st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown(
+        f'<div class="case-panel"><div class="case-panel-title">{t("room_queue_title")}</div>',
+        unsafe_allow_html=True,
+    )
+    queue = [d for d in filtered if d.get("lifecycle") in {"under_review", "escalated", "pending"}]
+    if not queue:
+        st.markdown(f'<div class="case-empty">{t("room_queue_empty")}</div>', unsafe_allow_html=True)
+    else:
+        for idx, d in enumerate(queue[:8]):
+            case_id = str(d.get("case_id", "?"))
+            domain = str(d.get("domain", "?"))
+            lifecycle = str(d.get("lifecycle", "?"))
+            action = str(d.get("action", "?"))
+            confidence = float(d.get("confidence", 0) or 0)
+            c_q1, c_q2 = st.columns([5, 1])
+            with c_q1:
+                st.markdown(
+                    '<div class="case-queue-item">'
+                    f'<div class="case-queue-title">{case_id} · {action}</div>'
+                    f'<div class="case-queue-meta">{domain} · {lifecycle} · confidence {confidence:.0%}</div>'
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
+            with c_q2:
+                if st.button(t("room_open_review"), key=f"room_open_{case_id}_{idx}", use_container_width=True):
+                    st.session_state["current_page"] = "review"
+                    st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown(
+        f'<div class="case-panel"><div class="case-panel-title">{t("room_section_recent")}</div>',
+        unsafe_allow_html=True,
+    )
+    table_rows = []
+    for d in filtered[:20]:
+        table_rows.append(
+            {
+                "case_id": d.get("case_id"),
+                "domain": d.get("domain"),
+                "lifecycle": d.get("lifecycle"),
+                "action": d.get("action"),
+                "confidence": round(float(d.get("confidence", 0) or 0), 3),
+                "processing_time_ms": round(float(d.get("processing_time_ms", 0) or 0), 1),
+                "provider": str((d.get("metadata") or {}).get("provider", "mock")),
+            }
+        )
+    st.dataframe(table_rows, use_container_width=True, hide_index=True)
+    if table_rows:
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=list(table_rows[0].keys()))
+        writer.writeheader()
+        writer.writerows(table_rows)
+        st.download_button(
+            "CSV",
+            data=buf.getvalue(),
+            file_name="case_control_room.csv",
+            mime="text/csv",
+            use_container_width=False,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
