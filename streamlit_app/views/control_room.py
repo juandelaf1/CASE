@@ -431,6 +431,49 @@ def _validation_chart(decisions: list[dict[str, Any]]) -> go.Figure:
     return fig
 
 
+def _trend_chart(decisions: list[dict[str, Any]], metric: str) -> go.Figure:
+    buckets: dict[str, list[float]] = {}
+    for d in decisions:
+        dt = _parse_created_at(str(d.get("created_at", "")))
+        if dt is None:
+            continue
+        key = dt.strftime("%Y-%m-%d %H:00") if len({str(x.get("created_at", ""))[:10] for x in decisions if x.get("created_at")}) <= 2 else dt.strftime("%Y-%m-%d")
+        val: float | None = None
+        if metric == "latency":
+            v = float(d.get("processing_time_ms", 0) or 0)
+            val = v if v > 0 else None
+        elif metric == "cost":
+            meta = d.get("metadata") or {}
+            cost_obj = meta.get("cost") or {}
+            c = meta.get("cost_usd", meta.get("estimated_cost_usd"))
+            if c is None and isinstance(cost_obj, dict):
+                c = cost_obj.get("total_usd", cost_obj.get("estimated_cost_usd"))
+            try:
+                val = float(c) if c is not None else None
+            except Exception:
+                val = None
+        if val is not None:
+            buckets.setdefault(key, []).append(val)
+    if not buckets:
+        fig = go.Figure()
+        fig.update_layout(height=220, margin={"l": 20, "r": 20, "t": 20, "b": 20})
+        return fig
+    labels = sorted(buckets.keys())
+    if metric == "latency":
+        y = []
+        for k in labels:
+            vals = sorted(buckets[k])
+            idx = max(int(0.95 * len(vals)) - 1, 0)
+            y.append(vals[idx])
+        name = "p95 latency ms"
+    else:
+        y = [sum(buckets[k]) for k in labels]
+        name = "Total cost USD"
+    fig = go.Figure(go.Scatter(x=labels, y=y, mode="lines+markers", name=name, line={"color": "#2d6fa3" if metric == "latency" else "#1a7a4a"}))
+    fig.update_layout(height=220, margin={"l": 20, "r": 20, "t": 20, "b": 20}, xaxis_title=None, yaxis_title=name)
+    return fig
+
+
 def render() -> None:
     st.markdown(_STATUS_CSS, unsafe_allow_html=True)
     client = get_client()
@@ -619,6 +662,16 @@ def render() -> None:
         with vcol:
             st.markdown('<div class="case-panel">', unsafe_allow_html=True)
             st.plotly_chart(_validation_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        tcol, ccol = st.columns(2)
+        with tcol:
+            st.markdown('<div class="case-panel"><div class="case-panel-title">{t("room_chart_latency_trend")}</div>', unsafe_allow_html=True)
+            st.plotly_chart(_trend_chart(filtered, "latency"), use_container_width=True, config={"displayModeBar": False})
+            st.markdown("</div>", unsafe_allow_html=True)
+        with ccol:
+            st.markdown('<div class="case-panel"><div class="case-panel-title">Cost trend (USD)</div>', unsafe_allow_html=True)
+            st.plotly_chart(_trend_chart(filtered, "cost"), use_container_width=True, config={"displayModeBar": False})
             st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown(

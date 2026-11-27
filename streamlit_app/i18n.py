@@ -288,6 +288,8 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "room_chart_domains": "Domain distribution",
         "room_chart_reliability": "Decision outcomes",
         "room_chart_validation": "Validation stage failures",
+        "room_chart_latency_trend": "p95 latency trend",
+        "room_chart_cost_trend": "Cost trend (USD)",
         "room_chart_retries": "Retries / attempts",
         "room_queue_title": "HITL Queue",
         "room_queue_empty": "No cases in queue",
