@@ -565,9 +565,50 @@ h1, h2, h3, h4, h5, h6, [data-testid="stMarkdownContainer"] h1,
 """
 
 
+_BANNER_B64: str | None = None
+
+
+def _get_banner_b64() -> str | None:
+    global _BANNER_B64
+    if _BANNER_B64 is not None:
+        return _BANNER_B64
+    try:
+        import base64
+        from pathlib import Path
+
+        banner_path = Path(__file__).resolve().parent.parent.parent / "docs" / "images" / "CASE_banner.jpg"
+        if banner_path.exists():
+            _BANNER_B64 = base64.b64encode(banner_path.read_bytes()).decode("ascii")
+        else:
+            _BANNER_B64 = ""
+    except Exception:
+        _BANNER_B64 = ""
+    return _BANNER_B64 or None
+
+
 def inject_global_css() -> None:
     import streamlit as st
     st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+    banner_b64 = _get_banner_b64()
+    if banner_b64:
+        st.markdown(
+            f"""<style>
+[data-testid="stAppViewContainer"] {{
+    background:
+        linear-gradient(180deg, rgba(244,245,247,0.82) 0%, rgba(244,245,247,0.90) 35%, rgba(244,245,247,0.95) 100%),
+        url("data:image/jpeg;base64,{banner_b64}") center top / cover fixed no-repeat !important;
+}}
+[data-testid="stHeader"] {{
+    background: rgba(244,245,247,0.72) !important;
+    backdrop-filter: blur(6px);
+}}
+[data-testid="stSidebar"] {{
+    background: linear-gradient(180deg, rgba(28,31,38,0.94) 0%, rgba(28,31,38,0.98) 100%) !important;
+    backdrop-filter: blur(4px);
+}}
+</style>""",
+            unsafe_allow_html=True,
+        )
 
 
 def metric_card(label: str, value: str, icon: str, color: str = "#1a7a7a") -> str:
