@@ -342,6 +342,78 @@ def _timeline_chart(decisions: list[dict[str, Any]]) -> go.Figure:
     return fig
 
 
+def _percentile(values: list[float], p: float) -> float:
+    if not values:
+        return 0.0
+    vals = sorted(values)
+    k = (len(vals) - 1) * p
+    f = int(k)
+    c = min(f + 1, len(vals) - 1)
+    if f == c:
+        return vals[f]
+    return vals[f] + (vals[c] - vals[f]) * (k - f)
+
+
+def _provider_metrics(decisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_provider: dict[str, dict[str, Any]] = {}
+    for d in decisions:
+        meta = d.get("metadata") or {}
+        pinfo = meta.get("provider_info") or {}
+        provider = str(pinfo.get("provider") or meta.get("provider") or "mock")
+        entry = by_provider.setdefault(
+            provider,
+            {"provider": provider, "count": 0, "latencies": [], "tokens": 0, "cost": 0.0, "errors": 0},
+        )
+        entry["count"] += 1
+        latency = float(pinfo.get("latency_ms") or 0)
+        if latency > 0:
+            entry["latencies"].append(latency)
+        entry["tokens"] += int(pinfo.get("total_tokens") or 0)
+        cost = meta.get("cost") or {}
+        entry["cost"] += float(cost.get("total_cost") or 0)
+        if d.get("error"):
+            entry["errors"] += 1
+    rows = []
+    for provider, entry in by_provider.items():
+        latencies = entry["latencies"]
+        rows.append(
+            {
+                "provider": provider,
+                "cases": entry["count"],
+                "p50_ms": round(_percentile(latencies, 0.50), 1),
+                "p95_ms": round(_percentile(latencies, 0.95), 1),
+                "tokens": entry["tokens"],
+                "cost_usd": round(entry["cost"], 6),
+                "errors": entry["errors"],
+            }
+        )
+    return sorted(rows, key=lambda r: r["provider"])
+
+
+def _validation_chart(decisions: list[dict[str, Any]]) -> go.Figure:
+    stages = ["parse", "schema", "semantic", "domain"]
+    totals = {s: 0 for s in stages}
+    for d in decisions:
+        rel = (d.get("metadata") or {}).get("reliability") or {}
+        sf = rel.get("stage_failures") or {}
+        for s in stages:
+            totals[s] += int(sf.get(s, 0) or 0)
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=[s.upper() for s in stages],
+                y=[totals[s] for s in stages],
+                marker_color=["#475569", "#b82e2e", "#a06800", "#1a7a7a"],
+                hovertemplate="%{x}: %{y}<extra></extra>",
+            )
+        ]
+    )
+    layout = _plot_layout(t("room_chart_validation"))
+    layout["yaxis"] = {"gridcolor": "rgba(148,163,184,0.15)", "dtick": 1}
+    fig.update_layout(**layout)
+    return fig
+
+
 def render() -> None:
     st.markdown(_STATUS_CSS, unsafe_allow_html=True)
     client = get_client()
@@ -493,6 +565,23 @@ def render() -> None:
     if timeline_has_data:
         st.markdown('<div class="case-panel">', unsafe_allow_html=True)
         st.plotly_chart(_timeline_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    provider_rows = _provider_metrics(filtered)
+    pcol, vcol = st.columns([1.3, 1])
+    with pcol:
+        st.markdown(
+            f'<div class="case-panel"><div class="case-panel-title">{t("room_section_providers")}</div>',
+            unsafe_allow_html=True,
+        )
+        if provider_rows:
+            st.dataframe(provider_rows, use_container_width=True, hide_index=True)
+        else:
+            st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+    with vcol:
+        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+        st.plotly_chart(_validation_chart(filtered), use_container_width=True, config={"displayModeBar": False})
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown(

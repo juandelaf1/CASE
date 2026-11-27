@@ -292,11 +292,31 @@ class ReliabilityPipeline:
         start = self._time_fn()
         validation_attempts = 0
         transient_attempts = 0
+        stage_failures: dict[str, int] = {
+            "parse": 0,
+            "schema": 0,
+            "semantic": 0,
+            "domain": 0,
+        }
+
+        def _record_stage(err_obj: CASEError | None) -> None:
+            if err_obj is None:
+                return
+            mapping = {
+                ErrorCategory.PARSING: "parse",
+                ErrorCategory.SCHEMA_VALIDATION: "schema",
+                ErrorCategory.SEMANTIC_VALIDATION: "semantic",
+                ErrorCategory.DOMAIN_VALIDATION: "domain",
+            }
+            key = mapping.get(err_obj.category)
+            if key:
+                stage_failures[key] += 1
 
         if emit_case_received:
             await self._emit_audit(case, "CASE_RECEIVED", {"domain": case.domain})
 
         data, err = self.validate_all(raw_content, case)
+        _record_stage(err)
         if err is None:
             assert data is not None
             elapsed_ms = (self._time_fn() - start) * 1000
@@ -345,6 +365,12 @@ class ReliabilityPipeline:
                         decision.decision_id,
                     )
 
+            decision.metadata["reliability"] = {
+                "validation_attempts": validation_attempts,
+                "transient_attempts": transient_attempts,
+                "stage_failures": dict(stage_failures),
+                "terminal_failure": False,
+            }
             await self._emit_audit(
                 case, "FINAL_DECISION",
                 {"action": decision.action, "lifecycle": decision.lifecycle.value},
@@ -392,6 +418,7 @@ class ReliabilityPipeline:
                     continue
 
             data, err = self.validate_all(raw_content, case)
+            _record_stage(err)
             validation_attempts += 1
 
             if self._time_fn() - start >= TOTAL_TIMEOUT_SECONDS:
@@ -415,6 +442,8 @@ class ReliabilityPipeline:
                 "processing_lifecycle": ProcessingLifecycle.TERMINAL_FAILURE.value,
                 "requires_manual_review": True,
                 "validation_attempts": validation_attempts,
+                "transient_attempts": transient_attempts,
+                "stage_failures": dict(stage_failures),
             }
             return None, err
 
@@ -465,6 +494,12 @@ class ReliabilityPipeline:
                     decision.decision_id,
                 )
 
+        decision.metadata["reliability"] = {
+            "validation_attempts": validation_attempts,
+            "transient_attempts": transient_attempts,
+            "stage_failures": dict(stage_failures),
+            "terminal_failure": False,
+        }
         await self._emit_audit(
             case, "FINAL_DECISION",
             {"action": decision.action, "lifecycle": decision.lifecycle.value},
