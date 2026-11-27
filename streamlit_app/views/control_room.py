@@ -299,6 +299,49 @@ def _latency_chart(decisions: list[dict[str, Any]]) -> go.Figure:
     return fig
 
 
+def _parse_created_at(value: str) -> datetime | None:
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _timeline_chart(decisions: list[dict[str, Any]]) -> go.Figure:
+    buckets: dict[str, int] = {}
+    for d in decisions:
+        dt = _parse_created_at(str(d.get("created_at", "")))
+        if dt is None:
+            continue
+        key = dt.strftime("%Y-%m-%d %H:00")
+        buckets[key] = buckets.get(key, 0) + 1
+    keys = sorted(buckets.keys())
+    values = [buckets[k] for k in keys]
+    fig = go.Figure(
+        data=[
+            go.Scatter(
+                x=keys,
+                y=values,
+                mode="lines+markers",
+                line={"color": "#1a7a7a", "width": 3},
+                marker={"size": 6},
+                hovertemplate="%{x}: %{y}<extra></extra>",
+            )
+        ]
+    )
+    layout = _plot_layout(t("room_chart_timeline"))
+    layout["xaxis"] = {"gridcolor": "rgba(148,163,184,0.15)"}
+    layout["yaxis"] = {"gridcolor": "rgba(148,163,184,0.15)", "dtick": 1}
+    fig.update_layout(**layout)
+    return fig
+
+
 def render() -> None:
     st.markdown(_STATUS_CSS, unsafe_allow_html=True)
     client = get_client()
@@ -446,6 +489,12 @@ def render() -> None:
             st.markdown(f'<div class="case-empty">{t("room_no_data")}</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
+    timeline_has_data = any(_parse_created_at(str(d.get("created_at", ""))) for d in filtered)
+    if timeline_has_data:
+        st.markdown('<div class="case-panel">', unsafe_allow_html=True)
+        st.plotly_chart(_timeline_chart(filtered), use_container_width=True, config={"displayModeBar": False})
+        st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown(
         f'<div class="case-panel"><div class="case-panel-title">{t("room_queue_title")}</div>',
         unsafe_allow_html=True,
@@ -490,6 +539,7 @@ def render() -> None:
                 "confidence": round(float(d.get("confidence", 0) or 0), 3),
                 "processing_time_ms": round(float(d.get("processing_time_ms", 0) or 0), 1),
                 "provider": str((d.get("metadata") or {}).get("provider", "mock")),
+                "created_at": d.get("created_at", ""),
             }
         )
     st.dataframe(table_rows, use_container_width=True, hide_index=True)

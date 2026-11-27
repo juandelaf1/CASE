@@ -67,6 +67,8 @@ class TriageDecision(BaseModel):
     operation_id: str = ""
     original_ai_proposal: AIProposal | None = None
     human_override: HumanOverride | None = None
+    created_at: str = ""
+    updated_at: str = ""
 
     @field_validator("summary")
     @classmethod
@@ -93,6 +95,8 @@ class TriageDecision(BaseModel):
             "operation_id": self.operation_id,
             "original_ai_proposal": self.original_ai_proposal.model_dump() if self.original_ai_proposal else None,
             "human_override": self.human_override.model_dump() if self.human_override else None,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
         }
 
     @classmethod
@@ -122,4 +126,6 @@ class TriageDecision(BaseModel):
             operation_id=data.get("operation_id", "") or "",
             original_ai_proposal=original_ai,
             human_override=human_override,
+            created_at=data.get("created_at", "") or "",
+            updated_at=data.get("updated_at", "") or "",
         )

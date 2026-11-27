@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -145,14 +146,21 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
             sec.update({"consumer_id": consumer_id, "tenant_id": tenant_id, "organization_id": organization_id})
             if op_id:
                 sec["operation_id"] = op_id
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        created_at = decision.created_at or ""
         conn = sqlite3.connect(self._db_path)
+        if not created_at:
+            row = conn.execute(
+                "SELECT created_at FROM decisions WHERE decision_id = ?", (decision.decision_id,)
+            ).fetchone()
+            created_at = str(row[0]) if row and row[0] else now
         conn.execute(
             """INSERT OR REPLACE INTO decisions
                (decision_id, case_id, domain, action, reason, urgency, confidence,
                 evidence_summary, decision_rationale, decision_factors, summary, error,
                 lifecycle, processing_time_ms, metadata, original_ai_proposal, human_override,
-                consumer_id, tenant_id, organization_id, operation_id, correlation_id, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                consumer_id, tenant_id, organization_id, operation_id, correlation_id, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 decision.decision_id,
                 decision.case_id,
@@ -176,6 +184,8 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
                 organization_id,
                 op_id,
                 corr_id,
+                created_at,
+                now,
             ),
         )
         conn.commit()
@@ -375,4 +385,6 @@ class SQLiteDecisionRepository(DecisionRepositoryPort):
             operation_id=str(op_id or ""),
             original_ai_proposal=original_ai,
             human_override=human_override,
+            created_at=str(d.get("created_at") or ""),
+            updated_at=str(d.get("updated_at") or ""),
         )
