@@ -190,7 +190,17 @@ def _apply_filters(
     domain: str,
     provider: str,
     lifecycle: str,
+    time_range: str,
 ) -> list[dict[str, Any]]:
+    now = datetime.now(timezone.utc)
+    max_age_hours: float | None = None
+    if time_range == t("room_range_24h"):
+        max_age_hours = 24
+    elif time_range == t("room_range_7d"):
+        max_age_hours = 24 * 7
+    elif time_range == t("room_range_30d"):
+        max_age_hours = 24 * 30
+
     filtered: list[dict[str, Any]] = []
     for d in decisions:
         if domain != t("room_filter_all") and d.get("domain") != domain:
@@ -200,6 +210,13 @@ def _apply_filters(
             continue
         if lifecycle != t("room_filter_all") and d.get("lifecycle") != lifecycle:
             continue
+        if max_age_hours is not None:
+            dt = _parse_created_at(str(d.get("created_at", "")))
+            if dt is None:
+                continue
+            age_hours = (now - dt).total_seconds() / 3600
+            if age_hours > max_age_hours:
+                continue
         filtered.append(d)
     return filtered
 
@@ -463,40 +480,36 @@ def render() -> None:
     domain_options = [t("room_filter_all"), *domains]
     provider_options = [t("room_filter_all"), *providers]
     lifecycle_options = [t("room_filter_all"), *lifecycles]
-    st.session_state.setdefault("room_domain_filter", domain_options[0])
-    st.session_state.setdefault("room_provider_filter", provider_options[0])
-    st.session_state.setdefault("room_lifecycle_filter", lifecycle_options[0])
+    range_options = [t("room_filter_all"), t("room_range_24h"), t("room_range_7d"), t("room_range_30d")]
     for key, options in (
         ("room_domain_filter", domain_options),
         ("room_provider_filter", provider_options),
         ("room_lifecycle_filter", lifecycle_options),
+        ("room_time_range", range_options),
     ):
+        st.session_state.setdefault(key, options[0])
         if st.session_state[key] not in options:
             st.session_state[key] = options[0]
 
-    f1, f2, f3, f4, f5 = st.columns([1.2, 1.2, 1.2, 1.2, 0.8])
+    f1, f2, f3, f4, f5, f6 = st.columns([1, 1, 1, 1, 1.2, 0.7])
     with f1:
-        domain_filter = st.selectbox(
-            t("room_filter_domain"), domain_options, key="room_domain_filter"
-        )
+        time_range = st.selectbox(t("room_filter_range"), range_options, key="room_time_range")
     with f2:
-        provider_filter = st.selectbox(
-            t("room_filter_provider"), provider_options, key="room_provider_filter"
-        )
+        domain_filter = st.selectbox(t("room_filter_domain"), domain_options, key="room_domain_filter")
     with f3:
-        lifecycle_filter = st.selectbox(
-            t("room_filter_lifecycle"), lifecycle_options, key="room_lifecycle_filter"
-        )
+        provider_filter = st.selectbox(t("room_filter_provider"), provider_options, key="room_provider_filter")
     with f4:
+        lifecycle_filter = st.selectbox(t("room_filter_lifecycle"), lifecycle_options, key="room_lifecycle_filter")
+    with f5:
         st.markdown(
             f'<div class="case-cr-chip" style="margin-top:1.95rem;">{t("room_last_refresh")}: {now}</div>',
             unsafe_allow_html=True,
         )
-    with f5:
+    with f6:
         if st.button(t("room_refresh"), use_container_width=True):
             st.rerun()
 
-    filtered = _apply_filters(decisions, domain_filter, provider_filter, lifecycle_filter)
+    filtered = _apply_filters(decisions, domain_filter, provider_filter, lifecycle_filter, time_range)
 
     total = len(filtered)
     route_counts = {"auto": 0, "human": 0, "escalated": 0}
@@ -512,20 +525,20 @@ def render() -> None:
         if ms > 0:
             latencies.append(ms)
     avg_latency = f"{sum(latencies) / len(latencies):.0f} ms" if latencies else "—"
+    def _rate(n: int) -> str:
+        return f"{(n / total * 100):.0f}%" if total else "—"
 
     k1, k2, k3, k4, k5, k6 = st.columns(6)
     with k1:
         st.markdown(_kpi(t("room_kpi_total"), str(total)), unsafe_allow_html=True)
     with k2:
-        st.markdown(_kpi(t("room_kpi_auto"), str(route_counts["auto"])), unsafe_allow_html=True)
+        st.markdown(_kpi(t("room_kpi_auto_rate"), _rate(route_counts["auto"]), f"{route_counts['auto']}"), unsafe_allow_html=True)
     with k3:
-        st.markdown(_kpi(t("room_kpi_hitl"), str(route_counts["human"])), unsafe_allow_html=True)
+        st.markdown(_kpi(t("room_kpi_hitl_rate"), _rate(route_counts["human"]), f"{route_counts['human']}"), unsafe_allow_html=True)
     with k4:
-        st.markdown(
-            _kpi(t("room_kpi_escalated"), str(route_counts["escalated"])), unsafe_allow_html=True
-        )
+        st.markdown(_kpi(t("room_kpi_escalated_rate"), _rate(route_counts["escalated"]), f"{route_counts['escalated']}"), unsafe_allow_html=True)
     with k5:
-        st.markdown(_kpi(t("room_kpi_validation"), str(errors)), unsafe_allow_html=True)
+        st.markdown(_kpi(t("room_kpi_error_rate"), _rate(errors), f"{errors}"), unsafe_allow_html=True)
     with k6:
         st.markdown(_kpi(t("room_kpi_latency"), avg_latency), unsafe_allow_html=True)
 
@@ -592,18 +605,35 @@ def render() -> None:
     if not queue:
         st.markdown(f'<div class="case-empty">{t("room_queue_empty")}</div>', unsafe_allow_html=True)
     else:
+        def _age_hours(decision: dict[str, Any]) -> float | None:
+            dt = _parse_created_at(str(decision.get("created_at", "")))
+            if dt is None:
+                return None
+            return max((datetime.now(timezone.utc) - dt).total_seconds() / 3600, 0.0)
+
+        queue = sorted(queue, key=lambda d: (_age_hours(d) is None, -(_age_hours(d) or 0)))
         for idx, d in enumerate(queue[:8]):
             case_id = str(d.get("case_id", "?"))
             domain = str(d.get("domain", "?"))
             lifecycle = str(d.get("lifecycle", "?"))
             action = str(d.get("action", "?"))
             confidence = float(d.get("confidence", 0) or 0)
+            age_h = _age_hours(d)
+            if age_h is None:
+                age_label = "—"
+                border = "#a06800"
+            elif age_h >= 24:
+                age_label = f"{age_h / 24:.1f}d"
+                border = "#b82e2e"
+            else:
+                age_label = f"{age_h:.1f}h"
+                border = "#a06800"
             c_q1, c_q2 = st.columns([5, 1])
             with c_q1:
                 st.markdown(
-                    '<div class="case-queue-item">'
+                    f'<div class="case-queue-item" style="border-left-color:{border};">'
                     f'<div class="case-queue-title">{case_id} · {action}</div>'
-                    f'<div class="case-queue-meta">{domain} · {lifecycle} · confidence {confidence:.0%}</div>'
+                    f'<div class="case-queue-meta">{domain} · {lifecycle} · confidence {confidence:.0%} · {t("room_queue_age")}: {age_label}</div>'
                     "</div>",
                     unsafe_allow_html=True,
                 )
