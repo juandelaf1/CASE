@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --bg: #0f1722;
+  --surface: #182233;
+  --surface-2: #1e2a3d;
+  --surface-3: #243247;
+  --border: #2b3b52;
+  --text: #e8edf4;
+  --text-muted: #9fb0c3;
+  --text-dim: #7b8ca1;
+  --teal: #2ba7a0;
+  --teal-soft: rgba(43,167,160,0.14);
+  --warning: #d97706;
+  --warning-soft: rgba(217,119,6,0.14);
+  --critical: #dc5a5a;
+  --critical-soft: rgba(220,90,90,0.14);
+  --success: #2e9b6e;
+  --success-soft: rgba(46,155,110,0.14);
+  --radius: 10px;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-critical: var(--critical);
+  --color-critical-soft: var(--critical-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+}
+
+* { border-color: var(--border); }
+html, body { background: var(--bg); color: var(--text); }
+body { font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif; }
+::selection { background: rgba(43,167,160,0.28); color: var(--text); }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+.case-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.case-muted { color: var(--text-muted); }
+.case-mono { font-family: var(--font-mono), ui-monospace, monospace; }
