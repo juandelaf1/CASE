@@ -10,16 +10,23 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/juandelaf1/CASE/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-blue" alt="Release"></a>
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
-  <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/pydantic-v2%2B-e91e63?logo=pydantic&logoColor=white" alt="Pydantic">
-  <img src="https://img.shields.io/badge/fastapi-0.115%2B-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  <a href="https://github.com/juandelaf1/CASE/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-2563eb?style=flat-square" alt="Release v1.0.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a?style=flat-square" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/pydantic-v2-E92063?style=flat-square&logo=pydantic&logoColor=white" alt="Pydantic v2">
+  <img src="https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/architecture-hexagonal-0f766e?style=flat-square" alt="Hexagonal Architecture">
+  <img src="https://img.shields.io/badge/HITL-human%20oversight-f59e0b?style=flat-square" alt="Human-in-the-loop">
 </p>
 
 <p align="center">
-  <strong>874 passed ? 0 failed</strong><br>
-  <sub>ruff 0 errors ? mypy 0 errors ? 118 source files</sub><br>
+  <img src="https://img.shields.io/badge/tests-874%20passed-16a34a?style=flat-square&logo=pytest&logoColor=white" alt="874 tests passed">
+  <img src="https://img.shields.io/badge/ruff-0%20errors-16a34a?style=flat-square" alt="Ruff 0 errors">
+  <img src="https://img.shields.io/badge/mypy-0%20errors-16a34a?style=flat-square" alt="Mypy 0 errors">
+  <img src="https://img.shields.io/badge/source%20files-118-64748b?style=flat-square" alt="118 source files">
+</p>
+
+<p align="center">
   <sub>Live tests (Groq/Ollama): require API key and running server</sub>
 </p>
 
@@ -39,7 +46,7 @@
 
 CASE es una plataforma de orquestación de decisiones IA, de dominio agnóstico y de proveedor agnóstico. Transforma casos operativos no estructurados en decisiones estructuradas, validadas y respaldadas por evidencia — con supervisión humana enforce por diseño.
 
-**Visi?n de producto:** CASE es la plataforma modular de decisi?n; los dominios se integran como *domain packs* y los consumidores externos (p. ej. Poolar) se integran por contratos versionados como `case.evaluate`, sin acoplar su l?gica al core. Log?stica es el vertical de referencia actual, no el l?mite del producto.
+**Visión de producto:** CASE es la plataforma modular de decisión; los dominios se integran como *domain packs* y los consumidores externos (p. ej. Poolar) se integran por contratos versionados como `case.evaluate`, sin acoplar su lógica al core. Logística es el vertical de referencia actual, no el límite del producto.
 
 > **El LLM propone. CASE valida, evalúa y gobierna la decisión.**
 
@@ -119,6 +126,8 @@ graph TB
         DP3[InfrastructurePolicy]
         DP4[SeismicRiskPolicy]
         DP5[RealEstatePolicy]
+        DP6[CustomerSupportPolicy]
+        DP7[SupplyChainDisruptionPolicy]
     end
 
     subgraph Intelligence
@@ -160,6 +169,9 @@ graph TB
     DR --> DP2
     DR --> DP3
     DR --> DP4
+    DR --> DP5
+    DR --> DP6
+    DR --> DP7
     REACT -.->|context| PB
     PB --> LLM
     LLM -.-> MP
@@ -281,7 +293,7 @@ Estos componentes están cableados al sistema en ejecución vía `composition.py
 |------------|-----------|--------|
 | Contratos (esquemas Pydantic v2) | `contracts/` | Conectado |
 | Puertos (6 interfaces ABC) | `ports/` | Conectado |
-| DomainRegistry (4 dominios) | `domain/registry.py` | Conectado |
+| DomainRegistry (7 dominios) | `domain/registry.py` | Conectado |
 | TriageEngine | `application/engine.py` | Conectado |
 | ReliabilityPipeline | `reliability/pipeline.py` | Conectado |
 | AutomationEvaluator | `reliability/automation.py` | Conectado |
@@ -474,10 +486,6 @@ Las evaluaciones sintéticas y los resultados de MockProvider están claramente 
 
 10 pares contrafactuales testean si cambios de atributos irrelevantes (nombre de proveedor, nombre de cliente, redacción) alteran los resultados de decisión. Actualmente cubre solo el dominio de Logística.
 
-### Alcance
-
-La evaluación usa datos sintéticos con MockProvider. Los resultados demuestran corrección arquitectónica, no precisión productiva. La validación con LLM real se realiza separadamente vía comparación LIVE.
-
 ---
 
 ## Providers
@@ -654,12 +662,12 @@ CASE/
 ├── src/
 │   ├── case_core/
 │   │   ├── application/     # TriageEngine (orquestador)
-│   │   ├── contracts/       # Esquemas Pydantic v2 (9 archivos)
+│   │   ├── contracts/       # Esquemas Pydantic v2 (11 archivos)
 │   │   ├── domain/          # DomainRegistry, DomainPacks
 │   │   ├── evaluation/      # Runner, métricas, reportes
-│   │   ├── ports/           # Interfaces ABC (6 puertos)
+│   │   ├── ports/           # Interfaces ABC (7 puertos)
 │   │   ├── prompts/         # PromptBuilder
-│   │   ├── providers/       # Mock, Ollama, Cloud
+│   │   ├── providers/       # Mock, Groq, Ollama, Cloud
 │   │   ├── reliability/     # Pipeline, evaluador de automatización
 │   │   └── composition.py   # Cableado de dependencias
 │   ├── case_api/
@@ -667,8 +675,8 @@ CASE/
 │   └── case_infra/
 │       └── persistence/     # Adaptadores SQLite
 ├── tests/
-│   ├── unit/                # 18 archivos de test
-│   └── integration/         # 2 archivos de test
+│   ├── unit/                # 40 archivos de test
+│   └── integration/         # 14 archivos de test
 ├── examples/                # 6 scripts de demo
 ├── streamlit_app/           # UI Streamlit
 ├── docs/                    # Arquitectura, estado, roadmap
@@ -812,6 +820,8 @@ graph TB
         DP3[InfrastructurePolicy]
         DP4[SeismicRiskPolicy]
         DP5[RealEstatePolicy]
+        DP6[CustomerSupportPolicy]
+        DP7[SupplyChainDisruptionPolicy]
     end
 
     subgraph Intelligence
@@ -853,6 +863,9 @@ graph TB
     DR --> DP2
     DR --> DP3
     DR --> DP4
+    DR --> DP5
+    DR --> DP6
+    DR --> DP7
     REACT -.->|context| PB
     PB --> LLM
     LLM -.-> MP
@@ -1167,10 +1180,6 @@ Synthetic evaluations and MockProvider results are clearly labeled as SIMULADO /
 
 10 counterfactual pairs test whether irrelevant attribute changes (supplier name, customer name, wording) alter decision outcomes. Currently covers the Logistics domain only.
 
-### Scope
-
-Evaluation uses synthetic data with MockProvider. Results demonstrate architectural correctness, not production accuracy. Real LLM validation is performed separately via LIVE comparison.
-
 ---
 
 ## Providers
@@ -1347,12 +1356,12 @@ CASE/
 ├── src/
 │   ├── case_core/
 │   │   ├── application/     # TriageEngine (orchestrator)
-│   │   ├── contracts/       # Pydantic v2 schemas (9 files)
+│   │   ├── contracts/       # Pydantic v2 schemas (11 files)
 │   │   ├── domain/          # DomainRegistry, DomainPacks
 │   │   ├── evaluation/      # Runner, metrics, reports
-│   │   ├── ports/           # ABC interfaces (6 ports)
+│   │   ├── ports/           # ABC interfaces (7 ports)
 │   │   ├── prompts/         # PromptBuilder
-│   │   ├── providers/       # Mock, Ollama, Cloud
+│   │   ├── providers/       # Mock, Groq, Ollama, Cloud
 │   │   ├── reliability/     # Pipeline, automation evaluator
 │   │   └── composition.py   # Dependency wiring
 │   ├── case_api/
@@ -1360,8 +1369,8 @@ CASE/
 │   └── case_infra/
 │       └── persistence/     # SQLite adapters
 ├── tests/
-│   ├── unit/                # 18 test files
-│   └── integration/         # 2 test files
+│   ├── unit/                # 40 test files
+│   └── integration/         # 14 test files
 ├── examples/                # 6 demo scripts
 ├── streamlit_app/           # Streamlit UI
 ├── docs/                    # Architecture, status, roadmap
@@ -1376,6 +1385,7 @@ CASE/
 | Document | Purpose |
 |----------|---------|
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Technical architecture and layer descriptions |
+| [MODULE_MAP.md](docs/MODULE_MAP.md) | Canonical module boundaries and reference vertical rule |
 | [DEVELOPMENT_STATUS.md](docs/DEVELOPMENT_STATUS.md) | Detailed implementation state and test matrix |
 | [ROADMAP.md](docs/ROADMAP.md) | Phases, milestones, and future planning |
 | [DECISION_LOG.md](docs/DECISION_LOG.md) | Record of significant technical decisions (D001-D010) |
